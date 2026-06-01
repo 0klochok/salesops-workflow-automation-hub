@@ -7,11 +7,11 @@
 | Last updated | 2026-06-01 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Phase 1 - backend foundation |
+| Current phase | Phase 2 - backend lead intake domain foundation |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
-| Git state | No commits yet on `main`; no remote output observed during Phase 0 inspection |
+| Git state | `main`; Phase 2 worktree changes remain unstaged for user review |
 
 ## 2. Project Summary
 
@@ -19,7 +19,7 @@ This is a greenfield portfolio project for a code-first sales operations workflo
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
-The first backend foundation has been scaffolded with a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, and initial pytest coverage. CRM, Slack, Google Sheets, PostgreSQL, and other external services are not required for startup.
+The backend now includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, and a Phase 2 lead intake domain foundation. `POST /leads/intake` validates synthetic lead payloads, runs deterministic in-memory dedupe, calls mock CRM/Slack adapter boundaries, and returns local run results without persistence or network calls. CRM, Slack, Google Sheets, PostgreSQL, and other external services are not required for startup.
 
 ## 3. Source-of-Truth Files
 
@@ -40,7 +40,7 @@ The first backend foundation has been scaffolded with a `uv`-managed FastAPI app
 - Codex must not commit or push.
 - User manually commits and pushes.
 - Use `uv` for backend dependencies.
-- Do not scaffold Next.js, `apps/web`, or frontend code in Phase 1.
+- Do not scaffold Next.js, `apps/web`, or frontend code in Phase 2.
 - Do not call real external APIs.
 - Do not create real secrets or commit a real `.env` file.
 - Use `.env.example` only for placeholders.
@@ -52,9 +52,9 @@ The first backend foundation has been scaffolded with a `uv`-managed FastAPI app
 
 | Area | Planned choice | Notes |
 |---|---|---|
-| Backend | FastAPI, Python 3.12+, Pydantic; SQLAlchemy and Alembic planned next | FastAPI foundation added in Phase 1 |
+| Backend | FastAPI, Python 3.12+, Pydantic; SQLAlchemy and Alembic planned later | FastAPI foundation and lead intake domain added |
 | Backend tooling | `uv`, pytest, Ruff, mypy | Configured in Phase 1 |
-| Database | PostgreSQL through Docker Compose | SQLite only as a local test fallback if justified |
+| Database | PostgreSQL through Docker Compose | Future phase; Phase 2 has no database dependency |
 | Frontend | Next.js, TypeScript, Tailwind CSS, shadcn/ui, TanStack Table | Planned for Phase 3 |
 | Frontend tooling | `pnpm` | Default for TypeScript/JavaScript |
 | Integrations | Mocked CRM and mocked Slack by default | Real services require explicit approval |
@@ -63,12 +63,12 @@ The first backend foundation has been scaffolded with a `uv`-managed FastAPI app
 
 ## 6. Planned Repository Shape
 
-Current Phase 1 repository contents include root-level backend foundation code. Future phases may introduce frontend and additional docs/scripts:
+Current Phase 2 repository contents include root-level backend foundation code and the lead intake domain package. Future phases may introduce frontend and additional docs/scripts:
 
 ```text
 /
   backend/
-    app/        # FastAPI app, settings, health endpoint
+    app/        # FastAPI app, settings, health endpoint, lead intake domain
   tests/        # backend tests
   apps/
     web/        # planned Next.js frontend
@@ -91,14 +91,14 @@ Current Phase 1 repository contents include root-level backend foundation code. 
 
 ## 7. Core Planned Features
 
-- Lead intake API endpoint with Pydantic validation.
+- Lead intake API endpoint with Pydantic validation. Phase 2 local foundation implemented.
 - Public demo lead form.
 - CSV lead import.
-- Duplicate detection by email and company domain.
-- CRM upsert adapter for contact/deal create-or-update behavior.
-- Slack notification adapter for qualified lead notifications.
-- Automation run log with queued, success, failed, and retried statuses.
-- Manual retry for failed automation runs.
+- Duplicate detection by email and company domain. Phase 2 in-memory foundation implemented.
+- CRM upsert adapter for contact/deal create-or-update behavior. Phase 2 mock boundary implemented.
+- Slack notification adapter for qualified lead notifications. Phase 2 mock boundary implemented.
+- Automation run log with queued, success, failed, and retried statuses. Phase 2 local model implemented.
+- Manual retry for failed automation runs. Phase 2 deterministic retry policy implemented.
 - Error detail page with payload, validation issue, and suggested action.
 - Admin table with filters by date, source, status, lead owner, and error type.
 - Backup/audit records.
@@ -111,7 +111,7 @@ Current Phase 1 repository contents include root-level backend foundation code. 
 - No paid API usage is allowed without explicit approval.
 - Synthetic demo data will be used.
 - No production deployment is planned in early phases.
-- PostgreSQL is the primary database target; SQLite may be used only as a justified local unit-test fallback.
+- PostgreSQL is the primary database target for a future persistence phase; Phase 2 has no database dependency or SQLite fallback.
 
 ## 9. Open Questions
 
@@ -120,6 +120,6 @@ Current Phase 1 repository contents include root-level backend foundation code. 
 | Q-001 | Should the final demo use real HubSpot or only a mock CRM? | Before live integration work | Mock CRM |
 | Q-002 | Should Slack use a real webhook or a mock/log notifier? | Before live notification work | Mock/log notifier |
 | Q-003 | What rule assigns leads to the 5 sales reps? | Before lead routing implementation | Round-robin or deterministic placeholder |
-| Q-004 | What qualifies a lead for CRM sync and Slack notification? | Before automation rules | Simple score/source-based rule to be defined |
+| Q-004 | What qualifies a lead for CRM sync and Slack notification? | Before demo polish | Phase 2 default: `lead_score >= 70` |
 | Q-005 | How should dedupe handle shared domains, aliases, and updated emails? | Before dedupe implementation | Email first, company domain second |
-| Q-006 | Should tests require PostgreSQL only, or allow SQLite unit fallback? | Before backend testing setup | PostgreSQL for integration, SQLite only if justified |
+| Q-006 | Should tests require PostgreSQL only, or allow SQLite unit fallback? | Before persistence work | PostgreSQL for integration, SQLite only if justified |

@@ -7,14 +7,14 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Phase 0 - documentation and safety rails |
+| Current phase | Phase 2 - backend lead intake domain foundation |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief
 
 SalesOps Workflow Automation Hub is a planned portfolio demo for a growth agency with 5 sales reps. It will show how lead intake, validation, deduplication, CRM sync, Slack notification, backup/audit logging, failure inspection, and manual retries can be automated with a code-first system.
 
-The project is not implemented yet. Phase 0 only establishes requirements, design direction, safety rails, and local validation expectations.
+Phase 2 implements the backend lead intake domain foundation only. It provides local validation, deterministic dedupe, mock CRM/Slack adapter boundaries, local run-log models, and retry policy without persistence, frontend work, Docker/PostgreSQL infrastructure, real secrets, or real external calls.
 
 ## 3. Goals
 
@@ -58,14 +58,14 @@ The project is not implemented yet. Phase 0 only establishes requirements, desig
 
 | ID | Requirement | Priority | Acceptance signal | Status |
 |---|---|---|---|---|
-| FR-001 | The backend accepts lead submissions through an API endpoint and validates required fields. | P0 | Valid payload succeeds; invalid payload returns structured validation errors. | planned |
+| FR-001 | The backend accepts lead submissions through an API endpoint and validates required fields. | P0 | Valid payload succeeds; invalid payload returns structured validation errors. | foundation implemented |
 | FR-002 | The frontend provides a public demo form for lead submission. | P0 | User can submit a lead and see success/error feedback. | planned |
 | FR-003 | The system imports leads from CSV. | P0 | Valid rows are processed; invalid rows are reported without hiding errors. | planned |
-| FR-004 | The system detects duplicate leads by email and company domain. | P0 | Duplicate and non-duplicate cases are covered by tests. | planned |
-| FR-005 | The CRM adapter simulates create-or-update behavior for contacts/deals. | P0 | Tests prove create, update, duplicate, and failure behavior in mock mode. | planned |
-| FR-006 | The Slack adapter simulates notification for qualified leads. | P0 | Qualified lead produces a mock notification record; unqualified lead does not. | planned |
-| FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | planned |
-| FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | planned |
+| FR-004 | The system detects duplicate leads by email and company domain. | P0 | Duplicate and non-duplicate cases are covered by tests. | local foundation implemented |
+| FR-005 | The CRM adapter simulates create-or-update behavior for contacts/deals. | P0 | Tests prove create, update, duplicate, and failure behavior in mock mode. | mock foundation implemented |
+| FR-006 | The Slack adapter simulates notification for qualified leads. | P0 | Qualified lead produces a mock notification record; unqualified lead does not. | mock foundation implemented |
+| FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | local model implemented; persistence planned |
+| FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | local policy implemented; UI/action planned |
 | FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | planned |
 | FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, lead owner, and error type. | planned |
 | FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | planned |

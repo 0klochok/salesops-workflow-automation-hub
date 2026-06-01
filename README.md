@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 1: backend foundation.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 2: backend lead intake domain foundation.
 
 ## Problem
 
@@ -39,10 +39,15 @@ CRM, Slack, and Google Sheets are mocked/optional unless real usage is explicitl
 
 ## Current Status
 
-Phase 1 has started with a minimal local FastAPI backend:
+Phase 2 adds a local-safe backend lead intake foundation:
 
 - `backend.app.main:app` exposes the FastAPI app object;
 - `GET /health` returns deterministic local service health JSON;
+- `POST /leads/intake` validates lead payloads and returns deterministic local workflow results;
+- lead intake schemas normalize email and company domain values;
+- dedupe foundation checks in-memory lead snapshots by normalized email and company domain;
+- mock CRM and Slack adapter boundaries return deterministic local records only;
+- run logging and retry policy foundations model queued, success, failed, and retried states without persistence;
 - configuration reads environment variables with local-safe defaults;
 - backend tests, Ruff, and mypy are configured through `uv`;
 - `.gitignore` and `.env.example` are present as safety rails;
@@ -69,15 +74,31 @@ Manual health smoke check while the server is running:
 Invoke-RestMethod -Uri "http://localhost:8000/health"
 ```
 
+Manual lead intake smoke check while the server is running:
+
+```powershell
+$payload = @{
+    email = "ada@example.com"
+    first_name = "Ada"
+    last_name = "Lovelace"
+    company_name = "Example Co"
+    company_domain = "example.com"
+    source = "demo_form"
+    lead_score = 90
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
+```
+
 ## Roadmap
 
 | Phase | Focus |
 |---|---|
 | Phase 0 | Documentation and safety rails |
 | Phase 1 | Backend foundation |
-| Phase 2 | Lead processing, dedupe, CRM/Slack mocks, retry logic |
+| Phase 2 | Backend lead intake domain foundation |
 | Phase 3 | Frontend demo form, CSV import UI, admin dashboard |
-| Phase 4 | Portfolio polish, seed data, diagrams, handoff docs, demo script |
+| Phase 4 | Persistence, portfolio polish, seed data, diagrams, handoff docs, demo script |
 
 ## Safety Note
 

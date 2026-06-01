@@ -7,7 +7,7 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 1 - backend foundation |
+| Current phase | Phase 2 - backend lead intake domain foundation |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,19 +20,29 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 1 Test Status
+## 3. Phase 2 Test Status
 
-Phase 1 establishes the first backend test surface:
+Phase 2 extends the backend test surface:
 
 ```powershell
 git diff --check
-git status --short
+git status --short --branch
+uv sync --frozen
 uv run pytest
 uv run ruff check .
 uv run mypy backend tests
 ```
 
-Current tests cover the health endpoint and local-safe configuration defaults/overrides. Database, lead intake, dedupe, adapter, retry, and frontend tests remain planned for later phases.
+Current tests cover:
+
+- health endpoint and local-safe configuration defaults/overrides;
+- lead intake schema normalization and validation failures;
+- deterministic `POST /leads/intake` API behavior for qualified, unqualified, and invalid payloads;
+- in-memory dedupe by normalized email and company domain;
+- mock CRM and Slack adapter deterministic local records;
+- local run logging and retry history preservation.
+
+Database, persistence migrations, CSV import, frontend, and end-to-end browser tests remain planned for later phases.
 
 ## 4. Planned Test Matrix
 
@@ -49,7 +59,7 @@ Current tests cover the health endpoint and local-safe configuration defaults/ov
 
 ## 5. Backend Testing Expectations
 
-Phase 1 establishes:
+Existing backend baseline includes:
 
 - pytest test structure.
 - FastAPI test client coverage for the health endpoint.
@@ -57,17 +67,16 @@ Phase 1 establishes:
 - Ruff linting.
 - mypy type checking.
 
-Phase 2 should add:
+Phase 2 adds:
 
 - FastAPI test client coverage for intake endpoints.
 - Pydantic validation tests.
-- SQLAlchemy persistence tests.
 - Adapter contract tests for mock CRM and mock Slack.
 - Retry state transition tests.
 - Ruff linting.
-- A selected type checker: mypy or pyright.
+- mypy type checking.
 
-PostgreSQL is the target integration database. SQLite may be used only as a narrow unit-test fallback if justified and documented.
+PostgreSQL remains the target integration database for a future persistence phase. Phase 2 intentionally has no database dependency and no SQLite fallback.
 
 ## 6. Frontend Testing Expectations
 
@@ -86,7 +95,7 @@ Phase 3 should establish:
 
 | Change type | Required checks |
 |---|---|
-| Docs/config only | `git diff --check`, `git diff --stat`, `git status --short`, docs review |
+| Docs/config only | `git diff --check`, `git diff --stat`, `git status --short --branch`, docs review |
 | Backend behavior | Targeted pytest, full backend pytest, Ruff, typecheck, API smoke when runnable |
 | Backend persistence | Repository/service tests, migration check, PostgreSQL validation |
 | Adapter behavior | Mock contract tests, no-network verification, failure-path tests |

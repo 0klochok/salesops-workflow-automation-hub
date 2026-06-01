@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 1 - backend foundation |
+| Current phase | Phase 2 - backend lead intake domain foundation |
 
 ## 2. Operating Rules
 
@@ -33,7 +33,7 @@ git status --short --branch
 git remote -v
 ```
 
-Expected Phase 1 observation: worktree may show backend scaffold and doc changes until the user manually commits.
+Expected Phase 2 observation: worktree may show lead domain, test, and doc changes until the user manually commits.
 
 ## 5. Check Tool Versions
 
@@ -64,7 +64,7 @@ Optional local copy command, only when local overrides are needed:
 Copy-Item -LiteralPath ".env.example" -Destination ".env"
 ```
 
-## 7. Phase 1 Backend Commands
+## 7. Backend Commands
 
 ```powershell
 # Install/sync backend dependencies
@@ -89,11 +89,47 @@ Manual backend smoke check while the server is running:
 Invoke-RestMethod -Uri "http://localhost:8000/health"
 ```
 
-## 8. Phase 1 Validation
+Manual Phase 2 lead intake smoke check while the server is running:
 
 ```powershell
-git status --short
+$payload = @{
+    email = "ada@example.com"
+    first_name = "Ada"
+    last_name = "Lovelace"
+    company_name = "Example Co"
+    company_domain = "example.com"
+    source = "demo_form"
+    lead_score = 90
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
+```
+
+Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and optional `slack` fields. This endpoint uses mock adapters only and does not persist data.
+
+## 8. Phase 2 Validation
+
+```powershell
+git status --short --branch
+uv sync --frozen
+uv run pytest
+uv run ruff check .
+uv run mypy backend tests
 git diff --check
+Test-Path -LiteralPath ".github\workflows"
+$files = Get-ChildItem -Recurse -Force -File | Where-Object { $_.FullName -notmatch "\\(\.git|\.venv|__pycache__|\.pytest_cache|\.mypy_cache)\\" }
+$secretPattern = "sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}"
+$endpointPattern = "hooks\.slack\.com|api\.hubapi\.com|api\.openai\.com|sheets\.googleapis\.com"
+$files | Select-String -Pattern $secretPattern
+$files | Select-String -Pattern $endpointPattern
+$files | Select-String -Pattern "[ \t]+$"
+```
+
+The forbidden-pattern scans should return no matches for likely secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
+
+Previously configured backend gates remain:
+
+```powershell
 uv run pytest
 uv run ruff check .
 uv run mypy backend tests
@@ -151,6 +187,7 @@ Future database health checks should be added here once compose services and nam
 |---|---|---|
 | Backend command fails because `uv` is missing | `uv` is not installed or not on PATH | Install `uv` locally, then rerun the command |
 | Health endpoint is unreachable | Uvicorn is not running or port 8000 is in use | Start the server or choose a free port |
+| Lead intake returns 422 | Payload failed local Pydantic validation | Check required fields, email format, company domain, source, and `lead_score` range |
 | Future frontend command fails | Frontend not scaffolded yet | Wait for Phase 3 |
 | Docker command fails | Compose file not created yet or Docker not running | Wait for compose phase or start Docker Desktop |
 | Real API credential requested | Live integration is not approved | Use mock mode and placeholders |
