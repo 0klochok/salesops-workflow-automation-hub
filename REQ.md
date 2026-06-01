@@ -7,14 +7,14 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Phase 2 - backend lead intake domain foundation |
+| Current phase | Phase 4 slice 1 - backend persistence foundation |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief
 
-SalesOps Workflow Automation Hub is a planned portfolio demo for a growth agency with 5 sales reps. It will show how lead intake, validation, deduplication, CRM sync, Slack notification, backup/audit logging, failure inspection, and manual retries can be automated with a code-first system.
+SalesOps Workflow Automation Hub is a planned portfolio demo for a growth agency with 5 sales reps. It shows how lead intake, validation, deduplication, CRM sync, Slack notification, backup/audit logging, failure inspection, and manual retries can be automated with a code-first system.
 
-Phase 2 implements the backend lead intake domain foundation only. It provides local validation, deterministic dedupe, mock CRM/Slack adapter boundaries, local run-log models, and retry policy without persistence, frontend work, Docker/PostgreSQL infrastructure, real secrets, or real external calls.
+Phase 4 slice 1 adds the backend persistence foundation after the Phase 3 frontend surface. The app now has SQLAlchemy/Alembic mappings, local PostgreSQL Docker Compose configuration, and repository tests, but the public intake API remains deterministic and mock-only until persistence is wired in a later slice.
 
 ## 3. Goals
 
@@ -32,7 +32,7 @@ Phase 2 implements the backend lead intake domain foundation only. It provides l
 |---|---|---|---|
 | S-001 | Lead intake API endpoint | P0 | Backend API validates lead submissions |
 | S-002 | Public demo lead form | P0 | Frontend submits demo leads to backend |
-| S-003 | CSV lead import | P0 | Upload/import leads from CSV with validation feedback |
+| S-003 | CSV lead import | P0 | Local CSV rows are parsed and submitted with validation feedback |
 | S-004 | Deduplication | P0 | Detect duplicates by email and company domain |
 | S-005 | CRM upsert simulation | P0 | Adapter simulates contact/deal create-or-update |
 | S-006 | Slack notification simulation | P0 | Adapter logs/simulates notification for qualified leads |
@@ -53,22 +53,23 @@ Phase 2 implements the backend lead intake domain foundation only. It provides l
 | OOS-004 | Real HubSpot, Slack, Google Sheets, or OpenAI calls | Mock mode is the default safety boundary | Explicit user approval and adapter hardening |
 | OOS-005 | GitHub Actions as default validation | Local validation must be stable first | User asks to add CI after local gates pass |
 | OOS-006 | Auth and multi-tenant production controls | Portfolio demo scope | If project becomes production-facing |
+| OOS-007 | Persistent frontend dashboard data in Phase 3 | Persistence is a later phase | PostgreSQL/run-history phase |
 
 ## 6. Functional Requirements
 
 | ID | Requirement | Priority | Acceptance signal | Status |
 |---|---|---|---|---|
 | FR-001 | The backend accepts lead submissions through an API endpoint and validates required fields. | P0 | Valid payload succeeds; invalid payload returns structured validation errors. | foundation implemented |
-| FR-002 | The frontend provides a public demo form for lead submission. | P0 | User can submit a lead and see success/error feedback. | planned |
-| FR-003 | The system imports leads from CSV. | P0 | Valid rows are processed; invalid rows are reported without hiding errors. | planned |
-| FR-004 | The system detects duplicate leads by email and company domain. | P0 | Duplicate and non-duplicate cases are covered by tests. | local foundation implemented |
+| FR-002 | The frontend provides a public demo form for lead submission. | P0 | User can submit a lead and see success/error feedback. | Phase 3 implemented |
+| FR-003 | The system imports leads from CSV. | P0 | Valid rows are processed; invalid rows are reported without hiding errors. | Phase 3 local UI implemented |
+| FR-004 | The system detects duplicate leads by email and company domain. | P0 | Duplicate and non-duplicate cases are covered by tests. | backend foundation plus frontend session hint |
 | FR-005 | The CRM adapter simulates create-or-update behavior for contacts/deals. | P0 | Tests prove create, update, duplicate, and failure behavior in mock mode. | mock foundation implemented |
 | FR-006 | The Slack adapter simulates notification for qualified leads. | P0 | Qualified lead produces a mock notification record; unqualified lead does not. | mock foundation implemented |
-| FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | local model implemented; persistence planned |
-| FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | local policy implemented; UI/action planned |
-| FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | planned |
-| FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, lead owner, and error type. | planned |
-| FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | planned |
+| FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | persistence tables/repository added; API wiring planned |
+| FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | local policy and persistence foundation implemented; UI/API action planned |
+| FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | Phase 3 inline validation/error details; dedicated page planned |
+| FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type. | Phase 3 session filters for available fields; owner/error type planned |
+| FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | planned after persistence wiring |
 | FR-012 | Portfolio handoff materials explain how real CRM/Slack credentials would be added safely. | P1 | Handoff doc documents credential boundaries without real secrets. | planned |
 
 ## 7. Non-Functional Requirements
@@ -76,11 +77,12 @@ Phase 2 implements the backend lead intake domain foundation only. It provides l
 | ID | Category | Requirement | Priority | Validation |
 |---|---|---|---|---|
 | NFR-001 | Safety | Mock/no-real-API mode is default. | P0 | Config review and adapter tests |
-| NFR-002 | Secrets | Real secrets must not be committed, logged, or placed in docs. | P0 | `.gitignore`, `.env.example`, review |
+| NFR-002 | Secrets | Real secrets must not be committed, logged, or placed in docs. | P0 | `.gitignore`, `.env.example`, forbidden-pattern scan |
 | NFR-003 | Local development | Commands must work on Windows PowerShell. | P0 | Runbook command review and local validation |
 | NFR-004 | Testability | Serious phases include tests, linting, type checks, and manual verification commands. | P0 | `TDD.md`, `EXEC_PLAN.md`, phase validation |
 | NFR-005 | Auditability | Lead processing and integration attempts are traceable. | P0 | Run log and audit record tests |
 | NFR-006 | Maintainability | Adapters isolate CRM/Slack implementations from core workflow logic. | P0 | Design review and contract tests |
+| NFR-007 | Local frontend state | Phase 3 UI state must not imply durable persistence. | P0 | Docs and UI/session implementation review |
 
 ## 8. Acceptance Criteria
 
@@ -93,7 +95,9 @@ Phase 2 implements the backend lead intake domain foundation only. It provides l
 | AC-005 | FR-005 | A valid qualified lead | CRM sync runs in mock mode | A CRM sync record is stored without live external calls | Adapter tests |
 | AC-006 | FR-006 | A qualified lead | Notification runs in mock mode | A notification record is stored/logged without live Slack calls | Adapter tests |
 | AC-007 | FR-008 | A failed automation run | User triggers retry | A new attempt is recorded and history is preserved | Retry tests |
-| AC-008 | FR-010 | Existing automation runs | User applies admin filters | The table shows only matching rows | UI tests/manual smoke |
+| AC-008 | FR-010 | Existing automation runs | User applies admin filters | The table shows only matching rows | Frontend tests/manual smoke |
+| AC-009 | FR-002 | A synthetic lead in the UI form | User submits it | The UI displays success/error state and a session dashboard row | Frontend tests/manual smoke |
+| AC-010 | FR-003 | A local CSV row | User imports it | Valid rows submit locally and invalid rows show row-level errors | Frontend tests/manual smoke |
 
 ## 9. Assumptions
 
@@ -102,6 +106,7 @@ Phase 2 implements the backend lead intake domain foundation only. It provides l
 - PostgreSQL is the intended integration database through Docker Compose.
 - SQLite may be considered only for narrow local unit tests if justified.
 - Authentication is not part of early portfolio scope unless later requested.
+- Phase 3 dashboard state is stored in browser `sessionStorage` only.
 
 ## 10. Open Questions
 
@@ -110,6 +115,6 @@ Phase 2 implements the backend lead intake domain foundation only. It provides l
 | Q-001 | Real HubSpot vs mock CRM? | Live integration scope and security posture | Mock CRM |
 | Q-002 | Real Slack webhook vs mock/log notifier? | Notification adapter behavior | Mock/log notifier |
 | Q-003 | Owner assignment rule? | Lead routing and admin filters | TBD |
-| Q-004 | Qualification rule? | CRM/Slack trigger behavior | TBD |
+| Q-004 | Qualification rule? | CRM/Slack trigger behavior | Phase 2 default: `lead_score >= 70` |
 | Q-005 | Dedupe edge cases? | False positives/negatives | Email first, domain second |
 | Q-006 | PostgreSQL-only tests vs SQLite unit fallback? | Test speed and fidelity | PostgreSQL integration, SQLite only if justified |

@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 2: backend lead intake domain foundation.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 1: backend persistence foundation after the Phase 3 frontend demo scaffold.
 
 ## Problem
 
@@ -8,7 +8,7 @@ A growth agency with 5 sales reps receives leads from forms and CSV uploads. The
 
 ## Planned Solution
 
-The planned system will demonstrate an automated workflow that:
+The planned system demonstrates an automated workflow that:
 
 - accepts leads from a public demo form and CSV imports;
 - validates lead data;
@@ -18,43 +18,31 @@ The planned system will demonstrate an automated workflow that:
 - records backup/audit data and automation run history;
 - provides an admin dashboard for run status, failures, filters, failure details, and manual retries.
 
-## Planned Stack
+## Stack
 
-| Area | Planned technology |
+| Area | Technology |
 |---|---|
 | Backend | FastAPI, Python 3.12+, Pydantic, SQLAlchemy, Alembic |
-| Backend tooling | `uv`, pytest, Ruff, mypy or pyright |
-| Database | PostgreSQL through Docker Compose |
-| Frontend | Next.js, TypeScript, Tailwind CSS, shadcn/ui, TanStack Table |
-| Frontend tooling | `pnpm` |
+| Backend tooling | `uv`, pytest, Ruff, mypy |
+| Frontend | Next.js App Router, TypeScript, Tailwind CSS, TanStack Table, local shadcn-style primitives |
+| Frontend tooling | `pnpm`, Vitest, Testing Library |
+| Local database | PostgreSQL through Docker Compose; SQLite is used only as a unit-test fallback for SQLAlchemy mappings |
 | Integrations | Mock CRM and mock Slack by default |
-
-## Planned Architecture
-
-```text
-lead sources -> FastAPI intake -> validation -> database/run log -> dedupe -> CRM adapter -> Slack adapter -> backup/audit -> admin dashboard
-```
-
-CRM, Slack, and Google Sheets are mocked/optional unless real usage is explicitly approved.
 
 ## Current Status
 
-Phase 2 adds a local-safe backend lead intake foundation:
+The current local demo includes:
 
-- `backend.app.main:app` exposes the FastAPI app object;
-- `GET /health` returns deterministic local service health JSON;
+- `backend.app.main:app` exposes `GET /health` and `POST /leads/intake`;
 - `POST /leads/intake` validates lead payloads and returns deterministic local workflow results;
-- lead intake schemas normalize email and company domain values;
-- dedupe foundation checks in-memory lead snapshots by normalized email and company domain;
-- mock CRM and Slack adapter boundaries return deterministic local records only;
-- run logging and retry policy foundations model queued, success, failed, and retried states without persistence;
-- configuration reads environment variables with local-safe defaults;
-- backend tests, Ruff, and mypy are configured through `uv`;
-- `.gitignore` and `.env.example` are present as safety rails;
-- no frontend app exists yet;
-- no database models or migrations exist yet;
-- no real APIs are called;
-- no real secrets are created or required.
+- `apps/web` provides a Next.js demo form aligned to the backend request schema;
+- the frontend posts through `POST /api/leads/intake`, which proxies to `BACKEND_API_BASE_URL` or `NEXT_PUBLIC_BACKEND_API_BASE_URL`, defaulting to `http://127.0.0.1:8000`;
+- CSV rows are parsed client-side/local-app only and submitted through the same local proxy;
+- the dashboard stores current browser-session submissions in `sessionStorage`;
+- same-session duplicate hints are shown by email/domain in the frontend, while backend `dedupe.status` is displayed separately;
+- Phase 4 slice 1 adds SQLAlchemy models, an Alembic initial migration, a persistence repository, and a local PostgreSQL `compose.yml`;
+- persistence is not yet wired into `POST /leads/intake`, so the API remains deterministic and mock-only by default;
+- no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
 ## Local Backend Setup
 
@@ -68,10 +56,18 @@ uv run mypy backend tests
 uv run uvicorn backend.app.main:app --reload
 ```
 
-Manual health smoke check while the server is running:
+Optional local database setup for the Phase 4 persistence foundation:
 
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/health"
+docker compose config
+docker compose up -d postgres
+uv run alembic upgrade head
+```
+
+Manual backend smoke check while the server is running:
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/health"
 ```
 
 Manual lead intake smoke check while the server is running:
@@ -87,7 +83,27 @@ $payload = @{
     lead_score = 90
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
+```
+
+## Local Frontend Setup
+
+From the repository root:
+
+```powershell
+pnpm install
+pnpm --dir apps/web dev
+```
+
+Open `http://localhost:3000` after the frontend server starts. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
+
+Frontend validation:
+
+```powershell
+pnpm --dir apps/web lint
+pnpm --dir apps/web test -- --run
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
 ```
 
 ## Roadmap
@@ -97,21 +113,9 @@ Invoke-RestMethod -Uri "http://localhost:8000/leads/intake" -Method Post -Conten
 | Phase 0 | Documentation and safety rails |
 | Phase 1 | Backend foundation |
 | Phase 2 | Backend lead intake domain foundation |
-| Phase 3 | Frontend demo form, CSV import UI, admin dashboard |
-| Phase 4 | Persistence, portfolio polish, seed data, diagrams, handoff docs, demo script |
+| Phase 3 | Frontend demo form, CSV import UI, session dashboard |
+| Phase 4 | Persistence foundation, then portfolio polish, seed data, diagrams, handoff docs, demo script |
 
 ## Safety Note
 
 This project defaults to mock/no-real-API mode. Do not add real HubSpot, Slack, Google Sheets, OpenAI, paid API credentials, or live API calls unless explicitly approved. Use `.env.example` for placeholders only and keep real local values in ignored `.env` files.
-
-## Local Validation
-
-From the repository root:
-
-```powershell
-git diff --check
-git status --short
-uv run pytest
-uv run ruff check .
-uv run mypy backend tests
-```

@@ -1,0 +1,12 @@
+{
+  "name": "salesops-workflow-automation-hub-workspace",
+  "private": true,
+  "packageManager": "pnpm@11.3.0",
+  "scripts": {
+    "frontend:dev": "pnpm --dir apps/web dev",
+    "frontend:lint": "pnpm --dir apps/web lint",
+    "frontend:test": "pnpm --dir apps/web test -- --run",
+    "frontend:typecheck": "pnpm --dir apps/web typecheck",
+    "frontend:build": "pnpm --dir apps/web build"
+  }
+}

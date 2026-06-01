@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 2 - backend lead intake domain foundation |
+| Current phase | Phase 4 slice 1 - backend persistence foundation |
 
 ## 2. Operating Rules
 
@@ -16,7 +16,7 @@
 - Use PowerShell-compatible commands.
 - Use `-LiteralPath` or quoted paths because the repository path contains spaces and Cyrillic characters.
 - Do not commit or push from Codex.
-- Use `uv` for backend dependency management.
+- Use `uv` for backend dependencies and `pnpm` for frontend dependencies.
 - Do not call real external APIs without explicit approval.
 - Keep CRM, Slack, Google Sheets, OpenAI, and other external services mocked or absent unless explicitly approved.
 
@@ -33,11 +33,9 @@ git status --short --branch
 git remote -v
 ```
 
-Expected Phase 2 observation: worktree may show lead domain, test, and doc changes until the user manually commits.
+Expected Phase 3 observation: worktree may show frontend scaffold, lockfile, environment placeholder, and doc changes until the user manually commits.
 
 ## 5. Check Tool Versions
-
-These are version checks. Install only the tools needed for the active phase.
 
 ```powershell
 python --version
@@ -45,18 +43,22 @@ uv --version
 node --version
 corepack --version
 pnpm --version
-docker --version
 git --version
 ```
 
-If a command is missing, record it before the phase that needs it.
+Phase 3 was validated with Node `v24.16.0`, pnpm `11.3.0`, and uv `0.11.16`.
 
 ## 6. Environment Variables
 
 - `.env.example` contains placeholders only.
-- `.env` is ignored and must contain only local values if created manually in later phases.
+- `.env` is ignored and must contain only local values if created manually.
 - Real secrets must not be committed, logged, printed, or placed in docs.
 - CRM, Slack, and Google Sheets are mocked/optional unless explicitly approved.
+- Frontend local proxy defaults:
+  - `BACKEND_API_BASE_URL=http://127.0.0.1:8000`
+  - `NEXT_PUBLIC_BACKEND_API_BASE_URL=http://127.0.0.1:8000`
+- Phase 4 local database default:
+  - `DATABASE_URL=postgresql+psycopg://salesops_user:salesops_local_password@localhost:5432/salesops_local`
 
 Optional local copy command, only when local overrides are needed:
 
@@ -67,29 +69,20 @@ Copy-Item -LiteralPath ".env.example" -Destination ".env"
 ## 7. Backend Commands
 
 ```powershell
-# Install/sync backend dependencies
 uv sync
-
-# Run backend tests
 uv run pytest
-
-# Run backend lint
 uv run ruff check .
-
-# Run backend typecheck
 uv run mypy backend tests
-
-# Start local FastAPI server
 uv run uvicorn backend.app.main:app --reload
 ```
 
 Manual backend smoke check while the server is running:
 
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/health"
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/health"
 ```
 
-Manual Phase 2 lead intake smoke check while the server is running:
+Manual lead intake smoke check while the server is running:
 
 ```powershell
 $payload = @{
@@ -102,22 +95,86 @@ $payload = @{
     lead_score = 90
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
 ```
 
-Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and optional `slack` fields. This endpoint uses mock adapters only and does not persist data.
+Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and nullable `slack` fields. This endpoint uses mock adapters only and does not persist data.
 
-## 8. Phase 2 Validation
+## 7.1 Local Database Commands
+
+The Phase 4 persistence foundation uses local PostgreSQL through Docker Compose. These commands do not call external CRM, Slack, Google Sheets, OpenAI, or paid APIs.
+
+```powershell
+docker compose config
+docker compose up -d postgres
+uv run alembic upgrade head
+```
+
+SQLite is used only in repository unit tests to validate SQLAlchemy mappings without requiring Docker for every test run.
+
+## 8. Frontend Commands
+
+```powershell
+pnpm install
+pnpm --dir apps/web dev
+pnpm --dir apps/web lint
+pnpm --dir apps/web test -- --run
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
+```
+
+The frontend app runs at `http://localhost:3000` by default and proxies local intake submissions through `POST /api/leads/intake` to the FastAPI backend.
+
+## 9. Manual Frontend Verification
+
+Start backend and frontend in separate PowerShell windows:
+
+```powershell
+uv run uvicorn backend.app.main:app --reload
+```
+
+```powershell
+pnpm --dir apps/web dev
+```
+
+Submit a lead through the UI:
+
+1. Open `http://localhost:3000`.
+2. Fill required form fields with synthetic data, for example `ada@example.com`, `Ada`, `Lovelace`, `Example Co`, `example.com`, source `demo_form`, lead score `90`.
+3. Select `Submit lead`.
+4. Confirm the latest result shows `Success`, backend dedupe `unique`, CRM action, Slack sent/skipped, and a dashboard row.
+
+Test duplicate handling:
+
+1. Submit the same email or company domain again during the same browser session.
+2. Confirm the UI shows a same-session duplicate hint.
+3. Confirm the backend dedupe field remains displayed separately; until persistence or backend process memory is added, repeated normal backend requests can still report `unique`.
+
+Test CSV import:
+
+1. Paste this CSV into the CSV input:
+
+```text
+email,first_name,last_name,company_name,company_domain,lead_score,job_title
+grace@example.com,Grace,Hopper,Example Co,example.com,88,Director
+```
+
+2. Select `Import rows`.
+3. Confirm the import summary reports one local submission and the dashboard includes the CSV row with source `csv_upload`.
+4. Remove a required CSV value and import again to verify row-level validation errors appear before invalid rows are submitted.
+
+## 10. Phase 3 Validation
 
 ```powershell
 git status --short --branch
-uv sync --frozen
-uv run pytest
-uv run ruff check .
-uv run mypy backend tests
+pnpm install
+pnpm --dir apps/web lint
+pnpm --dir apps/web test -- --run
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
 git diff --check
 Test-Path -LiteralPath ".github\workflows"
-$files = Get-ChildItem -Recurse -Force -File | Where-Object { $_.FullName -notmatch "\\(\.git|\.venv|__pycache__|\.pytest_cache|\.mypy_cache)\\" }
+$files = Get-ChildItem -Recurse -Force -File | Where-Object { $_.FullName -notmatch "\\(\.git|\.venv|node_modules|\.next|__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache)\\" }
 $secretPattern = "sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}"
 $endpointPattern = "hooks\.slack\.com|api\.hubapi\.com|api\.openai\.com|sheets\.googleapis\.com"
 $files | Select-String -Pattern $secretPattern
@@ -125,75 +182,66 @@ $files | Select-String -Pattern $endpointPattern
 $files | Select-String -Pattern "[ \t]+$"
 ```
 
-The forbidden-pattern scans should return no matches for likely secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
+The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-Previously configured backend gates remain:
+## 10.1 Phase 4 Slice 1 Validation
 
 ```powershell
+pnpm install --frozen-lockfile
+uv sync --frozen
 uv run pytest
 uv run ruff check .
 uv run mypy backend tests
+pnpm --dir apps/web lint
+pnpm --dir apps/web test -- --run
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
+docker compose config
+git diff --check
+git diff --cached --name-only
+Test-Path -LiteralPath ".github\workflows"
+$files = Get-ChildItem -Recurse -Force -File | Where-Object { $_.FullName -notmatch "\\(\.git|\.venv|node_modules|\.next|__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache)\\" }
+$secretPattern = "sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}"
+$endpointPattern = "hooks\.slack\.com|api\.hubapi\.com|api\.openai\.com|sheets\.googleapis\.com"
+$files | Select-String -Pattern $secretPattern
+$files | Select-String -Pattern $endpointPattern
+$files | Select-String -Pattern "[ \t]+$"
 ```
 
-## 9. Future Frontend Commands
+`docker compose up` and `uv run alembic upgrade head` require Docker Desktop and a running local PostgreSQL service. If Docker is unavailable, document that skip in `STATE.md`.
 
-These commands are planned for Phase 3 and will not work until the frontend exists.
+## 11. Docker/PostgreSQL Validation
 
-```powershell
-# Enable package manager support if needed
-corepack enable
-
-# Install frontend dependencies
-pnpm install
-
-# Run frontend dev server
-pnpm dev
-
-# Run frontend tests
-pnpm test
-
-# Run frontend lint
-pnpm lint
-
-# Run frontend typecheck
-pnpm typecheck
-
-# Run frontend build
-pnpm build
-```
-
-Future manual frontend smoke check:
+Use these commands when validating the local PostgreSQL service beyond static Compose configuration:
 
 ```powershell
-# Open manually in browser after dev server starts
-# http://localhost:3000
-```
-
-## 10. Future Docker/PostgreSQL Validation
-
-These commands are planned for the phase that adds Docker Compose and PostgreSQL config.
-
-```powershell
-docker compose up -d
+docker compose up -d postgres
 docker compose ps
-docker compose logs --tail=100
+docker compose logs --tail=100 postgres
+uv run alembic upgrade head
 ```
 
-Future database health checks should be added here once compose services and names exist.
+Stop local containers manually when finished if you do not want them running:
 
-## 11. Troubleshooting
+```powershell
+docker compose stop postgres
+```
+
+## 12. Troubleshooting
 
 | Symptom | Likely cause | Action |
 |---|---|---|
 | Backend command fails because `uv` is missing | `uv` is not installed or not on PATH | Install `uv` locally, then rerun the command |
 | Health endpoint is unreachable | Uvicorn is not running or port 8000 is in use | Start the server or choose a free port |
 | Lead intake returns 422 | Payload failed local Pydantic validation | Check required fields, email format, company domain, source, and `lead_score` range |
-| Future frontend command fails | Frontend not scaffolded yet | Wait for Phase 3 |
-| Docker command fails | Compose file not created yet or Docker not running | Wait for compose phase or start Docker Desktop |
+| Frontend cannot submit | Backend is not running or base URL is wrong | Start backend or set `BACKEND_API_BASE_URL` in local ignored `.env` |
+| CSV row is not submitted | Client-side CSV validation failed | Check required headers and row-level validation messages |
+| Repeated UI submission shows backend `unique` | Phase 2 backend service has no persistence | Use the Phase 3 same-session hint; durable backend dedupe is future persistence work |
+| Docker command fails | Compose file not created yet or Docker is not running | Wait for compose phase or start Docker Desktop |
 | Real API credential requested | Live integration is not approved | Use mock mode and placeholders |
 | `.env` appears in `git status` | Ignore rules or file handling problem | Stop and fix before committing |
 
-## 12. Manual Commit Checklist For User
+## 13. Manual Commit Checklist For User
 
 Codex must not perform these steps.
 

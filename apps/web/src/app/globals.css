@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 42 33% 97%;
+  --foreground: 220 21% 16%;
+  --surface: 0 0% 100%;
+  --surface-foreground: 220 21% 16%;
+  --muted: 210 20% 94%;
+  --muted-foreground: 218 11% 38%;
+  --border: 214 18% 84%;
+  --accent: 184 63% 38%;
+  --accent-foreground: 0 0% 100%;
+  --success: 152 60% 32%;
+  --warning: 36 92% 45%;
+  --danger: 0 72% 45%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

@@ -2,11 +2,11 @@
 
 ## 1. Purpose
 
-Deliver a local-first portfolio demo for sales operations workflow automation. The project will be built in phases, starting with source-of-truth documentation and ending with a polished demo package.
+Deliver a local-first portfolio demo for sales operations workflow automation. The project is built in phases, starting with source-of-truth documentation and moving toward a polished local demo package.
 
 ## 2. Current Phase
 
-Phase 2 is active. It introduces the backend lead intake domain foundation and must not add live integrations, frontend work, production PostgreSQL/Docker infrastructure, GitHub Actions, commits, pushes, or real secrets.
+Phase 4 slice 1 is implemented as a backend persistence foundation after the repaired Phase 3 frontend validation. It adds SQLAlchemy/Alembic mappings, a local PostgreSQL Docker Compose definition, and repository tests. It does not wire persistence into the public API yet, add auth, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -15,50 +15,51 @@ Phase 2 is active. It introduces the backend lead intake domain foundation and m
 | Phase 0 | Docs/source-of-truth normalization | Project-specific docs, `.gitignore`, `.env.example` | Docs capture context, requirements, design, plan, runbook, TDD, safety rails; placeholders only | `git diff --check`; `git diff --stat`; `git status --short`; docs review |
 | Phase 1 | Backend foundation | FastAPI app scaffold, Python project config, health endpoint, local-safe config, test setup | Backend starts locally; health endpoint responds; no database or external service is required at startup; no real integrations | `uv sync`; `uv run pytest`; `uv run ruff check .`; `uv run mypy backend tests`; backend smoke check |
 | Phase 2 | Backend lead intake domain foundation | Intake validation, deterministic API response, in-memory dedupe service, mock CRM adapter, mock Slack adapter, local run/attempt models, retry policy | Valid leads process through local mock workflow; invalid leads fail safely; dedupe and retries are unit-tested; no database or network is required | Backend unit/API tests; adapter contract tests; retry tests; lint; typecheck; optional API smoke |
-| Phase 3 | Frontend demo form, CSV import UI, admin dashboard | Next.js app, lead form, CSV import UI, run dashboard, filters, failure details, retry action | User can submit/import leads, inspect run states, filter dashboard, and retry failures locally | `pnpm install`; `pnpm test`; `pnpm lint`; `pnpm typecheck`; `pnpm build`; browser smoke |
-| Phase 4 | Persistence and portfolio polish | PostgreSQL/Docker infrastructure when approved, seed data, architecture diagram, before/after workflow explanation, handoff doc, demo script/video plan | Project is understandable as a portfolio artifact without claiming live production integrations | Full local quality gate; seeded demo smoke; docs review; secret check |
+| Phase 3 | Frontend demo form, CSV import UI, session dashboard | Next.js app, local proxy, lead form, CSV parser/import UI, session dashboard, frontend tests | User can submit/import leads, inspect current-session results, see backend validation/errors, and see same-session duplicate hints locally | `pnpm install`; `pnpm --dir apps/web lint`; `pnpm --dir apps/web test -- --run`; `pnpm --dir apps/web typecheck`; `pnpm --dir apps/web build` |
+| Phase 4 | Persistence and portfolio polish | PostgreSQL/Docker infrastructure, SQLAlchemy/Alembic persistence, seed data, architecture diagram, before/after workflow explanation, handoff doc, demo script/video plan | Project is understandable as a portfolio artifact without claiming live production integrations | Full local quality gate; seeded demo smoke; docs review; secret check |
 
-## 4. Phase 1 Work Items
+## 4. Completed Phase 3 Work Items
 
-- Add `pyproject.toml` for `uv`-managed Python backend tooling.
-- Add `backend.app.main:app` with a local `GET /health` endpoint.
-- Add local-safe settings with environment defaults and no required external services.
-- Add pytest coverage for health and configuration behavior.
-- Run backend tests, Ruff, mypy, git whitespace checks, and forbidden-pattern checks.
-- Update source-of-truth docs for the new backend commands and phase state.
+- Added `apps/web` as a Next.js App Router frontend with TypeScript, Tailwind CSS, TanStack Table, local UI primitives, Vitest, and Testing Library.
+- Added root `pnpm` workspace files and frontend scripts.
+- Added `POST /api/leads/intake` as a local Next.js proxy to the FastAPI endpoint.
+- Added a schema-aligned lead form for the implemented backend request contract.
+- Added local CSV parsing/import UI that maps rows to the same intake contract.
+- Added a session-only dashboard with filters for available local/session fields.
+- Added same-session duplicate hints by email/domain without changing backend behavior.
+- Updated docs for Phase 3 usage, validation, limitations, and next phase.
 
-## 5. Phase 2 Work Items
+## 4.1 Completed Phase 4 Slice 1 Work Items
 
-- Add `POST /leads/intake` to the existing FastAPI backend.
-- Add Pydantic lead intake schemas with deterministic local validation and normalization.
-- Add in-memory dedupe checks for normalized email and company domain.
-- Add CRM and Slack adapter protocols plus deterministic mock implementations.
-- Add local run-log models and deterministic retry policy.
-- Add tests for schemas, API behavior, dedupe, adapters, run logging, and retry behavior.
-- Update source-of-truth docs for the Phase 2 foundation-only scope.
+- Added SQLAlchemy metadata and a persistence repository for leads, automation runs, run attempts, and audit records.
+- Added an Alembic initial migration for the persistence tables.
+- Added a local PostgreSQL Docker Compose service with non-production demo credentials.
+- Added repository tests using SQLite as a fast unit-test fallback for SQLAlchemy mapping behavior.
+- Kept the current API/frontend workflow deterministic and mock-only; persistence wiring, seed data, admin failure pages, and retry endpoints remain future Phase 4 work.
 
-## 6. Quality Gate Expectations By Phase
+## 5. Quality Gate Expectations By Phase
 
 | Gate | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
 |---|---|---|---|---|---|
 | Docs review | required | required | required | required | required |
 | `git diff --check` | required | required | required | required | required |
-| Backend tests | n/a | required | required | required if backend touched | required |
-| Backend lint | n/a | required | required | required if backend touched | required |
-| Backend typecheck | n/a | choose and run | required | required if backend touched | required |
+| Backend tests | n/a | required | required | skipped if backend untouched | required |
+| Backend lint | n/a | required | required | skipped if backend untouched | required |
+| Backend typecheck | n/a | choose and run | required | skipped if backend untouched | required |
 | Frontend tests | n/a | n/a | n/a | required | required |
 | Frontend lint/typecheck/build | n/a | n/a | n/a | required | required |
-| Docker/PostgreSQL validation | n/a | skipped until compose exists | skipped until infrastructure phase | skipped unless infrastructure exists | required when persistence exists |
+| Docker/PostgreSQL validation | n/a | skipped until compose exists | skipped until infrastructure phase | skipped until infrastructure phase | required when persistence is wired; `docker compose config` required for slice 1 |
 | Manual smoke | docs only | backend health | workflow API | UI workflow | seeded demo |
 
-## 7. Recovery And Safety
+## 6. Recovery And Safety
 
-- Phase 2 changes are limited to local backend domain code, tests, and docs and can be reviewed through `git diff`.
+- Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
+- Phase 4 slice 1 changes are limited to backend persistence foundation, local database infrastructure, dependency lockfiles, tests, and docs.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.
-- If a later phase introduces a bad scaffold, revert through normal reviewed Git changes, not history rewrites.
+- If the frontend scaffold needs reversal, review and revert through normal Git diff workflows, not history rewrites.
 
-## 8. Recommended Next Phase
+## 7. Recommended Next Phase
 
-After Phase 2 is validated, proceed to Phase 3: frontend demo form, CSV import UI, admin dashboard scaffolding against the deterministic local backend endpoint, or add persistence first if the user wants database-backed runs before UI work.
+Continue Phase 4 by wiring the persistence repository into backend intake with explicit database-session dependencies, then add persisted failure detail/retry endpoints, demo seed data, and portfolio polish docs.

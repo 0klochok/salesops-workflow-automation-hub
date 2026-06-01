@@ -7,11 +7,11 @@
 | Last updated | 2026-06-01 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Phase 2 - backend lead intake domain foundation |
+| Current phase | Phase 4 slice 1 - backend persistence foundation |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
-| Git state | `main`; Phase 2 worktree changes remain unstaged for user review |
+| Git state | `main`; Phase 3 and Phase 4 slice 1 worktree changes remain unstaged for user review |
 
 ## 2. Project Summary
 
@@ -19,7 +19,11 @@ This is a greenfield portfolio project for a code-first sales operations workflo
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
-The backend now includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, and a Phase 2 lead intake domain foundation. `POST /leads/intake` validates synthetic lead payloads, runs deterministic in-memory dedupe, calls mock CRM/Slack adapter boundaries, and returns local run results without persistence or network calls. CRM, Slack, Google Sheets, PostgreSQL, and other external services are not required for startup.
+The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, and a Phase 2 lead intake domain foundation. `POST /leads/intake` validates synthetic lead payloads, runs deterministic in-memory dedupe, calls mock CRM/Slack adapter boundaries, and returns local run results without persistence or network calls.
+
+The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, and a current-session dashboard stored in browser `sessionStorage`.
+
+Phase 4 slice 1 adds backend persistence scaffolding: SQLAlchemy metadata, a repository for leads/runs/attempts/audit records, an Alembic initial migration, and a local PostgreSQL Docker Compose service. The route still uses the deterministic in-memory service until a later slice wires database sessions into the API.
 
 ## 3. Source-of-Truth Files
 
@@ -40,7 +44,7 @@ The backend now includes a `uv`-managed FastAPI app, local-safe settings, a dete
 - Codex must not commit or push.
 - User manually commits and pushes.
 - Use `uv` for backend dependencies.
-- Do not scaffold Next.js, `apps/web`, or frontend code in Phase 2.
+- Use `pnpm` for frontend dependencies.
 - Do not call real external APIs.
 - Do not create real secrets or commit a real `.env` file.
 - Use `.env.example` only for placeholders.
@@ -48,22 +52,20 @@ The backend now includes a `uv`-managed FastAPI app, local-safe settings, a dete
 - GitHub Actions are out of scope until local validation is stable and explicitly requested.
 - Use quoted PowerShell paths or `-LiteralPath` because the repo path contains spaces and Cyrillic characters.
 
-## 5. Planned Stack
+## 5. Stack
 
-| Area | Planned choice | Notes |
+| Area | Choice | Notes |
 |---|---|---|
-| Backend | FastAPI, Python 3.12+, Pydantic; SQLAlchemy and Alembic planned later | FastAPI foundation and lead intake domain added |
+| Backend | FastAPI, Python 3.12+, Pydantic, SQLAlchemy, Alembic | FastAPI foundation, lead intake domain, and persistence foundation added |
 | Backend tooling | `uv`, pytest, Ruff, mypy | Configured in Phase 1 |
-| Database | PostgreSQL through Docker Compose | Future phase; Phase 2 has no database dependency |
-| Frontend | Next.js, TypeScript, Tailwind CSS, shadcn/ui, TanStack Table | Planned for Phase 3 |
-| Frontend tooling | `pnpm` | Default for TypeScript/JavaScript |
+| Database | PostgreSQL through Docker Compose | Local compose and migration added; API wiring planned |
+| Frontend | Next.js App Router, TypeScript, Tailwind CSS, local shadcn-style primitives, TanStack Table | Added in Phase 3 |
+| Frontend tooling | `pnpm`, Vitest, Testing Library, ESLint, TypeScript | Added in Phase 3 |
 | Integrations | Mocked CRM and mocked Slack by default | Real services require explicit approval |
 | Optional integration | Google Sheets | Mocked/optional unless explicitly approved |
 | CI/CD | Not configured | Local validation first |
 
-## 6. Planned Repository Shape
-
-Current Phase 2 repository contents include root-level backend foundation code and the lead intake domain package. Future phases may introduce frontend and additional docs/scripts:
+## 6. Repository Shape
 
 ```text
 /
@@ -71,9 +73,12 @@ Current Phase 2 repository contents include root-level backend foundation code a
     app/        # FastAPI app, settings, health endpoint, lead intake domain
   tests/        # backend tests
   apps/
-    web/        # planned Next.js frontend
-  docs/         # optional durable docs, diagrams, handoff materials
-  scripts/      # optional local validation and seed scripts
+    web/        # Next.js frontend demo
+  alembic/      # Migration environment and initial persistence migration
+  compose.yml   # Local PostgreSQL service
+  package.json
+  pnpm-lock.yaml
+  pnpm-workspace.yaml
   pyproject.toml
   uv.lock
   AGENTS.md
@@ -92,16 +97,16 @@ Current Phase 2 repository contents include root-level backend foundation code a
 ## 7. Core Planned Features
 
 - Lead intake API endpoint with Pydantic validation. Phase 2 local foundation implemented.
-- Public demo lead form.
-- CSV lead import.
-- Duplicate detection by email and company domain. Phase 2 in-memory foundation implemented.
+- Public demo lead form. Phase 3 local frontend implemented.
+- CSV lead import. Phase 3 local parser/import UI implemented.
+- Duplicate detection by email and company domain. Backend local foundation exists; frontend same-session hints added.
 - CRM upsert adapter for contact/deal create-or-update behavior. Phase 2 mock boundary implemented.
 - Slack notification adapter for qualified lead notifications. Phase 2 mock boundary implemented.
-- Automation run log with queued, success, failed, and retried statuses. Phase 2 local model implemented.
-- Manual retry for failed automation runs. Phase 2 deterministic retry policy implemented.
-- Error detail page with payload, validation issue, and suggested action.
-- Admin table with filters by date, source, status, lead owner, and error type.
-- Backup/audit records.
+- Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence tables/repository implemented; API wiring planned.
+- Manual retry for failed automation runs. Phase 2 deterministic retry policy exists; persistence foundation added; UI/API action planned after route wiring.
+- Error detail page with payload, validation issue, error type, suggested action. Phase 3 shows validation/error details inline; dedicated page planned later.
+- Admin table with filters by date, source, status, lead owner, and error type. Phase 3 session dashboard filters available local fields; owner/error type filters require persistence/domain fields.
+- Backup/audit records. Planned for persistence phase.
 
 ## 8. Assumptions
 
@@ -111,7 +116,8 @@ Current Phase 2 repository contents include root-level backend foundation code a
 - No paid API usage is allowed without explicit approval.
 - Synthetic demo data will be used.
 - No production deployment is planned in early phases.
-- PostgreSQL is the primary database target for a future persistence phase; Phase 2 has no database dependency or SQLite fallback.
+- PostgreSQL is the primary local database target; SQLite is used only as a test fallback for SQLAlchemy mapping/repository unit tests.
+- Frontend duplicate hints are a Phase 3 UI aid, not a replacement for future backend persistence.
 
 ## 9. Open Questions
 
@@ -120,6 +126,6 @@ Current Phase 2 repository contents include root-level backend foundation code a
 | Q-001 | Should the final demo use real HubSpot or only a mock CRM? | Before live integration work | Mock CRM |
 | Q-002 | Should Slack use a real webhook or a mock/log notifier? | Before live notification work | Mock/log notifier |
 | Q-003 | What rule assigns leads to the 5 sales reps? | Before lead routing implementation | Round-robin or deterministic placeholder |
-| Q-004 | What qualifies a lead for CRM sync and Slack notification? | Before demo polish | Phase 2 default: `lead_score >= 70` |
-| Q-005 | How should dedupe handle shared domains, aliases, and updated emails? | Before dedupe implementation | Email first, company domain second |
+| Q-004 | Should `lead_score >= 70` remain the qualification rule? | Before demo polish | Current backend default |
+| Q-005 | How should dedupe handle shared domains, aliases, and updated emails? | Before persistence/admin workflow | Email first, company domain second |
 | Q-006 | Should tests require PostgreSQL only, or allow SQLite unit fallback? | Before persistence work | PostgreSQL for integration, SQLite only if justified |

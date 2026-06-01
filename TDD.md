@@ -7,7 +7,7 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 2 - backend lead intake domain foundation |
+| Current phase | Phase 4 slice 1 - backend persistence foundation |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,20 +20,46 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 2 Test Status
+## 3. Phase 4 Slice 1 Test Status
 
-Phase 2 extends the backend test surface:
+Phase 4 slice 1 adds backend persistence tests while keeping the Phase 3 frontend tests unchanged.
+
+Current backend commands:
 
 ```powershell
-git diff --check
-git status --short --branch
 uv sync --frozen
 uv run pytest
 uv run ruff check .
 uv run mypy backend tests
 ```
 
-Current tests cover:
+Current backend persistence tests cover:
+
+- SQLAlchemy persistence for leads, runs, attempts, and audit records;
+- stored lead snapshots feeding the existing dedupe service;
+- duplicate-email storage reusing the matched persisted lead id;
+- failed-run error details and suggested actions.
+
+Current frontend commands:
+
+```powershell
+pnpm --dir apps/web lint
+pnpm --dir apps/web test -- --run
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
+```
+
+Current frontend tests still cover:
+
+- form fields aligned to the backend intake schema;
+- expected JSON payload sent to the local proxy;
+- successful mocked API response appearing in the dashboard;
+- FastAPI-style `422` validation details;
+- CSV parsing for valid and invalid rows;
+- same-session duplicate hint behavior;
+- dashboard filtering by source.
+
+Existing backend tests also cover:
 
 - health endpoint and local-safe configuration defaults/overrides;
 - lead intake schema normalization and validation failures;
@@ -42,73 +68,51 @@ Current tests cover:
 - mock CRM and Slack adapter deterministic local records;
 - local run logging and retry history preservation.
 
-Database, persistence migrations, CSV import, frontend, and end-to-end browser tests remain planned for later phases.
-
 ## 4. Planned Test Matrix
 
-| Area | Primary behaviors | Test layer | Planned command |
+| Area | Primary behaviors | Test layer | Command |
 |---|---|---|---|
 | Validation tests | Required fields, email format, source values, invalid payload handling | Backend unit/API tests | `uv run pytest` |
 | Dedupe tests | Exact email match, company domain match, non-duplicate lead, ambiguous edge cases | Backend unit/integration tests | `uv run pytest` |
 | CRM adapter mock tests | Contact/deal create, update, duplicate, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
 | Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
 | Retry logic tests | Failed run retry, new attempt creation, history preservation, status transitions | Backend unit/integration tests | `uv run pytest` |
-| CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, batch summary | Backend and frontend tests | `uv run pytest`; `pnpm test` |
-| Admin dashboard/filter tests | Filter by date, source, status, owner, error type; failure detail view | Frontend component/integration tests | `pnpm test` |
-| End-to-end demo smoke test | Submit/import lead, process mock workflow, inspect dashboard, retry failure | Later E2E/manual smoke | TBD after apps exist |
+| Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run pytest` |
+| Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test -- --run` |
+| CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test -- --run` |
+| Session dashboard tests | Filters, current-session results, duplicate hints | Frontend component tests | `pnpm --dir apps/web test -- --run` |
+| End-to-end demo smoke test | Submit/import lead, inspect dashboard, verify duplicate hint | Manual smoke | `RUNBOOK.md` steps |
 
-## 5. Backend Testing Expectations
+## 5. Frontend Testing Expectations
 
-Existing backend baseline includes:
+Phase 3 frontend tests are local and deterministic:
 
-- pytest test structure.
-- FastAPI test client coverage for the health endpoint.
-- Settings tests for local defaults and environment overrides.
-- Ruff linting.
-- mypy type checking.
+- no real backend process is needed for component tests;
+- `fetch` is mocked in UI tests;
+- CSV parsing is tested as a pure local utility;
+- same-session duplicate hints are tested separately from backend dedupe;
+- lint, typecheck, and production build are required.
 
-Phase 2 adds:
+Browser/manual smoke is still recommended because component tests do not prove that a live FastAPI process and Next.js dev server are running together on the developer machine.
 
-- FastAPI test client coverage for intake endpoints.
-- Pydantic validation tests.
-- Adapter contract tests for mock CRM and mock Slack.
-- Retry state transition tests.
-- Ruff linting.
-- mypy type checking.
-
-PostgreSQL remains the target integration database for a future persistence phase. Phase 2 intentionally has no database dependency and no SQLite fallback.
-
-## 6. Frontend Testing Expectations
-
-Phase 3 should establish:
-
-- Tests for the demo lead form.
-- Tests for CSV import UI states.
-- Tests for admin dashboard filters.
-- Tests for failure detail and retry interaction.
-- TypeScript type checks.
-- Linting.
-- Production build validation.
-- Browser/manual smoke checks for primary flows.
-
-## 7. Quality Gates By Change Type
+## 6. Quality Gates By Change Type
 
 | Change type | Required checks |
 |---|---|
 | Docs/config only | `git diff --check`, `git diff --stat`, `git status --short --branch`, docs review |
 | Backend behavior | Targeted pytest, full backend pytest, Ruff, typecheck, API smoke when runnable |
-| Backend persistence | Repository/service tests, migration check, PostgreSQL validation |
+| Backend persistence | Repository/service tests, migration check, PostgreSQL validation or documented local-Docker skip |
 | Adapter behavior | Mock contract tests, no-network verification, failure-path tests |
-| Frontend behavior | Component/integration tests, lint, typecheck, build, browser smoke |
+| Frontend behavior | Component/unit tests, lint, typecheck, build, browser smoke |
 | End-to-end demo | Full local quality gate, seeded data, manual smoke script |
 
-## 8. Definition Of Done
+## 7. Definition Of Done
 
 A serious implementation phase is done only when:
 
-- Requirements and expected behavior are documented.
-- Applicable tests exist and pass.
-- Lint and type checks pass, or skipped gates have written reasons.
-- Manual verification commands are documented and run when the app is runnable.
-- Source-of-truth docs and `STATE.md` are current.
-- No real secrets or live external calls are introduced.
+- requirements and expected behavior are documented;
+- applicable tests exist and pass;
+- lint and type checks pass, or skipped gates have written reasons;
+- manual verification commands are documented and run when the app is runnable;
+- source-of-truth docs and `STATE.md` are current;
+- no real secrets or live external calls are introduced.
