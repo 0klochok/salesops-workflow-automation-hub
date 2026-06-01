@@ -167,6 +167,56 @@ uv run alembic upgrade head
 
 SQLite is used only in repository unit tests to validate SQLAlchemy mappings without requiring Docker for every test run.
 
+## 7.2 Local Persistence Run-History Smoke
+
+Use this smoke path to verify that persisted run history is wired to local PostgreSQL. These commands are local-only and do not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
+
+Create the ignored local `.env` only if it is missing:
+
+```powershell
+if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
+```
+
+Verify that `DATABASE_URL` exists and points at the local development PostgreSQL database without printing the value:
+
+```powershell
+$databaseUrlLine = Select-String -LiteralPath ".env" -Pattern "^DATABASE_URL=" | Select-Object -First 1
+if ($null -eq $databaseUrlLine) { throw "DATABASE_URL is missing from .env" }
+
+$databaseUrl = $databaseUrlLine.Line -replace "^DATABASE_URL=", ""
+if ($databaseUrl -notmatch "^postgresql\+psycopg://[^@]+@(localhost|127\.0\.0\.1):5432/salesops_local$") {
+    throw "DATABASE_URL does not look like the local Docker PostgreSQL database."
+}
+
+"DATABASE_URL is present and points at local development PostgreSQL; value not printed."
+```
+
+Start PostgreSQL, apply migrations, and seed deterministic demo run data:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+```
+
+Start the backend API:
+
+```powershell
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8010 --log-level debug
+```
+
+In a second PowerShell window, call the persisted run-history endpoint:
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:8010/leads/runs"
+```
+
+Expected result:
+
+- HTTP 200 with sanitized run-history JSON;
+- records include stored run metadata and latest attempt summaries;
+- raw audit payloads, phone, message, and unrestricted error fields are not returned.
+
 ## 8. Frontend Commands
 
 ```powershell
@@ -293,6 +343,7 @@ docker compose stop postgres
 | CSV row is not submitted | Client-side CSV validation failed | Check required headers and row-level validation messages |
 | Repeated UI submission shows backend `unique` | The first lead was not persisted or the backend is pointing at a fresh database | Check `DATABASE_URL`, migrations, and local PostgreSQL state |
 | Docker command fails | Compose file not created yet or Docker is not running | Wait for compose phase or start Docker Desktop |
+| `docker compose up -d postgres` fails before creating the local database | Docker Desktop or Docker Engine is not running | Start Docker Desktop, wait for the engine to be ready, rerun `docker compose up -d postgres`, then inspect with `docker compose ps` and `docker compose logs --tail=100 postgres` |
 | Real API credential requested | Live integration is not approved | Use mock mode and placeholders |
 | `.env` appears in `git status` | Ignore rules or file handling problem | Stop and fix before committing |
 
