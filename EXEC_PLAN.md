@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Phase 4 slice 1 is implemented as a backend persistence foundation after the repaired Phase 3 frontend validation. It adds SQLAlchemy/Alembic mappings, a local PostgreSQL Docker Compose definition, and repository tests. It does not wire persistence into the public API yet, add auth, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Phase 4 slice 2 is implemented as persistence-backed local intake after the repaired Phase 3 frontend validation and Phase 4 slice 1 persistence foundation. It wires SQLAlchemy/Alembic persistence into `POST /leads/intake`, keeps mock CRM/Slack behavior and the response contract unchanged, and does not add auth, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -35,7 +35,15 @@ Phase 4 slice 1 is implemented as a backend persistence foundation after the rep
 - Added an Alembic initial migration for the persistence tables.
 - Added a local PostgreSQL Docker Compose service with non-production demo credentials.
 - Added repository tests using SQLite as a fast unit-test fallback for SQLAlchemy mapping behavior.
-- Kept the current API/frontend workflow deterministic and mock-only; persistence wiring, seed data, admin failure pages, and retry endpoints remain future Phase 4 work.
+- Kept the current API/frontend workflow deterministic and mock-only; API persistence wiring, seed data, admin failure pages, and retry endpoints remained future Phase 4 work for that slice.
+
+## 4.2 Completed Phase 4 Slice 2 Work Items
+
+- Added lazy backend database session lifecycle helpers with commit, rollback, and close handling.
+- Wired `POST /leads/intake` to persisted lead snapshots and workflow result persistence.
+- Added API tests for successful local persistence and persisted email/domain dedupe.
+- Kept frontend behavior unchanged and kept CRM/Slack adapters mocked.
+- Left failure-detail/retry endpoints, admin persisted run history, seed data, and portfolio polish documents for the next Phase 4 slice.
 
 ## 5. Quality Gate Expectations By Phase
 
@@ -48,13 +56,13 @@ Phase 4 slice 1 is implemented as a backend persistence foundation after the rep
 | Backend typecheck | n/a | choose and run | required | skipped if backend untouched | required |
 | Frontend tests | n/a | n/a | n/a | required | required |
 | Frontend lint/typecheck/build | n/a | n/a | n/a | required | required |
-| Docker/PostgreSQL validation | n/a | skipped until compose exists | skipped until infrastructure phase | skipped until infrastructure phase | required when persistence is wired; `docker compose config` required for slice 1 |
+| Docker/PostgreSQL validation | n/a | skipped until compose exists | skipped until infrastructure phase | skipped until infrastructure phase | `docker compose config` and offline Alembic SQL required; live PostgreSQL validation required or explicitly documented as skipped |
 | Manual smoke | docs only | backend health | workflow API | UI workflow | seeded demo |
 
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Phase 4 slice 1 changes are limited to backend persistence foundation, local database infrastructure, dependency lockfiles, tests, and docs.
+- Phase 4 slice 2 changes are limited to backend intake persistence wiring, local tests, and source-of-truth docs.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.
@@ -62,4 +70,4 @@ Phase 4 slice 1 is implemented as a backend persistence foundation after the rep
 
 ## 7. Recommended Next Phase
 
-Continue Phase 4 by wiring the persistence repository into backend intake with explicit database-session dependencies, then add persisted failure detail/retry endpoints, demo seed data, and portfolio polish docs.
+Continue Phase 4 by adding persisted failure detail and manual retry endpoints, then add demo seed data and portfolio polish docs.

@@ -7,7 +7,7 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 4 slice 1 - backend persistence foundation |
+| Current phase | Phase 4 slice 2 - persistence-backed local intake |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,9 +20,9 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 4 Slice 1 Test Status
+## 3. Phase 4 Slice 2 Test Status
 
-Phase 4 slice 1 adds backend persistence tests while keeping the Phase 3 frontend tests unchanged.
+Phase 4 slice 2 adds persistence-backed intake API tests while keeping the Phase 3 frontend tests unchanged.
 
 Current backend commands:
 
@@ -39,6 +39,13 @@ Current backend persistence tests cover:
 - stored lead snapshots feeding the existing dedupe service;
 - duplicate-email storage reusing the matched persisted lead id;
 - failed-run error details and suggested actions.
+
+Current backend intake API tests cover:
+
+- successful `POST /leads/intake` persistence for leads, runs, attempts, and audit records;
+- persisted email dedupe feeding mock CRM update behavior;
+- persisted company-domain dedupe reporting possible duplicates;
+- unchanged response shape and mock-only CRM/Slack adapter behavior.
 
 Current frontend commands:
 

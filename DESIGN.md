@@ -7,14 +7,14 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Scope | Architecture for greenfield portfolio demo |
-| Current phase | Phase 4 slice 1 - backend persistence foundation |
+| Current phase | Phase 4 slice 2 - persistence-backed local intake |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system remains safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-Phase 4 slice 1 adds the backend persistence foundation against the Phase 2 deterministic backend contract and Phase 3 frontend demo. It includes SQLAlchemy models, an Alembic initial migration, a local PostgreSQL Compose service, and repository tests. Persistence is not wired into the public intake route yet. Real integrations, auth, deployment, and GitHub Actions remain planned later or out of scope.
+Phase 4 slice 2 wires the backend persistence foundation into the Phase 2 deterministic backend contract and Phase 3 frontend demo. It keeps the public intake response contract and mock CRM/Slack adapters while persisting local leads, automation runs, attempts, and audit records through explicit database-session dependencies. Real integrations, auth, deployment, and GitHub Actions remain planned later or out of scope.
 
 ## 3. Stack
 
@@ -25,7 +25,7 @@ Phase 4 slice 1 adds the backend persistence foundation against the Phase 2 dete
 | Frontend | Next.js App Router, TypeScript, Tailwind CSS | Planned portfolio UI stack with local route handlers and component tests | Phase 3 |
 | Tables | TanStack Table | Filterable current-session run dashboard | Phase 3 |
 | Frontend tests | Vitest, Testing Library, jsdom | Fast local UI behavior checks | Phase 3 |
-| Persistence | SQLAlchemy, Alembic, PostgreSQL through Docker Compose | Durable relational records for leads, attempts, audit trails | Phase 4 slice 1 foundation |
+| Persistence | SQLAlchemy, Alembic, PostgreSQL through Docker Compose | Durable relational records for leads, attempts, audit trails | Phase 4 slice 2 local intake wiring |
 | Integrations | CRM adapter and Slack adapter in mock mode by default | Keeps boundaries clear without real external calls | Phase 2+ |
 
 ## 4. Repository Structure
@@ -63,10 +63,10 @@ Phase 4 slice 1 adds the backend persistence foundation against the Phase 2 dete
 
 ## 5. Architecture Flow
 
-Current Phase 3 local flow:
+Current Phase 4 slice 2 local flow:
 
 ```text
-Next.js UI -> Next.js local proxy -> FastAPI intake -> validation -> local run log model -> dedupe -> mock CRM -> mock Slack -> UI session dashboard
+Next.js UI -> Next.js local proxy -> FastAPI intake -> validation -> persisted snapshots -> dedupe -> mock CRM -> mock Slack -> persistence repository -> UI session dashboard
 ```
 
 ```mermaid
@@ -77,16 +77,20 @@ flowchart LR
     B --> E["POST /api/leads/intake"]
     E --> F["POST /leads/intake FastAPI"]
     F --> G["Pydantic validation"]
-    G --> H["Local run log model"]
-    H --> I["In-memory dedupe service"]
-    I --> J["Mock CRM adapter"]
-    I --> K["Mock Slack notifier"]
-    J --> L["Deterministic response"]
-    K --> L
-L --> M["Current-session dashboard"]
+    G --> H["SQLAlchemy session dependency"]
+    H --> I["Persisted lead snapshots"]
+    I --> N["Local run log model"]
+    N --> O["Dedupe service"]
+    O --> J["Mock CRM adapter"]
+    O --> K["Mock Slack notifier"]
+    J --> P["Persistence repository"]
+    K --> P
+    P --> Q["Lead/run/attempt/audit records"]
+    Q --> L["Deterministic response"]
+    L --> M["Current-session dashboard"]
 ```
 
-Phase 4 slice 1 persistence foundation:
+Persistence data model:
 
 ```mermaid
 erDiagram
@@ -111,13 +115,13 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 
 ## 7. Data And State Boundaries
 
-- Backend Phase 2 state is deterministic and not persisted; each normal request uses a fresh intake service.
+- Backend intake uses an explicit SQLAlchemy session dependency and commits local records after successful workflow processing.
 - Frontend Phase 3 dashboard records are stored only in browser `sessionStorage`.
 - Same-session duplicate hints compare submitted email and company domain in the browser session.
 - Backend `dedupe.status` remains the authoritative backend response and is displayed separately from frontend hints.
-- SQLAlchemy tables now exist for leads, automation runs, run attempts, and audit records.
+- SQLAlchemy tables now store leads, automation runs, run attempts, and audit records from `POST /leads/intake`.
 - Repository tests validate persistence behavior with SQLite as a unit-test fallback; PostgreSQL remains the local integration target.
-- Durable API dedupe, admin run history, owner assignment, failure taxonomies, retry endpoints, and seeded demo data require future persistence/API wiring.
+- Admin run history, owner assignment, failure taxonomies, retry endpoints, and seeded demo data require future API wiring.
 
 ## 8. Adapter Boundaries And Mock Mode
 

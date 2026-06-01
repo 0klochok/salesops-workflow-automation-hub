@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 slice 1 - backend persistence foundation |
+| Current phase | Phase 4 slice 2 - persistence-backed local intake |
 
 ## 2. Operating Rules
 
@@ -60,10 +60,10 @@ Phase 3 was validated with Node `v24.16.0`, pnpm `11.3.0`, and uv `0.11.16`.
 - Phase 4 local database default:
   - `DATABASE_URL=postgresql+psycopg://salesops_user:salesops_local_password@localhost:5432/salesops_local`
 
-Optional local copy command, only when local overrides are needed:
+Local intake persistence requires `DATABASE_URL`. Create a local ignored `.env` from placeholders if it does not already exist:
 
 ```powershell
-Copy-Item -LiteralPath ".env.example" -Destination ".env"
+if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
 ```
 
 ## 7. Backend Commands
@@ -73,6 +73,8 @@ uv sync
 uv run pytest
 uv run ruff check .
 uv run mypy backend tests
+docker compose up -d postgres
+uv run alembic upgrade head
 uv run uvicorn backend.app.main:app --reload
 ```
 
@@ -98,7 +100,7 @@ $payload = @{
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
 ```
 
-Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and nullable `slack` fields. This endpoint uses mock adapters only and does not persist data.
+Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and nullable `slack` fields. This endpoint uses mock adapters only and persists local lead, run, attempt, and audit records.
 
 ## 7.1 Local Database Commands
 
@@ -148,7 +150,7 @@ Test duplicate handling:
 
 1. Submit the same email or company domain again during the same browser session.
 2. Confirm the UI shows a same-session duplicate hint.
-3. Confirm the backend dedupe field remains displayed separately; until persistence or backend process memory is added, repeated normal backend requests can still report `unique`.
+3. Confirm the backend dedupe field remains displayed separately and reports persisted backend dedupe once the first lead has been stored locally.
 
 Test CSV import:
 
@@ -184,7 +186,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 1 Validation
+## 10.1 Phase 4 Slice 2 Validation
 
 ```powershell
 pnpm install --frozen-lockfile
@@ -197,6 +199,7 @@ pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 docker compose config
+uv run alembic upgrade head --sql
 git diff --check
 git diff --cached --name-only
 Test-Path -LiteralPath ".github\workflows"
@@ -208,7 +211,7 @@ $files | Select-String -Pattern $endpointPattern
 $files | Select-String -Pattern "[ \t]+$"
 ```
 
-`docker compose up` and `uv run alembic upgrade head` require Docker Desktop and a running local PostgreSQL service. If Docker is unavailable, document that skip in `STATE.md`.
+`docker compose up` and online `uv run alembic upgrade head` require Docker Desktop and a running local PostgreSQL service. If Docker is unavailable, document that skip in `STATE.md`.
 
 ## 11. Docker/PostgreSQL Validation
 
@@ -234,9 +237,10 @@ docker compose stop postgres
 | Backend command fails because `uv` is missing | `uv` is not installed or not on PATH | Install `uv` locally, then rerun the command |
 | Health endpoint is unreachable | Uvicorn is not running or port 8000 is in use | Start the server or choose a free port |
 | Lead intake returns 422 | Payload failed local Pydantic validation | Check required fields, email format, company domain, source, and `lead_score` range |
+| Lead intake returns a database configuration error | `DATABASE_URL` is missing or PostgreSQL is not available | Create local `.env`, start Docker PostgreSQL, and run Alembic migrations |
 | Frontend cannot submit | Backend is not running or base URL is wrong | Start backend or set `BACKEND_API_BASE_URL` in local ignored `.env` |
 | CSV row is not submitted | Client-side CSV validation failed | Check required headers and row-level validation messages |
-| Repeated UI submission shows backend `unique` | Phase 2 backend service has no persistence | Use the Phase 3 same-session hint; durable backend dedupe is future persistence work |
+| Repeated UI submission shows backend `unique` | The first lead was not persisted or the backend is pointing at a fresh database | Check `DATABASE_URL`, migrations, and local PostgreSQL state |
 | Docker command fails | Compose file not created yet or Docker is not running | Wait for compose phase or start Docker Desktop |
 | Real API credential requested | Live integration is not approved | Use mock mode and placeholders |
 | `.env` appears in `git status` | Ignore rules or file handling problem | Stop and fix before committing |

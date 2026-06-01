@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 1: backend persistence foundation after the Phase 3 frontend demo scaffold.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 2: persistence-backed local intake after the Phase 3 frontend demo scaffold.
 
 ## Problem
 
@@ -34,14 +34,14 @@ The planned system demonstrates an automated workflow that:
 The current local demo includes:
 
 - `backend.app.main:app` exposes `GET /health` and `POST /leads/intake`;
-- `POST /leads/intake` validates lead payloads and returns deterministic local workflow results;
+- `POST /leads/intake` validates lead payloads, uses persisted lead snapshots for dedupe, persists local workflow records, and returns deterministic mock workflow results;
 - `apps/web` provides a Next.js demo form aligned to the backend request schema;
 - the frontend posts through `POST /api/leads/intake`, which proxies to `BACKEND_API_BASE_URL` or `NEXT_PUBLIC_BACKEND_API_BASE_URL`, defaulting to `http://127.0.0.1:8000`;
 - CSV rows are parsed client-side/local-app only and submitted through the same local proxy;
 - the dashboard stores current browser-session submissions in `sessionStorage`;
 - same-session duplicate hints are shown by email/domain in the frontend, while backend `dedupe.status` is displayed separately;
-- Phase 4 slice 1 adds SQLAlchemy models, an Alembic initial migration, a persistence repository, and a local PostgreSQL `compose.yml`;
-- persistence is not yet wired into `POST /leads/intake`, so the API remains deterministic and mock-only by default;
+- Phase 4 slice 2 wires SQLAlchemy/Alembic persistence into `POST /leads/intake` through explicit DB session dependencies;
+- local intake now records leads, automation runs, attempts, and audit records while keeping CRM and Slack mocked by default;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
 ## Local Backend Setup
@@ -49,19 +49,21 @@ The current local demo includes:
 From the repository root:
 
 ```powershell
+if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
 uv sync
 uv run pytest
 uv run ruff check .
 uv run mypy backend tests
+docker compose up -d postgres
+uv run alembic upgrade head
 uv run uvicorn backend.app.main:app --reload
 ```
 
-Optional local database setup for the Phase 4 persistence foundation:
+Static local database validation:
 
 ```powershell
 docker compose config
-docker compose up -d postgres
-uv run alembic upgrade head
+uv run alembic upgrade head --sql
 ```
 
 Manual backend smoke check while the server is running:

@@ -7,14 +7,14 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Phase 4 slice 1 - backend persistence foundation |
+| Current phase | Phase 4 slice 2 - persistence-backed local intake |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief
 
 SalesOps Workflow Automation Hub is a planned portfolio demo for a growth agency with 5 sales reps. It shows how lead intake, validation, deduplication, CRM sync, Slack notification, backup/audit logging, failure inspection, and manual retries can be automated with a code-first system.
 
-Phase 4 slice 1 adds the backend persistence foundation after the Phase 3 frontend surface. The app now has SQLAlchemy/Alembic mappings, local PostgreSQL Docker Compose configuration, and repository tests, but the public intake API remains deterministic and mock-only until persistence is wired in a later slice.
+Phase 4 slice 2 wires the backend persistence foundation into the Phase 3 frontend surface. The app now has SQLAlchemy/Alembic mappings, local PostgreSQL Docker Compose configuration, repository tests, and persistence-backed `POST /leads/intake` while keeping CRM/Slack behavior deterministic and mock-only.
 
 ## 3. Goals
 
@@ -62,14 +62,14 @@ Phase 4 slice 1 adds the backend persistence foundation after the Phase 3 fronte
 | FR-001 | The backend accepts lead submissions through an API endpoint and validates required fields. | P0 | Valid payload succeeds; invalid payload returns structured validation errors. | foundation implemented |
 | FR-002 | The frontend provides a public demo form for lead submission. | P0 | User can submit a lead and see success/error feedback. | Phase 3 implemented |
 | FR-003 | The system imports leads from CSV. | P0 | Valid rows are processed; invalid rows are reported without hiding errors. | Phase 3 local UI implemented |
-| FR-004 | The system detects duplicate leads by email and company domain. | P0 | Duplicate and non-duplicate cases are covered by tests. | backend foundation plus frontend session hint |
+| FR-004 | The system detects duplicate leads by email and company domain. | P0 | Duplicate and non-duplicate cases are covered by tests. | persistence-backed backend dedupe plus frontend session hint |
 | FR-005 | The CRM adapter simulates create-or-update behavior for contacts/deals. | P0 | Tests prove create, update, duplicate, and failure behavior in mock mode. | mock foundation implemented |
 | FR-006 | The Slack adapter simulates notification for qualified leads. | P0 | Qualified lead produces a mock notification record; unqualified lead does not. | mock foundation implemented |
-| FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | persistence tables/repository added; API wiring planned |
+| FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | successful intake runs are persisted; retry endpoint planned |
 | FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | local policy and persistence foundation implemented; UI/API action planned |
 | FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | Phase 3 inline validation/error details; dedicated page planned |
 | FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type. | Phase 3 session filters for available fields; owner/error type planned |
-| FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | planned after persistence wiring |
+| FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | planned after failure/retry API slice |
 | FR-012 | Portfolio handoff materials explain how real CRM/Slack credentials would be added safely. | P1 | Handoff doc documents credential boundaries without real secrets. | planned |
 
 ## 7. Non-Functional Requirements
