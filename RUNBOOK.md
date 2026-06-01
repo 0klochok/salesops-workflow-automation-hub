@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 slice 3 - persisted failure details and manual retry endpoints |
+| Current phase | Phase 4 slice 4 - persisted admin run history and demo seed data |
 
 ## 2. Operating Rules
 
@@ -75,6 +75,7 @@ uv run ruff check .
 uv run mypy backend tests
 docker compose up -d postgres
 uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
 uv run uvicorn backend.app.main:app --reload
 ```
 
@@ -102,6 +103,18 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/intake" -Method Post -Conten
 
 Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and nullable `slack` fields. This endpoint uses mock adapters only and persists local lead, run, attempt, and audit records.
 
+Manual persisted run-history lookup:
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs"
+```
+
+Expected behavior:
+
+- runs are loaded from local persistence and sorted by created timestamp descending, then run ID ascending;
+- each run includes source, current status, created/updated timestamps, attempt count, latest attempt summary, and whether failure detail is available;
+- raw audit payloads, phone, message, and unrestricted error detail are not returned.
+
 Manual failure detail lookup for a known failed run:
 
 ```powershell
@@ -128,6 +141,19 @@ Expected behavior:
 - successful or already-retried runs return `409`;
 - failed or queued runs append a local `retried` attempt, update the run status to `retried`, and write a `manual_retry` audit record;
 - retry is local persistence only and does not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
+
+Seed deterministic local demo runs:
+
+```powershell
+uv run python -m backend.app.leads.demo_seed
+```
+
+Expected behavior:
+
+- writes exactly four synthetic demo runs: success, failed, queued, and retried;
+- replaces only the known `run_demo_*` and `lead_demo_*` seed records on repeat runs;
+- uses fixed timestamps and local SQLAlchemy persistence only;
+- does not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, webhooks, or external services.
 
 ## 7.1 Local Database Commands
 
@@ -213,7 +239,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 3 Validation
+## 10.1 Phase 4 Slice 4 Validation
 
 ```powershell
 pnpm install --frozen-lockfile
@@ -230,15 +256,9 @@ uv run alembic upgrade head --sql
 git diff --check
 git diff --cached --name-only
 Test-Path -LiteralPath ".github\workflows"
-$files = Get-ChildItem -Recurse -Force -File | Where-Object { $_.FullName -notmatch "\\(\.git|\.venv|node_modules|\.next|__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache)\\" }
-$secretPattern = "sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}"
-$endpointPattern = "hooks\.slack\.com|api\.hubapi\.com|api\.openai\.com|sheets\.googleapis\.com"
-$files | Select-String -Pattern $secretPattern
-$files | Select-String -Pattern $endpointPattern
-$files | Select-String -Pattern "[ \t]+$"
 ```
 
-`docker compose up` and online `uv run alembic upgrade head` require Docker Desktop and a running local PostgreSQL service. If Docker is unavailable, document that skip in `STATE.md`.
+Live Docker/PostgreSQL and manual HTTP smoke checks require starting containers and local servers. For Phase 4 slice 4, Codex skipped live Docker/PostgreSQL and manual HTTP smoke checks to avoid mutating Docker volumes or starting long-running local services. Static `docker compose config`, offline `uv run alembic upgrade head --sql`, and automated SQLite-backed API/repository tests remain required.
 
 ## 11. Docker/PostgreSQL Validation
 
@@ -267,6 +287,7 @@ docker compose stop postgres
 | Lead intake returns a database configuration error | `DATABASE_URL` is missing or PostgreSQL is not available | Create local `.env`, start Docker PostgreSQL, and run Alembic migrations |
 | Failure detail returns 404 | The run ID does not exist in the configured local database | Check the run ID and `DATABASE_URL` |
 | Failure detail returns 409 | The run exists but has no failed attempt | Use a failed run ID; successful intake runs are not failure records |
+| Run history is empty | The configured local database has no persisted run records | Submit leads locally or run `uv run python -m backend.app.leads.demo_seed` |
 | Retry returns 409 | The run is already `success` or `retried` | Retry only `failed` or `queued` local runs |
 | Frontend cannot submit | Backend is not running or base URL is wrong | Start backend or set `BACKEND_API_BASE_URL` in local ignored `.env` |
 | CSV row is not submitted | Client-side CSV validation failed | Check required headers and row-level validation messages |

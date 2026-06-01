@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
@@ -119,5 +120,35 @@ class RetryRunResponse(BaseModel):
     attempt_count: int
     latest_attempt_number: int
     latest_attempt_status: RunStatus
+
+    model_config = ConfigDict(frozen=True)
+
+
+class RunHistoryAttemptSummary(BaseModel):
+    attempt_number: int
+    status: RunStatus
+    error_type: ErrorType | None = None
+    summary: str
+    created_at: datetime
+
+    model_config = ConfigDict(frozen=True)
+
+
+class RunHistoryItem(BaseModel):
+    run_id: str
+    lead_id: str
+    source: LeadSource
+    run_status: RunStatus
+    created_at: datetime
+    updated_at: datetime
+    attempt_count: int
+    latest_attempt: RunHistoryAttemptSummary | None = None
+    failure_detail_available: bool
+
+    model_config = ConfigDict(frozen=True)
+
+
+class RunHistoryResponse(BaseModel):
+    runs: tuple[RunHistoryItem, ...]
 
     model_config = ConfigDict(frozen=True)

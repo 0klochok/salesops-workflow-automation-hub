@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 3: persisted failure details and manual retry endpoints after the Phase 3 frontend demo scaffold.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 4: persisted admin run history and deterministic demo seed data after the Phase 4 failure detail and retry slice.
 
 ## Problem
 
@@ -43,6 +43,8 @@ The current local demo includes:
 - Phase 4 wires SQLAlchemy/Alembic persistence into `POST /leads/intake` through explicit DB session dependencies;
 - local intake now records leads, automation runs, attempts, and audit records while keeping CRM and Slack mocked by default;
 - backend-only failure detail and manual retry endpoints are available for persisted workflow runs;
+- a backend-only persisted run-history endpoint returns stored runs with latest attempt summaries;
+- deterministic local demo seed data can create success, failed, queued, and retried workflow runs;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
 ## Local Backend Setup
@@ -57,6 +59,7 @@ uv run ruff check .
 uv run mypy backend tests
 docker compose up -d postgres
 uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
 uv run uvicorn backend.app.main:app --reload
 ```
 
@@ -87,6 +90,12 @@ $payload = @{
 } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
+```
+
+Manual persisted run-history smoke check while the server is running:
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs"
 ```
 
 ## Local Frontend Setup

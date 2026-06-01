@@ -17,7 +17,7 @@ from sqlalchemy import (
 from sqlalchemy import (
     Enum as SqlEnum,
 )
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, Session, mapped_column, relationship, selectinload
 
 from backend.app.db import Base
 from backend.app.leads.dedupe import LeadSnapshot
@@ -32,7 +32,12 @@ from backend.app.leads.models import (
     RunStatus,
     SlackNotificationResult,
 )
-from backend.app.leads.schemas import LeadIntakeRequest, LeadSource
+from backend.app.leads.schemas import (
+    LeadIntakeRequest,
+    LeadSource,
+    RunHistoryAttemptSummary,
+    RunHistoryItem,
+)
 
 
 def utc_now() -> datetime:
@@ -57,6 +62,7 @@ SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
     r"\b(api[_-]?key|token|secret|password)\s*[:=]\s*([^\s,;]+)",
     flags=re.IGNORECASE,
 )
+RUN_HISTORY_SUMMARY_MAX_LENGTH = 240
 
 
 def sanitize_detail_text(value: str | None) -> str | None:
@@ -67,6 +73,15 @@ def sanitize_detail_text(value: str | None) -> str | None:
         lambda match: f"{match.group(1)}=[redacted]",
         normalized,
     )
+
+
+def summarize_detail_text(value: str | None) -> str | None:
+    sanitized = sanitize_detail_text(value)
+    if sanitized is None:
+        return None
+    if len(sanitized) <= RUN_HISTORY_SUMMARY_MAX_LENGTH:
+        return sanitized
+    return f"{sanitized[: RUN_HISTORY_SUMMARY_MAX_LENGTH - 3]}..."
 
 
 def sanitize_intake_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -235,6 +250,17 @@ class LeadPersistenceRepository:
             )
             for record in records
         )
+
+    def list_run_history(self) -> tuple[RunHistoryItem, ...]:
+        records = self._session.scalars(
+            select(AutomationRunRecord)
+            .options(
+                selectinload(AutomationRunRecord.lead),
+                selectinload(AutomationRunRecord.attempts),
+            )
+            .order_by(AutomationRunRecord.created_at.desc(), AutomationRunRecord.run_id.asc())
+        ).all()
+        return tuple(self._run_history_from_record(record) for record in records)
 
     def record_workflow_result(
         self,
@@ -423,4 +449,41 @@ class LeadPersistenceRepository:
             error_type=record.error_type,
             error_message=sanitize_detail_text(record.error_message),
             suggested_action=sanitize_detail_text(record.suggested_action),
+        )
+
+    def _run_history_from_record(self, record: AutomationRunRecord) -> RunHistoryItem:
+        attempts = tuple(record.attempts)
+        latest_attempt = attempts[-1] if attempts else None
+        return RunHistoryItem(
+            run_id=record.run_id,
+            lead_id=record.lead_id,
+            source=record.lead.source,
+            run_status=record.status,
+            created_at=record.created_at,
+            updated_at=record.updated_at,
+            attempt_count=len(attempts),
+            latest_attempt=(
+                self._run_history_attempt_from_record(latest_attempt)
+                if latest_attempt is not None
+                else None
+            ),
+            failure_detail_available=any(
+                attempt.status is RunStatus.FAILED for attempt in attempts
+            ),
+        )
+
+    def _run_history_attempt_from_record(
+        self,
+        record: RunAttemptRecord,
+    ) -> RunHistoryAttemptSummary:
+        summary = (
+            summarize_detail_text(record.error_message or record.suggested_action)
+            or f"Latest attempt recorded as {record.status.value}."
+        )
+        return RunHistoryAttemptSummary(
+            attempt_number=record.attempt_number,
+            status=record.status,
+            error_type=record.error_type,
+            summary=summary,
+            created_at=record.created_at,
         )

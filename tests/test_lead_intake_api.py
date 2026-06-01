@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app.db import Base, get_db_session
 from backend.app.leads.adapters import MockCrmAdapter
+from backend.app.leads.demo_seed import DEMO_RUN_IDS, seed_demo_data
 from backend.app.leads.models import DedupeResult, DedupeStatus, ErrorType, RunStatus
 from backend.app.leads.persistence import (
     AuditRecord,
@@ -118,6 +120,20 @@ def persist_workflow_run(
     )
     session.commit()
     return run.run_id
+
+
+def set_run_timestamps(
+    session: Session,
+    run_id: str,
+    *,
+    created_at: datetime,
+    updated_at: datetime | None = None,
+) -> None:
+    stored_run = session.get(AutomationRunRecord, run_id)
+    assert stored_run is not None
+    stored_run.created_at = created_at
+    stored_run.updated_at = updated_at or created_at
+    session.commit()
 
 
 def test_post_lead_intake_processes_qualified_lead_with_mock_adapters(
@@ -279,6 +295,97 @@ def test_post_lead_intake_returns_422_for_invalid_payload(
 
     assert response.status_code == 422
     assert "detail" in response.json()
+
+
+def test_get_run_history_returns_persisted_records_sorted_and_sanitized(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    tied_timestamp = datetime(2026, 6, 1, 9, 0, tzinfo=UTC)
+    later_timestamp = datetime(2026, 6, 1, 10, 0, tzinfo=UTC)
+    run_b = persist_workflow_run(
+        session,
+        run_id="run_sort_b",
+        lead_id="lead_sort_b",
+        status=RunStatus.SUCCESS,
+        email="sort.b@example.com",
+    )
+    run_a = persist_workflow_run(
+        session,
+        run_id="run_sort_a",
+        lead_id="lead_sort_a",
+        status=RunStatus.FAILED,
+        email="sort.a@example.com",
+    )
+    run_c = persist_workflow_run(
+        session,
+        run_id="run_sort_c",
+        lead_id="lead_sort_c",
+        status=RunStatus.QUEUED,
+        email="sort.c@example.com",
+    )
+    set_run_timestamps(session, run_b, created_at=tied_timestamp)
+    set_run_timestamps(session, run_a, created_at=tied_timestamp)
+    set_run_timestamps(session, run_c, created_at=later_timestamp)
+
+    response = client.get("/leads/runs")
+
+    assert response.status_code == 200
+    runs = response.json()["runs"]
+    assert [run["run_id"] for run in runs] == ["run_sort_c", "run_sort_a", "run_sort_b"]
+    failed_run = runs[1]
+    assert failed_run["lead_id"] == "lead_sort_a"
+    assert failed_run["source"] == "demo_form"
+    assert failed_run["run_status"] == "failed"
+    assert failed_run["attempt_count"] == 2
+    assert failed_run["failure_detail_available"] is True
+    assert failed_run["latest_attempt"]["attempt_number"] == 2
+    assert failed_run["latest_attempt"]["status"] == "failed"
+    assert failed_run["latest_attempt"]["error_type"] == "adapter"
+    assert failed_run["latest_attempt"]["summary"] == "Mock CRM adapter failed token=[redacted]"
+    assert runs[0]["failure_detail_available"] is False
+    assert runs[2]["failure_detail_available"] is False
+    assert "plain-text-secret" not in response.text
+    assert "phone" not in response.text
+    assert "message" not in response.text
+
+
+def test_get_run_history_represents_repeatable_demo_seed_data(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+
+    first_result = seed_demo_data(session)
+    session.commit()
+    first_response = client.get("/leads/runs")
+    second_result = seed_demo_data(session)
+    session.commit()
+    second_response = client.get("/leads/runs")
+
+    assert first_result.run_ids == DEMO_RUN_IDS
+    assert second_result.run_ids == DEMO_RUN_IDS
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.json() == second_response.json()
+    runs = first_response.json()["runs"]
+    by_run_id = {run["run_id"]: run for run in runs}
+
+    assert [run["run_id"] for run in runs] == [
+        "run_demo_queued",
+        "run_demo_retried",
+        "run_demo_failed",
+        "run_demo_success",
+    ]
+    assert len(runs) == 4
+    assert {run["run_status"] for run in runs} == {"success", "failed", "queued", "retried"}
+    assert by_run_id["run_demo_success"]["failure_detail_available"] is False
+    assert by_run_id["run_demo_queued"]["failure_detail_available"] is False
+    assert by_run_id["run_demo_failed"]["failure_detail_available"] is True
+    assert by_run_id["run_demo_retried"]["failure_detail_available"] is True
+    assert by_run_id["run_demo_retried"]["attempt_count"] == 3
+    assert by_run_id["run_demo_queued"]["latest_attempt"]["status"] == "queued"
+    assert "555-010" not in first_response.text
+    assert "CSV row should demonstrate" not in first_response.text
 
 
 def test_get_run_failure_returns_persisted_detail_and_sanitized_payload(

@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Phase 4 slice 3 is implemented as persisted failure details and manual retry endpoints after the Phase 4 slice 2 persistence-backed local intake work. It keeps mock CRM/Slack behavior and the intake response contract unchanged, and does not add auth, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Phase 4 slice 4 is implemented as persisted admin run history and deterministic demo seed data after the Phase 4 slice 3 failure detail and manual retry work. It keeps mock CRM/Slack behavior and the intake response contract unchanged, uses existing persistence tables without a migration, and does not add auth, frontend admin persistence wiring, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -53,6 +53,15 @@ Phase 4 slice 3 is implemented as persisted failure details and manual retry end
 - Kept `POST /leads/intake` response shape unchanged and kept CRM/Slack mocked.
 - Left persisted admin run history, seed data, and portfolio polish documents for the next Phase 4 slice.
 
+## 4.4 Completed Phase 4 Slice 4 Work Items
+
+- Added backend persisted run-history lookup at `GET /leads/runs`.
+- Included run IDs, lead IDs, source, current status, timestamps, attempt counts, sanitized latest attempt summaries, and failure-detail availability.
+- Added deterministic local demo seed data callable with `uv run python -m backend.app.leads.demo_seed`.
+- Seed data covers success, failed, queued, and retried runs and is repeatable for known demo records.
+- Reused existing persistence tables; no Alembic migration was needed.
+- Kept frontend persisted admin wiring, owner assignment, broad admin filters, and portfolio polish documents for later slices.
+
 ## 5. Quality Gate Expectations By Phase
 
 | Gate | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
@@ -70,7 +79,7 @@ Phase 4 slice 3 is implemented as persisted failure details and manual retry end
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Phase 4 slice 3 changes are limited to backend failure detail/retry endpoints, local tests, and source-of-truth docs.
+- Phase 4 slice 4 changes are limited to backend run history, deterministic demo seed data, local tests, and source-of-truth docs.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.
@@ -78,4 +87,4 @@ Phase 4 slice 3 is implemented as persisted failure details and manual retry end
 
 ## 7. Recommended Next Phase
 
-Continue Phase 4 by adding persisted admin run history and demo seed data, then add portfolio polish docs.
+Continue Phase 4 by wiring a minimal admin UI to persisted run history, then add portfolio polish docs.

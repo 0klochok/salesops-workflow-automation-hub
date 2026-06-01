@@ -11,6 +11,7 @@ from backend.app.leads.schemas import (
     LeadIntakeRequest,
     LeadIntakeResponse,
     RetryRunResponse,
+    RunHistoryResponse,
 )
 from backend.app.leads.service import LeadIntakeService
 
@@ -37,6 +38,17 @@ def create_lead_intake(
         slack=result.slack,
     )
     return result.response
+
+
+@router.get(
+    "/runs",
+    response_model=RunHistoryResponse,
+)
+def list_run_history(
+    session: Annotated[Session, Depends(get_db_session)],
+) -> RunHistoryResponse:
+    repository = LeadPersistenceRepository(session)
+    return RunHistoryResponse(runs=repository.list_run_history())
 
 
 @router.get(

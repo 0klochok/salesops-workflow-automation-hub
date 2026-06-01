@@ -7,14 +7,14 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Scope | Architecture for greenfield portfolio demo |
-| Current phase | Phase 4 slice 3 - persisted failure details and manual retry endpoints |
+| Current phase | Phase 4 slice 4 - persisted admin run history and demo seed data |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system remains safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-Phase 4 slice 3 builds on the persistence-backed intake flow by exposing backend-only failure detail and manual retry endpoints. It keeps the public intake response contract and mock CRM/Slack adapters while persisting local leads, automation runs, attempts, and audit records through explicit database-session dependencies. Real integrations, auth, deployment, and GitHub Actions remain planned later or out of scope.
+Phase 4 slice 4 builds on the persistence-backed failure detail and retry flow by exposing backend-only persisted run history and deterministic demo seed data. It keeps the public intake response contract and mock CRM/Slack adapters while using existing local lead, automation run, attempt, and audit tables. Real integrations, auth, frontend admin persistence wiring, deployment, and GitHub Actions remain planned later or out of scope.
 
 ## 3. Stack
 
@@ -63,11 +63,13 @@ Phase 4 slice 3 builds on the persistence-backed intake flow by exposing backend
 
 ## 5. Architecture Flow
 
-Current Phase 4 slice 3 local flow:
+Current Phase 4 slice 4 local flow:
 
 ```text
 Next.js UI -> Next.js local proxy -> FastAPI intake -> validation -> persisted snapshots -> dedupe -> mock CRM -> mock Slack -> persistence repository -> UI session dashboard
 FastAPI failure/retry endpoints -> persistence repository -> stored runs, attempts, and audit records
+FastAPI run-history endpoint -> persistence repository -> stored run list with latest attempt summaries
+Demo seed command -> SQLAlchemy session -> deterministic local run records
 ```
 
 ```mermaid
@@ -91,6 +93,8 @@ flowchart LR
     L --> M["Current-session dashboard"]
     R["Manual retry endpoint"] --> H
     S["Failure detail endpoint"] --> H
+    T["Run-history endpoint"] --> H
+    U["Demo seed command"] --> P
 ```
 
 Persistence data model:
@@ -120,6 +124,8 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 
 `POST /leads/runs/{run_id}/retry` accepts `failed` and `queued` runs, appends a `retried` attempt, updates the run status to `retried`, and writes a `manual_retry` audit event. Unknown run IDs return `404`; `success` and already-`retried` runs return `409`.
 
+`GET /leads/runs` returns persisted run history sorted by `automation_runs.created_at` descending and `automation_runs.run_id` ascending for timestamp ties. Each item includes `run_id`, `lead_id`, `source`, `run_status`, `created_at`, `updated_at`, `attempt_count`, `failure_detail_available`, and a sanitized `latest_attempt` summary. It does not expose raw audit payloads, phone, message, or unrestricted error detail.
+
 ## 7. Data And State Boundaries
 
 - Backend intake uses an explicit SQLAlchemy session dependency and commits local records after successful workflow processing.
@@ -129,8 +135,10 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - SQLAlchemy tables now store leads, automation runs, run attempts, and audit records from `POST /leads/intake`.
 - Failure detail responses use a safe allowlist from the stored intake audit payload and omit high-risk freeform fields such as `phone` and `message`.
 - Manual retry records update only local persistence; they do not call CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
+- Run-history responses are built from persisted runs, leads, and attempts and expose only a safe summary contract.
+- Demo seed data writes fixed synthetic success, failed, queued, and retried runs through local SQLAlchemy records only.
 - Repository tests validate persistence behavior with SQLite as a unit-test fallback; PostgreSQL remains the local integration target.
-- Admin run history, owner assignment, broader failure taxonomies, and seeded demo data require future API wiring.
+- Owner assignment, broader failure taxonomies, frontend persisted admin wiring, and admin filters beyond the current contract require future API/UI work.
 
 ## 8. Adapter Boundaries And Mock Mode
 

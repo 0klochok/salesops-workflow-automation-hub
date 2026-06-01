@@ -7,7 +7,7 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 4 slice 3 - persisted failure details and manual retry endpoints |
+| Current phase | Phase 4 slice 4 - persisted admin run history and demo seed data |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,9 +20,9 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 4 Slice 3 Test Status
+## 3. Phase 4 Slice 4 Test Status
 
-Phase 4 slice 3 adds backend API tests for persisted failure details and manual retry endpoints while keeping the Phase 3 frontend tests unchanged.
+Phase 4 slice 4 adds backend API and seed tests for persisted admin run history and deterministic demo seed data while keeping the Phase 3 frontend tests unchanged.
 
 Current backend commands:
 
@@ -39,6 +39,7 @@ Current backend persistence tests cover:
 - stored lead snapshots feeding the existing dedupe service;
 - duplicate-email storage reusing the matched persisted lead id;
 - failed-run error details and suggested actions.
+- deterministic demo seed data is exercised through the API test database.
 
 Current backend intake API tests cover:
 
@@ -50,6 +51,11 @@ Current backend intake API tests cover:
 - persisted failure detail lookup, including unknown IDs and no-failure conflict handling;
 - manual retry for failed and queued runs;
 - rejection of unknown, successful, and already-retried runs without mutating attempts.
+- persisted run-history records sorted by created timestamp and run ID tie-breaker;
+- success, failed, queued, and retried run-history examples from deterministic seed data;
+- correct failure-detail availability for failed and retried runs;
+- sanitized latest attempt summaries without raw payload, phone, message, or secret-like material;
+- repeatable demo seed behavior across multiple runs.
 
 Current frontend commands:
 
@@ -89,6 +95,8 @@ Existing backend tests also cover:
 | Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
 | Retry logic tests | Failed/queued run retry, new attempt creation, history preservation, status transitions, rejection of non-retryable runs | Backend unit/API tests | `uv run pytest` |
 | Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run pytest` |
+| Admin run history tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability | Backend API tests | `uv run pytest` |
+| Demo seed tests | Success/failed/queued/retried examples, repeatability, local-only deterministic records | Backend API/repository tests | `uv run pytest` |
 | Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test -- --run` |
 | CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test -- --run` |
 | Session dashboard tests | Filters, current-session results, duplicate hints | Frontend component tests | `pnpm --dir apps/web test -- --run` |
