@@ -9,105 +9,131 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Phase 2 - backend lead intake domain foundation |
+| Current phase | Phase 3 - frontend demo scaffold |
 | Overall status | on-track |
-| Quality gate status | Phase 2 backend validation passed |
-| Completion | Phase 2 complete pending user review |
+| Quality gate status | Phase 3 validation passed after frontend lint dependency repair |
+| Completion | Phase 3 repaired and ready for user review |
 | Main blocker | none |
 
 ## 1. Current Objective
 
-- Implement the backend lead intake domain foundation only.
-- Keep behavior local-safe, deterministic, and test-first.
-- Add lead validation, deterministic intake API response, in-memory dedupe, mock CRM/Slack adapter boundaries, local run-log models, and deterministic retry policy.
-- Do not add frontend work, production PostgreSQL/Docker infrastructure, GitHub Actions, real integrations, real API calls, real secrets, staging, commits, pushes, or deployments.
+- Build frontend demo scaffolding for the deterministic backend `POST /leads/intake` endpoint.
+- Keep backend behavior unchanged.
+- Add local Next.js demo form, local CSV import UI, and a session-only dashboard.
+- Keep behavior local and deterministic.
+- Do not add real CRM, Slack, email, auth, database persistence, Docker, GitHub Actions, deployment config, paid API usage, staging, commits, pushes, or deployments.
 
 ## 2. Status Snapshot
 
-- `POST /leads/intake` accepts synthetic lead payloads and returns deterministic local JSON with `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and optional `slack`.
-- Lead intake validation uses Pydantic only and normalizes email/company-domain values locally.
-- Dedupe checks in-memory lead snapshots by normalized email and company domain.
-- Mock CRM and Slack adapter boundaries return deterministic local records; they do not import provider SDKs, read credentials, or call the network.
-- Run logging and retry foundations are local models/interfaces only. No database, migrations, queue, sleeping retry, or persistence implementation exists in Phase 2.
-- Qualification default for mock Slack is `lead_score >= 70`.
-- `.env` remains ignored; `.env.example` remains placeholder-only.
+- `apps/web` is a Next.js App Router frontend managed with `pnpm`.
+- The frontend uses TypeScript, Tailwind CSS, TanStack Table, local shadcn-style UI primitives, Vitest, Testing Library, and jsdom.
+- `POST /api/leads/intake` proxies to `BACKEND_API_BASE_URL` or `NEXT_PUBLIC_BACKEND_API_BASE_URL`, defaulting to `http://127.0.0.1:8000`.
+- The lead form matches the implemented backend schema: `email`, `first_name`, `last_name`, `company_name`, `company_domain`, `source`, optional `job_title`, `phone`, `message`, and `lead_score`.
+- CSV rows are parsed locally in the browser/app and submitted through the same local proxy. Invalid rows show row-level errors before submission.
+- The dashboard stores current browser-session results in `sessionStorage`.
+- Same-session duplicate hints compare email and company domain in the frontend. Backend `dedupe.status` remains displayed separately.
+- Backend files under `backend/` were not changed in Phase 3.
+- Phase 3 validation repair on 2026-06-01 added an explicit `eslint-plugin-react-hooks` frontend dev dependency and excluded generated `next-env.d.ts` from ESLint; frontend lint, tests, typecheck, and build now pass again.
+- Manual review found Phase 3 repair incomplete: pnpm --dir apps/web lint failed because ESLint could not resolve @next/eslint-plugin-next from apps/web. Added @next/eslint-plugin-next as an explicit apps/web devDependency matching eslint-config-next/Next version. Reran install, lint, test, typecheck, build, diff check, staged-file check, and GitHub Actions absence check. No files staged, committed, pushed, deployed, or connected to external services.
 
-## 3. Phase 2 Done State
+## 3. Phase 3 Done State
 
-Phase 2 backend lead intake foundation is done when:
+Phase 3 frontend demo scaffold is done when:
 
-- `POST /leads/intake` validates required lead fields and returns deterministic local responses.
-- Invalid payloads return FastAPI/Pydantic `422` responses and do not call adapters.
-- Dedupe, mock CRM/Slack, run logging, and retry behavior are covered by unit/API tests.
-- No frontend, PostgreSQL/Docker infrastructure, GitHub Actions, real secrets, or real external calls are introduced.
-- Tests, lint, typecheck, git whitespace check, and forbidden-pattern checks pass or have documented skip reasons.
-- Source-of-truth docs describe the new backend behavior, commands, skips, and next phase.
+- User can submit a synthetic lead through the UI to the local deterministic backend.
+- User can import local CSV rows through the UI without external upload/service calls.
+- User can inspect current-session success, validation, duplicate hint, CRM, Slack, and error results in a dashboard.
+- Frontend tests, lint, typecheck, build, install, git whitespace check, and forbidden-pattern checks pass or have documented skip reasons.
+- Source-of-truth docs describe Phase 3 behavior, commands, limitations, and next phase.
 
-## 4. Changed Files For Phase 2
+## 4. Changed Files For Phase 3
 
 | Path | Purpose | Status |
 |---|---|---|
-| `backend/app/main.py` | Registered lead intake router | updated |
-| `backend/app/leads/` | Lead schemas, route, service, dedupe, adapters, run log, retry policy, deterministic IDs | created |
-| `tests/test_lead_schemas.py` | Lead validation and normalization tests | created |
-| `tests/test_dedupe.py` | In-memory dedupe tests | created |
-| `tests/test_lead_adapters.py` | Mock CRM/Slack adapter tests | created |
-| `tests/test_run_logging.py` | Run log and retry policy tests | created |
-| `tests/test_lead_intake_api.py` | `POST /leads/intake` API tests | created |
-| `README.md` | Updated current status and manual lead intake smoke command | updated |
-| `RUNBOOK.md` | Updated backend commands, validation scans, and manual smoke command | updated |
-| `DESIGN.md` | Updated Phase 2 architecture and persistence deferral | updated |
-| `EXEC_PLAN.md` | Updated Phase 2 deliverables and quality gates | updated |
-| `TDD.md` | Updated Phase 2 test coverage and persistence deferral | updated |
-| `CONTEXT.md` | Updated current project context and implemented foundations | updated |
-| `REQ.md` | Updated phase/status notes for implemented backend foundations | updated |
-| `STATE.md` | Recorded Phase 2 status and validation | updated |
+| `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml` | Root `pnpm` workspace, frontend scripts, dependency lockfile, narrow build-script allowlist | created |
+| `.env.example` | Added local frontend proxy placeholder URLs | updated |
+| `apps/web/` | Next.js App Router app, local proxy route, UI, utilities, config, and tests | created |
+| `README.md`, `RUNBOOK.md`, `DESIGN.md`, `EXEC_PLAN.md`, `TDD.md`, `CONTEXT.md`, `REQ.md`, `STATE.md` | Phase 3 docs, commands, status, and validation notes | updated |
 
 ## 5. Validation
 
 | Gate | Command | Status | Notes |
 |---|---|---|---|
-| Worktree status | `git status --short --branch` | pass | Shows Phase 2 modified/untracked files only; nothing staged. |
-| Setup sync | `uv sync --frozen` | pass | Uses existing lockfile; no dependency changes. |
-| Backend tests | `uv run pytest` | pass | 25 passed. One upstream `StarletteDeprecationWarning` from FastAPI `TestClient`; not a failure. |
-| Backend lint | `uv run ruff check .` | pass | All checks passed. |
-| Backend typecheck | `uv run mypy backend tests` | pass | No issues found in 22 source files. |
-| Git whitespace check | `git diff --check` | pass | Exit 0. Git may report CRLF normalization warnings on Windows; no whitespace errors. |
-| Likely secret/token scan | PowerShell `Select-String` scan over repo files excluding `.git`, `.venv`, and local tool caches | pass | No likely real secrets or tokens found. |
-| Real integration endpoint scan | PowerShell `Select-String` scan for real Slack/HubSpot/OpenAI/Google Sheets endpoints excluding `.git`, `.venv`, and local tool caches | pass | No real external integration endpoints or webhook URLs found. |
-| Trailing whitespace scan | PowerShell `Select-String -Pattern '[ \t]+$'` over repo files excluding `.git`, `.venv`, and local tool caches | pass | No trailing whitespace matches found. |
-| GitHub Actions absence | `Test-Path -LiteralPath ".github\workflows"` | pass | No `.github/workflows` directory exists. |
+| Worktree status | `git status --short --branch` | pass | Initial Phase 3 check showed clean `main`; final status must show unstaged Phase 3 files only. |
+| Frontend install | `pnpm install`; `pnpm install --frozen-lockfile` | pass | Phase 3 repair required normal `pnpm install` to update `pnpm-lock.yaml` after adding `eslint-plugin-react-hooks`; frozen install then confirmed the lockfile is consistent. |
+| Frontend lint | `pnpm --dir apps/web lint` | pass | ESLint completed with exit 0 after direct React Hooks plugin declaration and generated `next-env.d.ts` ignore. |
+| Frontend tests | `pnpm --dir apps/web test -- --run` | pass | 3 files, 9 tests passed. |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | pass | `tsc --noEmit` completed with exit 0. |
+| Frontend build | `pnpm --dir apps/web build` | pass | Next.js 15.5.18 production build completed successfully. |
+| Browser smoke | In-app browser against `http://localhost:3000` with backend on `http://127.0.0.1:8000` | pass | Submitted a lead, verified same-session duplicate hint, imported one CSV row, and saw dashboard updates. |
+| Backend gates | `uv sync --frozen`; `uv run pytest`; `uv run ruff check .`; `uv run mypy backend tests` | skipped | Backend implementation files were not touched in Phase 3. |
+| Docker/PostgreSQL validation | n/a | skipped | Explicitly out of Phase 3 scope; no compose file, database models, migrations, or persistence implementation exists yet. |
+| External integration smoke | n/a | skipped | Real CRM, Slack, Google Sheets, OpenAI, Anthropic, and other external calls are forbidden without explicit approval. |
+| GitHub Actions validation | `Test-Path -LiteralPath ".github\workflows"` | pass | Returned `False`; no workflow directory exists. |
+| Git whitespace check | `git diff --check` | pass | Exit 0. Git reported Windows LF-to-CRLF normalization warnings only; no whitespace errors. |
+| Likely secret/token scan | PowerShell scan excluding `.git`, `.venv`, `node_modules`, `.next`, and local caches | pass | No matches. |
+| Real integration endpoint scan | PowerShell scan for Slack/HubSpot/OpenAI/Google Sheets endpoints excluding generated/cache directories | pass | No matches. |
+| Trailing whitespace scan | PowerShell scan excluding `.git`, `.venv`, `node_modules`, `.next`, and local caches | pass | No matches. |
 
-## 6. Skipped Checks
+## 6. Manual Verification
 
-| Gate | Status | Reason |
-|---|---|---|
-| Live uvicorn smoke | skipped | Avoided leaving a server process running. `POST /leads/intake` and `GET /health` are covered by FastAPI `TestClient`; exact manual commands are documented in `RUNBOOK.md`. |
-| Docker/PostgreSQL validation | skipped | Explicitly out of Phase 2 scope; no compose file, database models, migrations, or persistence implementation exists yet. |
-| Frontend tests/lint/typecheck/build | skipped | Frontend work is explicitly out of Phase 2 scope and no frontend exists. |
-| External integration smoke | skipped | Real CRM, Slack, Google Sheets, OpenAI, Anthropic, and other external calls are forbidden without explicit approval. |
-| GitHub Actions validation | skipped | GitHub Actions are explicitly out of scope; `.github/workflows` is absent. |
+Start the backend:
 
-## 7. Open Questions For Later Phases
+```powershell
+uv run uvicorn backend.app.main:app --reload
+```
+
+Start the frontend:
+
+```powershell
+pnpm --dir apps/web dev
+```
+
+Submit a lead:
+
+1. Open `http://localhost:3000`.
+2. Fill required form fields with synthetic data.
+3. Select `Submit lead`.
+4. Confirm the latest result and dashboard show the backend response.
+
+Test duplicate handling:
+
+1. Submit the same email or company domain again during the same browser session.
+2. Confirm the UI shows a same-session duplicate hint.
+3. Confirm backend `dedupe.status` is shown separately.
+
+Test CSV import:
+
+1. Paste a CSV with required headers into the CSV input.
+2. Select `Import rows`.
+3. Confirm valid rows submit locally and invalid rows show row-level errors.
+
+## 7. Known Limitations
+
+- The dashboard is session-only and stored in browser `sessionStorage`.
+- Backend duplicate results remain deterministic per request because Phase 2 did not add persistence or process-level lead storage for normal API calls.
+- Manual retry is not a UI action yet because there is no persisted failed-run API endpoint.
+- Owner assignment, date persistence, error type filtering, failure detail pages, backup/audit records, seed data, Docker/PostgreSQL, and portfolio polish remain future work.
+- Next.js may print anonymous telemetry information during `next build`; no deployment or real integration call is made.
+
+## 8. Open Questions For Later Phases
 
 | ID | Question | Needed by | Current default / assumption |
 |---|---|---|---|
 | Q-001 | Real HubSpot vs mock CRM? | Before live CRM integration | Mock CRM |
 | Q-002 | Real Slack webhook vs mock/log notifier? | Before live Slack integration | Mock/log notifier |
 | Q-003 | What is the owner assignment rule for 5 sales reps? | Before lead routing/admin filters | TBD; start with deterministic rule |
-| Q-004 | Should `lead_score >= 70` remain the qualification rule? | Before UI/demo polish | Current Phase 2 default |
+| Q-004 | Should `lead_score >= 70` remain the qualification rule? | Before UI/demo polish | Current backend default |
 | Q-005 | How should dedupe handle shared domains, aliases, and updated emails? | Before persistence/admin workflow | Email first, company domain second |
-| Q-006 | Should persistence be added before frontend, or should frontend target deterministic local responses first? | Before next phase | Phase 3 frontend first unless user chooses persistence |
+| Q-006 | Should manual retry be added before or after persistence? | Before retry UI | After persistence/failure record API |
 
-## 8. Next Actions
+## 9. Next Actions
 
-1. User reviews the Phase 2 diff and manually stages/commits/pushes if acceptable.
-2. Recommended next phase: Phase 3 frontend demo form, CSV import UI, and admin dashboard scaffolding against the deterministic local backend endpoint.
-3. Alternative next phase: add database-backed persistence before frontend if durable run history is preferred first.
-4. Keep real integrations disabled unless explicitly approved.
+1. User reviews the Phase 3 diff and manually stages/commits/pushes if acceptable.
+2. Recommended next phase: Phase 4 persistence and portfolio polish with PostgreSQL/Docker only after approval.
 
-## 9. Suggested Commit Message
+## 10. Suggested Commit Message
 
 ```text
-Add Phase 2 lead intake backend foundation
+Add Phase 3 frontend demo scaffold
 ```
