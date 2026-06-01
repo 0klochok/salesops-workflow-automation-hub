@@ -42,9 +42,22 @@ def test_retry_policy_creates_new_attempt_and_preserves_failure_history() -> Non
     assert retried.attempts[2].attempt_number == 3
 
 
-def test_retry_policy_rejects_non_failed_runs() -> None:
+def test_retry_policy_accepts_queued_runs() -> None:
     run_log = LocalRunLog()
     queued = run_log.create_run(run_id="run_demo", lead_id="lead_demo")
 
+    retried = RetryPolicy().retry(queued)
+
+    assert retried.status is RunStatus.RETRIED
+    assert [attempt.status for attempt in retried.attempts] == [
+        RunStatus.QUEUED,
+        RunStatus.RETRIED,
+    ]
+
+
+def test_retry_policy_rejects_successful_runs() -> None:
+    run_log = LocalRunLog()
+    succeeded = run_log.record_success(run_log.create_run(run_id="run_demo", lead_id="lead_demo"))
+
     with pytest.raises(ValueError, match="failed"):
-        RetryPolicy().retry(queued)
+        RetryPolicy().retry(succeeded)

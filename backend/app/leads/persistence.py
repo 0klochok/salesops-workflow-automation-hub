@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -27,6 +28,7 @@ from backend.app.leads.models import (
     DedupeResult,
     DedupeStatus,
     ErrorType,
+    RunAttempt,
     RunStatus,
     SlackNotificationResult,
 )
@@ -39,6 +41,44 @@ def utc_now() -> datetime:
 
 def enum_values(enum_class: type[Any]) -> list[str]:
     return [item.value for item in enum_class]
+
+
+SAFE_LEAD_PAYLOAD_FIELDS = (
+    "email",
+    "first_name",
+    "last_name",
+    "company_name",
+    "company_domain",
+    "source",
+    "job_title",
+    "lead_score",
+)
+SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
+    r"\b(api[_-]?key|token|secret|password)\s*[:=]\s*([^\s,;]+)",
+    flags=re.IGNORECASE,
+)
+
+
+def sanitize_detail_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = " ".join(value.split())
+    return SENSITIVE_ASSIGNMENT_PATTERN.sub(
+        lambda match: f"{match.group(1)}=[redacted]",
+        normalized,
+    )
+
+
+def sanitize_intake_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    safe_payload: dict[str, Any] = {}
+    for field_name in SAFE_LEAD_PAYLOAD_FIELDS:
+        if field_name not in payload:
+            continue
+        value = payload[field_name]
+        safe_payload[field_name] = (
+            sanitize_detail_text(value) if isinstance(value, str) else value
+        )
+    return safe_payload
 
 
 LeadSourceColumn = SqlEnum(
@@ -222,6 +262,71 @@ class LeadPersistenceRepository:
         )
         self._session.flush()
 
+    def get_run(self, run_id: str) -> AutomationRun | None:
+        record = self._session.get(AutomationRunRecord, run_id)
+        if record is None:
+            return None
+
+        attempts = self._session.scalars(
+            select(RunAttemptRecord)
+            .where(RunAttemptRecord.run_id == run_id)
+            .order_by(RunAttemptRecord.attempt_number)
+        ).all()
+        return AutomationRun(
+            run_id=record.run_id,
+            lead_id=record.lead_id,
+            status=record.status,
+            attempts=tuple(self._run_attempt_from_record(attempt) for attempt in attempts),
+        )
+
+    def get_latest_failed_attempt(self, run: AutomationRun) -> RunAttempt | None:
+        failed_attempts = tuple(
+            attempt for attempt in run.attempts if attempt.status is RunStatus.FAILED
+        )
+        return failed_attempts[-1] if failed_attempts else None
+
+    def get_sanitized_intake_payload(self, run_id: str) -> dict[str, Any]:
+        payload = self._session.scalar(
+            select(AuditRecord.payload)
+            .where(AuditRecord.run_id == run_id, AuditRecord.event_type == "lead_intake")
+            .order_by(AuditRecord.created_at.desc())
+        )
+        return sanitize_intake_payload(payload or {})
+
+    def record_manual_retry(self, retried_run: AutomationRun) -> None:
+        if not retried_run.attempts:
+            raise ValueError("Retried automation run must include at least one attempt")
+
+        record = self._session.get(AutomationRunRecord, retried_run.run_id)
+        if record is None:
+            raise ValueError("Automation run does not exist")
+
+        latest_attempt = retried_run.attempts[-1]
+        record.status = retried_run.status
+        self._add_attempt_record(run_id=retried_run.run_id, attempt=latest_attempt)
+        self._session.add(
+            AuditRecord(
+                audit_id=deterministic_id(
+                    "audit",
+                    retried_run.run_id,
+                    "manual_retry",
+                    str(latest_attempt.attempt_number),
+                ),
+                lead_id=retried_run.lead_id,
+                run_id=retried_run.run_id,
+                event_type="manual_retry",
+                payload={
+                    "run_id": retried_run.run_id,
+                    "lead_id": retried_run.lead_id,
+                    "status": retried_run.status.value,
+                    "attempt_number": latest_attempt.attempt_number,
+                    "attempt_status": latest_attempt.status.value,
+                    "suggested_action": latest_attempt.suggested_action,
+                },
+            )
+        )
+        self._session.flush()
+
     def _resolve_persisted_lead_id(
         self,
         requested_lead_id: str,
@@ -268,16 +373,7 @@ class LeadPersistenceRepository:
     def _replace_attempts(self, run: AutomationRun) -> None:
         self._session.execute(delete(RunAttemptRecord).where(RunAttemptRecord.run_id == run.run_id))
         for attempt in run.attempts:
-            self._session.add(
-                RunAttemptRecord(
-                    run_id=run.run_id,
-                    attempt_number=attempt.attempt_number,
-                    status=attempt.status,
-                    error_type=attempt.error_type,
-                    error_message=attempt.error_message,
-                    suggested_action=attempt.suggested_action,
-                )
-            )
+            self._add_attempt_record(run_id=run.run_id, attempt=attempt)
 
     def _replace_audit_records(
         self,
@@ -307,3 +403,24 @@ class LeadPersistenceRepository:
                     payload=payload,
                 )
             )
+
+    def _add_attempt_record(self, run_id: str, attempt: RunAttempt) -> None:
+        self._session.add(
+            RunAttemptRecord(
+                run_id=run_id,
+                attempt_number=attempt.attempt_number,
+                status=attempt.status,
+                error_type=attempt.error_type,
+                error_message=sanitize_detail_text(attempt.error_message),
+                suggested_action=sanitize_detail_text(attempt.suggested_action),
+            )
+        )
+
+    def _run_attempt_from_record(self, record: RunAttemptRecord) -> RunAttempt:
+        return RunAttempt(
+            attempt_number=record.attempt_number,
+            status=record.status,
+            error_type=record.error_type,
+            error_message=sanitize_detail_text(record.error_message),
+            suggested_action=sanitize_detail_text(record.suggested_action),
+        )

@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 2: persistence-backed local intake after the Phase 3 frontend demo scaffold.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 3: persisted failure details and manual retry endpoints after the Phase 3 frontend demo scaffold.
 
 ## Problem
 
@@ -40,8 +40,9 @@ The current local demo includes:
 - CSV rows are parsed client-side/local-app only and submitted through the same local proxy;
 - the dashboard stores current browser-session submissions in `sessionStorage`;
 - same-session duplicate hints are shown by email/domain in the frontend, while backend `dedupe.status` is displayed separately;
-- Phase 4 slice 2 wires SQLAlchemy/Alembic persistence into `POST /leads/intake` through explicit DB session dependencies;
+- Phase 4 wires SQLAlchemy/Alembic persistence into `POST /leads/intake` through explicit DB session dependencies;
 - local intake now records leads, automation runs, attempts, and audit records while keeping CRM and Slack mocked by default;
+- backend-only failure detail and manual retry endpoints are available for persisted workflow runs;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
 ## Local Backend Setup

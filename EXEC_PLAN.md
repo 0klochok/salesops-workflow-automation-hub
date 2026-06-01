@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Phase 4 slice 2 is implemented as persistence-backed local intake after the repaired Phase 3 frontend validation and Phase 4 slice 1 persistence foundation. It wires SQLAlchemy/Alembic persistence into `POST /leads/intake`, keeps mock CRM/Slack behavior and the response contract unchanged, and does not add auth, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Phase 4 slice 3 is implemented as persisted failure details and manual retry endpoints after the Phase 4 slice 2 persistence-backed local intake work. It keeps mock CRM/Slack behavior and the intake response contract unchanged, and does not add auth, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -45,6 +45,14 @@ Phase 4 slice 2 is implemented as persistence-backed local intake after the repa
 - Kept frontend behavior unchanged and kept CRM/Slack adapters mocked.
 - Left failure-detail/retry endpoints, admin persisted run history, seed data, and portfolio polish documents for the next Phase 4 slice.
 
+## 4.3 Completed Phase 4 Slice 3 Work Items
+
+- Added backend failure-detail lookup for persisted runs with failed attempts.
+- Added backend manual retry for failed and queued persisted runs.
+- Preserved retry history by appending `retried` attempts and `manual_retry` audit records.
+- Kept `POST /leads/intake` response shape unchanged and kept CRM/Slack mocked.
+- Left persisted admin run history, seed data, and portfolio polish documents for the next Phase 4 slice.
+
 ## 5. Quality Gate Expectations By Phase
 
 | Gate | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
@@ -62,7 +70,7 @@ Phase 4 slice 2 is implemented as persistence-backed local intake after the repa
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Phase 4 slice 2 changes are limited to backend intake persistence wiring, local tests, and source-of-truth docs.
+- Phase 4 slice 3 changes are limited to backend failure detail/retry endpoints, local tests, and source-of-truth docs.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.
@@ -70,4 +78,4 @@ Phase 4 slice 2 is implemented as persistence-backed local intake after the repa
 
 ## 7. Recommended Next Phase
 
-Continue Phase 4 by adding persisted failure detail and manual retry endpoints, then add demo seed data and portfolio polish docs.
+Continue Phase 4 by adding persisted admin run history and demo seed data, then add portfolio polish docs.

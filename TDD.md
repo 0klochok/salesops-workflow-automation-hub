@@ -7,7 +7,7 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 4 slice 2 - persistence-backed local intake |
+| Current phase | Phase 4 slice 3 - persisted failure details and manual retry endpoints |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,9 +20,9 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 4 Slice 2 Test Status
+## 3. Phase 4 Slice 3 Test Status
 
-Phase 4 slice 2 adds persistence-backed intake API tests while keeping the Phase 3 frontend tests unchanged.
+Phase 4 slice 3 adds backend API tests for persisted failure details and manual retry endpoints while keeping the Phase 3 frontend tests unchanged.
 
 Current backend commands:
 
@@ -46,6 +46,10 @@ Current backend intake API tests cover:
 - persisted email dedupe feeding mock CRM update behavior;
 - persisted company-domain dedupe reporting possible duplicates;
 - unchanged response shape and mock-only CRM/Slack adapter behavior.
+- exact replay behavior for deterministic `lead_id` and `run_id`;
+- persisted failure detail lookup, including unknown IDs and no-failure conflict handling;
+- manual retry for failed and queued runs;
+- rejection of unknown, successful, and already-retried runs without mutating attempts.
 
 Current frontend commands:
 
@@ -83,7 +87,7 @@ Existing backend tests also cover:
 | Dedupe tests | Exact email match, company domain match, non-duplicate lead, ambiguous edge cases | Backend unit/integration tests | `uv run pytest` |
 | CRM adapter mock tests | Contact/deal create, update, duplicate, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
 | Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
-| Retry logic tests | Failed run retry, new attempt creation, history preservation, status transitions | Backend unit/integration tests | `uv run pytest` |
+| Retry logic tests | Failed/queued run retry, new attempt creation, history preservation, status transitions, rejection of non-retryable runs | Backend unit/API tests | `uv run pytest` |
 | Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run pytest` |
 | Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test -- --run` |
 | CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test -- --run` |

@@ -7,13 +7,18 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from backend.app.db import Base, get_db_session
-from backend.app.leads.models import RunStatus
+from backend.app.leads.adapters import MockCrmAdapter
+from backend.app.leads.models import DedupeResult, DedupeStatus, ErrorType, RunStatus
 from backend.app.leads.persistence import (
     AuditRecord,
     AutomationRunRecord,
+    LeadPersistenceRepository,
     LeadRecord,
     RunAttemptRecord,
 )
+from backend.app.leads.retry import RetryPolicy
+from backend.app.leads.run_log import LocalRunLog
+from backend.app.leads.schemas import LeadIntakeRequest
 from backend.app.main import app
 
 
@@ -64,6 +69,55 @@ def api_context() -> Iterator[tuple[TestClient, Session]]:
             app.dependency_overrides[get_db_session] = previous_override
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+def persist_workflow_run(
+    session: Session,
+    *,
+    run_id: str,
+    lead_id: str,
+    status: RunStatus,
+    email: str,
+    company_domain: str = "example.com",
+) -> str:
+    payload = qualified_payload(email=email, company_domain=company_domain)
+    payload["phone"] = "555-0100"
+    payload["message"] = "do not expose token=plain-text-secret"
+    lead = LeadIntakeRequest.model_validate(payload)
+    run_log = LocalRunLog()
+    queued = run_log.create_run(run_id=run_id, lead_id=lead_id)
+    if status is RunStatus.SUCCESS:
+        run = run_log.record_success(queued)
+    elif status is RunStatus.FAILED:
+        run = run_log.record_failure(
+            queued,
+            error_type=ErrorType.ADAPTER,
+            error_message="Mock CRM adapter failed token=plain-text-secret",
+            suggested_action="Retry after reviewing the mock adapter payload.",
+        )
+    elif status is RunStatus.RETRIED:
+        run = RetryPolicy().retry(
+            run_log.record_failure(
+                queued,
+                error_type=ErrorType.ADAPTER,
+                error_message="Mock CRM adapter failed",
+                suggested_action="Retry after reviewing the mock adapter payload.",
+            )
+        )
+    else:
+        run = queued
+
+    dedupe = DedupeResult(status=DedupeStatus.UNIQUE)
+    crm = MockCrmAdapter().upsert_lead(lead=lead, lead_id=lead_id, dedupe=dedupe)
+    LeadPersistenceRepository(session).record_workflow_result(
+        lead=lead,
+        run=run,
+        dedupe=dedupe,
+        crm=crm,
+        slack=None,
+    )
+    session.commit()
+    return run.run_id
 
 
 def test_post_lead_intake_processes_qualified_lead_with_mock_adapters(
@@ -163,6 +217,34 @@ def test_post_lead_intake_uses_persisted_email_dedupe(
     assert stored_second_run.lead_id == first_data["lead_id"]
 
 
+def test_post_lead_intake_exact_replay_keeps_deterministic_run_and_dedupe(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+
+    first = client.post("/leads/intake", json=qualified_payload())
+    second = client.post("/leads/intake", json=qualified_payload())
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    first_data = first.json()
+    second_data = second.json()
+    attempts = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == first_data["run_id"])
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    runs = session.scalars(
+        select(AutomationRunRecord).where(AutomationRunRecord.run_id == first_data["run_id"])
+    ).all()
+
+    assert second_data["lead_id"] == first_data["lead_id"]
+    assert second_data["run_id"] == first_data["run_id"]
+    assert second_data["dedupe"]["status"] == "duplicate_email"
+    assert len(runs) == 1
+    assert [attempt.status for attempt in attempts] == [RunStatus.QUEUED, RunStatus.SUCCESS]
+
+
 def test_post_lead_intake_uses_persisted_company_domain_dedupe(
     api_context: tuple[TestClient, Session],
 ) -> None:
@@ -197,3 +279,193 @@ def test_post_lead_intake_returns_422_for_invalid_payload(
 
     assert response.status_code == 422
     assert "detail" in response.json()
+
+
+def test_get_run_failure_returns_persisted_detail_and_sanitized_payload(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    run_id = persist_workflow_run(
+        session,
+        run_id="run_failed",
+        lead_id="lead_failed",
+        status=RunStatus.FAILED,
+        email="failure@example.com",
+    )
+
+    response = client.get(f"/leads/runs/{run_id}/failure")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["run_id"] == "run_failed"
+    assert data["lead_id"] == "lead_failed"
+    assert data["run_status"] == "failed"
+    assert data["failed_attempt_number"] == 2
+    assert data["error_type"] == "adapter"
+    assert data["error_message"] == "Mock CRM adapter failed token=[redacted]"
+    assert data["suggested_action"] == "Retry after reviewing the mock adapter payload."
+    assert data["payload"]["email"] == "failure@example.com"
+    assert data["payload"]["company_domain"] == "example.com"
+    assert "phone" not in data["payload"]
+    assert "message" not in data["payload"]
+
+
+def test_get_run_failure_rejects_unknown_run(api_context: tuple[TestClient, Session]) -> None:
+    client, _session = api_context
+
+    response = client.get("/leads/runs/run_missing/failure")
+
+    assert response.status_code == 404
+
+
+def test_get_run_failure_rejects_run_without_failed_attempt(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    run_id = persist_workflow_run(
+        session,
+        run_id="run_success_for_failure_lookup",
+        lead_id="lead_success_for_failure_lookup",
+        status=RunStatus.SUCCESS,
+        email="success.failure.lookup@example.com",
+    )
+
+    response = client.get(f"/leads/runs/{run_id}/failure")
+
+    assert response.status_code == 409
+
+
+def test_post_retry_failed_run_appends_retried_attempt(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    run_id = persist_workflow_run(
+        session,
+        run_id="run_retry_failed",
+        lead_id="lead_retry_failed",
+        status=RunStatus.FAILED,
+        email="retry.failed@example.com",
+    )
+
+    response = client.post(f"/leads/runs/{run_id}/retry")
+
+    assert response.status_code == 200
+    data = response.json()
+    stored_run = session.get(AutomationRunRecord, run_id)
+    attempts = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    manual_retry = session.scalar(
+        select(AuditRecord).where(
+            AuditRecord.run_id == run_id,
+            AuditRecord.event_type == "manual_retry",
+        )
+    )
+
+    assert data["run_status"] == "retried"
+    assert data["attempt_count"] == 3
+    assert data["latest_attempt_number"] == 3
+    assert data["latest_attempt_status"] == "retried"
+    assert stored_run is not None
+    assert stored_run.status is RunStatus.RETRIED
+    assert [attempt.status for attempt in attempts] == [
+        RunStatus.QUEUED,
+        RunStatus.FAILED,
+        RunStatus.RETRIED,
+    ]
+    assert manual_retry is not None
+    assert manual_retry.payload["attempt_number"] == 3
+
+
+def test_post_retry_queued_run_appends_retried_attempt(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    run_id = persist_workflow_run(
+        session,
+        run_id="run_retry_queued",
+        lead_id="lead_retry_queued",
+        status=RunStatus.QUEUED,
+        email="retry.queued@example.com",
+    )
+
+    response = client.post(f"/leads/runs/{run_id}/retry")
+
+    assert response.status_code == 200
+    attempts = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    assert response.json()["attempt_count"] == 2
+    assert [attempt.status for attempt in attempts] == [RunStatus.QUEUED, RunStatus.RETRIED]
+
+
+def test_post_retry_rejects_unknown_run(api_context: tuple[TestClient, Session]) -> None:
+    client, _session = api_context
+
+    response = client.post("/leads/runs/run_missing/retry")
+
+    assert response.status_code == 404
+
+
+def test_post_retry_rejects_successful_run_without_mutating_attempts(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    run_id = persist_workflow_run(
+        session,
+        run_id="run_retry_success",
+        lead_id="lead_retry_success",
+        status=RunStatus.SUCCESS,
+        email="retry.success@example.com",
+    )
+    before_attempts = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+
+    response = client.post(f"/leads/runs/{run_id}/retry")
+
+    after_attempts = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    stored_run = session.get(AutomationRunRecord, run_id)
+    assert response.status_code == 409
+    assert [attempt.status for attempt in after_attempts] == [
+        attempt.status for attempt in before_attempts
+    ]
+    assert stored_run is not None
+    assert stored_run.status is RunStatus.SUCCESS
+
+
+def test_post_retry_rejects_already_retried_run(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    run_id = persist_workflow_run(
+        session,
+        run_id="run_already_retried",
+        lead_id="lead_already_retried",
+        status=RunStatus.RETRIED,
+        email="already.retried@example.com",
+    )
+
+    response = client.post(f"/leads/runs/{run_id}/retry")
+
+    attempts = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    assert response.status_code == 409
+    assert [attempt.status for attempt in attempts] == [
+        RunStatus.QUEUED,
+        RunStatus.FAILED,
+        RunStatus.RETRIED,
+    ]

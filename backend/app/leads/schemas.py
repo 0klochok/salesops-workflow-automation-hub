@@ -1,11 +1,13 @@
 import re
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.app.leads.models import (
     CrmUpsertResult,
     DedupeResult,
+    ErrorType,
     RunStatus,
     SlackNotificationResult,
 )
@@ -93,5 +95,29 @@ class LeadIntakeResponse(BaseModel):
     dedupe: DedupeResult
     crm: CrmUpsertResult
     slack: SlackNotificationResult | None = None
+
+    model_config = ConfigDict(frozen=True)
+
+
+class FailureDetailResponse(BaseModel):
+    run_id: str
+    lead_id: str
+    run_status: RunStatus
+    failed_attempt_number: int
+    error_type: ErrorType | None = None
+    error_message: str | None = None
+    suggested_action: str | None = None
+    payload: dict[str, Any]
+
+    model_config = ConfigDict(frozen=True)
+
+
+class RetryRunResponse(BaseModel):
+    run_id: str
+    lead_id: str
+    run_status: RunStatus
+    attempt_count: int
+    latest_attempt_number: int
+    latest_attempt_status: RunStatus
 
     model_config = ConfigDict(frozen=True)

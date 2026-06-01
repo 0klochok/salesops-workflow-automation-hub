@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 slice 2 - persistence-backed local intake |
+| Current phase | Phase 4 slice 3 - persisted failure details and manual retry endpoints |
 
 ## 2. Operating Rules
 
@@ -102,6 +102,33 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/intake" -Method Post -Conten
 
 Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and nullable `slack` fields. This endpoint uses mock adapters only and persists local lead, run, attempt, and audit records.
 
+Manual failure detail lookup for a known failed run:
+
+```powershell
+$runId = "<failed-run-id>"
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/$runId/failure"
+```
+
+Expected behavior:
+
+- unknown run IDs return `404`;
+- runs without a failed attempt return `409`;
+- failed runs return the latest failed attempt, sanitized error detail, suggested action, and a safe allowlist of the stored intake payload.
+
+Manual retry for a known failed or queued run:
+
+```powershell
+$runId = "<failed-or-queued-run-id>"
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/$runId/retry" -Method Post
+```
+
+Expected behavior:
+
+- unknown run IDs return `404`;
+- successful or already-retried runs return `409`;
+- failed or queued runs append a local `retried` attempt, update the run status to `retried`, and write a `manual_retry` audit record;
+- retry is local persistence only and does not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
+
 ## 7.1 Local Database Commands
 
 The Phase 4 persistence foundation uses local PostgreSQL through Docker Compose. These commands do not call external CRM, Slack, Google Sheets, OpenAI, or paid APIs.
@@ -186,7 +213,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 2 Validation
+## 10.1 Phase 4 Slice 3 Validation
 
 ```powershell
 pnpm install --frozen-lockfile
@@ -238,6 +265,9 @@ docker compose stop postgres
 | Health endpoint is unreachable | Uvicorn is not running or port 8000 is in use | Start the server or choose a free port |
 | Lead intake returns 422 | Payload failed local Pydantic validation | Check required fields, email format, company domain, source, and `lead_score` range |
 | Lead intake returns a database configuration error | `DATABASE_URL` is missing or PostgreSQL is not available | Create local `.env`, start Docker PostgreSQL, and run Alembic migrations |
+| Failure detail returns 404 | The run ID does not exist in the configured local database | Check the run ID and `DATABASE_URL` |
+| Failure detail returns 409 | The run exists but has no failed attempt | Use a failed run ID; successful intake runs are not failure records |
+| Retry returns 409 | The run is already `success` or `retried` | Retry only `failed` or `queued` local runs |
 | Frontend cannot submit | Backend is not running or base URL is wrong | Start backend or set `BACKEND_API_BASE_URL` in local ignored `.env` |
 | CSV row is not submitted | Client-side CSV validation failed | Check required headers and row-level validation messages |
 | Repeated UI submission shows backend `unique` | The first lead was not persisted or the backend is pointing at a fresh database | Check `DATABASE_URL`, migrations, and local PostgreSQL state |

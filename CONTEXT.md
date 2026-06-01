@@ -7,11 +7,11 @@
 | Last updated | 2026-06-01 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Phase 4 slice 2 - persistence-backed local intake |
+| Current phase | Phase 4 slice 3 - persisted failure details and manual retry endpoints |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
-| Git state | `main`; Phase 4 slice 2 worktree changes remain unstaged for user review |
+| Git state | `main`; Phase 4 slice 3 worktree changes remain unstaged for user review |
 
 ## 2. Project Summary
 
@@ -19,11 +19,11 @@ This is a greenfield portfolio project for a code-first sales operations workflo
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
-The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, and a persistence-backed local lead intake path. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
+The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, a persistence-backed local lead intake path, and backend-only failure detail/retry endpoints. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
 
 The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, and a current-session dashboard stored in browser `sessionStorage`.
 
-Phase 4 slice 2 wires backend persistence scaffolding into intake: SQLAlchemy metadata, a repository for leads/runs/attempts/audit records, an Alembic initial migration, a local PostgreSQL Docker Compose service, and explicit FastAPI database-session dependencies.
+Phase 4 slice 3 adds persisted failure detail lookup and manual retry endpoints on top of the SQLAlchemy/Alembic intake persistence foundation.
 
 ## 3. Source-of-Truth Files
 
@@ -102,11 +102,11 @@ Phase 4 slice 2 wires backend persistence scaffolding into intake: SQLAlchemy me
 - Duplicate detection by email and company domain. Backend local foundation exists; frontend same-session hints added.
 - CRM upsert adapter for contact/deal create-or-update behavior. Phase 2 mock boundary implemented.
 - Slack notification adapter for qualified lead notifications. Phase 2 mock boundary implemented.
-- Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake records implemented; manual retry API planned.
-- Manual retry for failed automation runs. Phase 2 deterministic retry policy exists; persistence foundation added; UI/API action planned after route wiring.
-- Error detail page with payload, validation issue, error type, suggested action. Phase 3 shows validation/error details inline; dedicated page planned later.
+- Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake/retry records implemented.
+- Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; UI action planned later.
+- Error detail page with payload, validation issue, error type, suggested action. Backend failure detail endpoint implemented; dedicated admin page planned later.
 - Admin table with filters by date, source, status, lead owner, and error type. Phase 3 session dashboard filters available local fields; owner/error type filters require persistence/domain fields.
-- Backup/audit records. Planned for persistence phase.
+- Backup/audit records. Persisted for local intake and manual retry events.
 
 ## 8. Assumptions
 

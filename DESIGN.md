@@ -7,14 +7,14 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Scope | Architecture for greenfield portfolio demo |
-| Current phase | Phase 4 slice 2 - persistence-backed local intake |
+| Current phase | Phase 4 slice 3 - persisted failure details and manual retry endpoints |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system remains safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-Phase 4 slice 2 wires the backend persistence foundation into the Phase 2 deterministic backend contract and Phase 3 frontend demo. It keeps the public intake response contract and mock CRM/Slack adapters while persisting local leads, automation runs, attempts, and audit records through explicit database-session dependencies. Real integrations, auth, deployment, and GitHub Actions remain planned later or out of scope.
+Phase 4 slice 3 builds on the persistence-backed intake flow by exposing backend-only failure detail and manual retry endpoints. It keeps the public intake response contract and mock CRM/Slack adapters while persisting local leads, automation runs, attempts, and audit records through explicit database-session dependencies. Real integrations, auth, deployment, and GitHub Actions remain planned later or out of scope.
 
 ## 3. Stack
 
@@ -25,7 +25,7 @@ Phase 4 slice 2 wires the backend persistence foundation into the Phase 2 determ
 | Frontend | Next.js App Router, TypeScript, Tailwind CSS | Planned portfolio UI stack with local route handlers and component tests | Phase 3 |
 | Tables | TanStack Table | Filterable current-session run dashboard | Phase 3 |
 | Frontend tests | Vitest, Testing Library, jsdom | Fast local UI behavior checks | Phase 3 |
-| Persistence | SQLAlchemy, Alembic, PostgreSQL through Docker Compose | Durable relational records for leads, attempts, audit trails | Phase 4 slice 2 local intake wiring |
+| Persistence | SQLAlchemy, Alembic, PostgreSQL through Docker Compose | Durable relational records for leads, attempts, audit trails | Phase 4 local intake, failure detail, and retry wiring |
 | Integrations | CRM adapter and Slack adapter in mock mode by default | Keeps boundaries clear without real external calls | Phase 2+ |
 
 ## 4. Repository Structure
@@ -63,10 +63,11 @@ Phase 4 slice 2 wires the backend persistence foundation into the Phase 2 determ
 
 ## 5. Architecture Flow
 
-Current Phase 4 slice 2 local flow:
+Current Phase 4 slice 3 local flow:
 
 ```text
 Next.js UI -> Next.js local proxy -> FastAPI intake -> validation -> persisted snapshots -> dedupe -> mock CRM -> mock Slack -> persistence repository -> UI session dashboard
+FastAPI failure/retry endpoints -> persistence repository -> stored runs, attempts, and audit records
 ```
 
 ```mermaid
@@ -88,6 +89,8 @@ flowchart LR
     P --> Q["Lead/run/attempt/audit records"]
     Q --> L["Deterministic response"]
     L --> M["Current-session dashboard"]
+    R["Manual retry endpoint"] --> H
+    S["Failure detail endpoint"] --> H
 ```
 
 Persistence data model:
@@ -113,6 +116,10 @@ It returns `201` with `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and nu
 
 The frontend proxy preserves backend status codes and response bodies. If the local backend is unreachable, it returns a local `502` response with a suggested action.
 
+`GET /leads/runs/{run_id}/failure` returns persisted failure detail for a run with a failed attempt. Unknown run IDs return `404`; runs without failed attempts return `409`.
+
+`POST /leads/runs/{run_id}/retry` accepts `failed` and `queued` runs, appends a `retried` attempt, updates the run status to `retried`, and writes a `manual_retry` audit event. Unknown run IDs return `404`; `success` and already-`retried` runs return `409`.
+
 ## 7. Data And State Boundaries
 
 - Backend intake uses an explicit SQLAlchemy session dependency and commits local records after successful workflow processing.
@@ -120,8 +127,10 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - Same-session duplicate hints compare submitted email and company domain in the browser session.
 - Backend `dedupe.status` remains the authoritative backend response and is displayed separately from frontend hints.
 - SQLAlchemy tables now store leads, automation runs, run attempts, and audit records from `POST /leads/intake`.
+- Failure detail responses use a safe allowlist from the stored intake audit payload and omit high-risk freeform fields such as `phone` and `message`.
+- Manual retry records update only local persistence; they do not call CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
 - Repository tests validate persistence behavior with SQLite as a unit-test fallback; PostgreSQL remains the local integration target.
-- Admin run history, owner assignment, failure taxonomies, retry endpoints, and seeded demo data require future API wiring.
+- Admin run history, owner assignment, broader failure taxonomies, and seeded demo data require future API wiring.
 
 ## 8. Adapter Boundaries And Mock Mode
 
@@ -139,4 +148,4 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 | DQ-002 | What qualifies a lead for CRM sync and Slack notification? | Phase 2 default: `lead_score >= 70` |
 | DQ-003 | How strict should company-domain dedupe be? | Email exact match first, company domain possible duplicate second |
 | DQ-004 | Should future persistence tests use SQLite fallback? | Prefer PostgreSQL integration; allow SQLite only if justified |
-| DQ-005 | Should manual retry be a backend endpoint or admin-only local simulation first? | Backend endpoint after persistence/failure records exist |
+| DQ-005 | Should manual retry re-run mock adapters or only record retry intent? | Current default records deterministic local retry intent only |
