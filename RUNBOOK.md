@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 0 - documentation and safety rails |
+| Current phase | Phase 1 - backend foundation |
 
 ## 2. Operating Rules
 
@@ -16,10 +16,9 @@
 - Use PowerShell-compatible commands.
 - Use `-LiteralPath` or quoted paths because the repository path contains spaces and Cyrillic characters.
 - Do not commit or push from Codex.
-- Do not install dependencies in Phase 0.
-- Do not create a real `.env` file in Phase 0.
+- Use `uv` for backend dependency management.
 - Do not call real external APIs without explicit approval.
-- Future commands marked "future" will not work until later phases create the relevant apps and configs.
+- Keep CRM, Slack, Google Sheets, OpenAI, and other external services mocked or absent unless explicitly approved.
 
 ## 3. Enter The Repository
 
@@ -34,11 +33,11 @@ git status --short --branch
 git remote -v
 ```
 
-Expected Phase 0 observation: no commits yet on `main`; no remote output was observed during initial inspection.
+Expected Phase 1 observation: worktree may show backend scaffold and doc changes until the user manually commits.
 
 ## 5. Check Tool Versions
 
-These are version checks only. Do not install missing tools during Phase 0.
+These are version checks. Install only the tools needed for the active phase.
 
 ```powershell
 python --version
@@ -59,25 +58,13 @@ If a command is missing, record it before the phase that needs it.
 - Real secrets must not be committed, logged, printed, or placed in docs.
 - CRM, Slack, and Google Sheets are mocked/optional unless explicitly approved.
 
-Future local copy command, only when an app needs environment variables:
+Optional local copy command, only when local overrides are needed:
 
 ```powershell
 Copy-Item -LiteralPath ".env.example" -Destination ".env"
 ```
 
-## 7. Phase 0 Validation
-
-```powershell
-git diff --check
-git diff --stat
-git status --short
-```
-
-Phase 0 has no application tests, lint, type checks, build, or smoke tests because no app has been scaffolded.
-
-## 8. Future Backend Commands
-
-These commands are planned for Phase 1 and will not work until the backend exists.
+## 7. Phase 1 Backend Commands
 
 ```powershell
 # Install/sync backend dependencies
@@ -89,19 +76,27 @@ uv run pytest
 # Run backend lint
 uv run ruff check .
 
-# Run backend typecheck, after the project chooses mypy or pyright
-uv run mypy .
-# or
-uv run pyright
+# Run backend typecheck
+uv run mypy backend tests
 
-# Start local FastAPI server, once the package exists
-uv run uvicorn <api_package>.main:app --reload
+# Start local FastAPI server
+uv run uvicorn backend.app.main:app --reload
 ```
 
-Future manual backend smoke check:
+Manual backend smoke check while the server is running:
 
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:8000/health"
+```
+
+## 8. Phase 1 Validation
+
+```powershell
+git status --short
+git diff --check
+uv run pytest
+uv run ruff check .
+uv run mypy backend tests
 ```
 
 ## 9. Future Frontend Commands
@@ -154,7 +149,8 @@ Future database health checks should be added here once compose services and nam
 
 | Symptom | Likely cause | Action |
 |---|---|---|
-| Future backend command fails | Backend not scaffolded yet | Wait for Phase 1 |
+| Backend command fails because `uv` is missing | `uv` is not installed or not on PATH | Install `uv` locally, then rerun the command |
+| Health endpoint is unreachable | Uvicorn is not running or port 8000 is in use | Start the server or choose a free port |
 | Future frontend command fails | Frontend not scaffolded yet | Wait for Phase 3 |
 | Docker command fails | Compose file not created yet or Docker not running | Wait for compose phase or start Docker Desktop |
 | Real API credential requested | Live integration is not approved | Use mock mode and placeholders |

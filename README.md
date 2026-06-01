@@ -1,8 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a planned portfolio project for a code-first lead operations workflow. It is currently in Phase 0: source-of-truth documentation and safety rails.
-
-No application code has been scaffolded yet.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 1: backend foundation.
 
 ## Problem
 
@@ -41,14 +39,35 @@ CRM, Slack, and Google Sheets are mocked/optional unless real usage is explicitl
 
 ## Current Status
 
-Phase 0 is documentation-only:
+Phase 1 has started with a minimal local FastAPI backend:
 
-- source-of-truth docs are being normalized;
-- `.gitignore` and `.env.example` are added as safety rails;
-- no FastAPI or Next.js app exists yet;
-- no dependencies are installed;
+- `backend.app.main:app` exposes the FastAPI app object;
+- `GET /health` returns deterministic local service health JSON;
+- configuration reads environment variables with local-safe defaults;
+- backend tests, Ruff, and mypy are configured through `uv`;
+- `.gitignore` and `.env.example` are present as safety rails;
+- no frontend app exists yet;
+- no database models or migrations exist yet;
 - no real APIs are called;
-- no real secrets are created.
+- no real secrets are created or required.
+
+## Local Backend Setup
+
+From the repository root:
+
+```powershell
+uv sync
+uv run pytest
+uv run ruff check .
+uv run mypy backend tests
+uv run uvicorn backend.app.main:app --reload
+```
+
+Manual health smoke check while the server is running:
+
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/health"
+```
 
 ## Roadmap
 
@@ -64,12 +83,14 @@ Phase 0 is documentation-only:
 
 This project defaults to mock/no-real-API mode. Do not add real HubSpot, Slack, Google Sheets, OpenAI, paid API credentials, or live API calls unless explicitly approved. Use `.env.example` for placeholders only and keep real local values in ignored `.env` files.
 
-## Local Phase 0 Validation
+## Local Validation
 
 From the repository root:
 
 ```powershell
 git diff --check
-git diff --stat
 git status --short
+uv run pytest
+uv run ruff check .
+uv run mypy backend tests
 ```

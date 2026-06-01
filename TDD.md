@@ -7,7 +7,7 @@
 | Last updated | 2026-06-01 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 0 - documentation and safety rails |
+| Current phase | Phase 1 - backend foundation |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,17 +20,19 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 0 Test Status
+## 3. Phase 1 Test Status
 
-Phase 0 has no application code. Required validation is documentation/config focused:
+Phase 1 establishes the first backend test surface:
 
 ```powershell
 git diff --check
-git diff --stat
 git status --short
+uv run pytest
+uv run ruff check .
+uv run mypy backend tests
 ```
 
-Automated tests, lint, type checks, builds, and runtime smoke checks begin in later phases after apps are scaffolded.
+Current tests cover the health endpoint and local-safe configuration defaults/overrides. Database, lead intake, dedupe, adapter, retry, and frontend tests remain planned for later phases.
 
 ## 4. Planned Test Matrix
 
@@ -47,10 +49,17 @@ Automated tests, lint, type checks, builds, and runtime smoke checks begin in la
 
 ## 5. Backend Testing Expectations
 
-Phase 1 and Phase 2 should establish:
+Phase 1 establishes:
 
 - pytest test structure.
-- FastAPI test client coverage for health and intake endpoints.
+- FastAPI test client coverage for the health endpoint.
+- Settings tests for local defaults and environment overrides.
+- Ruff linting.
+- mypy type checking.
+
+Phase 2 should add:
+
+- FastAPI test client coverage for intake endpoints.
 - Pydantic validation tests.
 - SQLAlchemy persistence tests.
 - Adapter contract tests for mock CRM and mock Slack.

@@ -6,42 +6,47 @@
 |---|---|
 | Last updated | 2026-06-01 |
 | Status | active draft |
-| Scope | Planned architecture for greenfield portfolio demo |
-| Current phase | Phase 0 - documentation and safety rails |
+| Scope | Architecture for greenfield portfolio demo |
+| Current phase | Phase 1 - backend foundation |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system should remain safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-No application code exists yet. This document defines planned architecture only.
+Phase 1 adds only the backend foundation: app creation, local-safe configuration, and health checking. Persistence, lead processing, adapters, and frontend surfaces remain planned.
 
 ## 3. Planned Stack
 
 | Layer | Choice | Rationale | Phase |
 |---|---|---|---|
 | Backend API | FastAPI, Python 3.12+, Pydantic | Strong validation, clear OpenAPI surface, good portfolio readability | Phase 1 |
-| Persistence | SQLAlchemy, Alembic, PostgreSQL through Docker Compose | Durable relational records for leads, attempts, audit trails | Phase 1 |
-| Backend tooling | `uv`, pytest, Ruff, mypy or pyright | Fast local workflow and quality gates | Phase 1 |
+| Persistence | SQLAlchemy, Alembic, PostgreSQL through Docker Compose | Durable relational records for leads, attempts, audit trails | Phase 2 |
+| Backend tooling | `uv`, pytest, Ruff, mypy | Fast local workflow and quality gates | Phase 1 |
 | Frontend | Next.js, TypeScript, Tailwind CSS, shadcn/ui | Modern portfolio UI with practical admin dashboard patterns | Phase 3 |
 | Tables | TanStack Table | Filterable run dashboard | Phase 3 |
 | Integrations | CRM adapter and Slack adapter in mock mode by default | Keeps boundaries clear without real external calls | Phase 2 |
 
 ## 4. Planned Monorepo Structure
 
-The structure below is planned and must not be scaffolded during Phase 0.
+The structure below reflects the Phase 1 backend foundation and planned future additions.
 
 ```text
 /
+  backend/
+    app/
+      # FastAPI app, local settings, health endpoint
+  tests/
+    # Backend tests
   apps/
-    api/
-      # planned FastAPI app, domain services, adapters, tests
     web/
       # planned Next.js app, demo form, CSV import UI, admin dashboard
   docs/
     # planned diagrams, handoff guide, demo script
   scripts/
     # planned local seed, smoke, and quality-gate helpers
+  pyproject.toml
+  uv.lock
   AGENTS.md
   CONTEXT.md
   DESIGN.md

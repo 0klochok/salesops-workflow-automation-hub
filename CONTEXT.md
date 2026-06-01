@@ -7,7 +7,7 @@
 | Last updated | 2026-06-01 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Phase 0 - repo/source-of-truth normalization |
+| Current phase | Phase 1 - backend foundation |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
@@ -19,7 +19,7 @@ This is a greenfield portfolio project for a code-first sales operations workflo
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
-No application code has been scaffolded yet. Phase 0 is limited to documentation and safety rails.
+The first backend foundation has been scaffolded with a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, and initial pytest coverage. CRM, Slack, Google Sheets, PostgreSQL, and other external services are not required for startup.
 
 ## 3. Source-of-Truth Files
 
@@ -39,10 +39,10 @@ No application code has been scaffolded yet. Phase 0 is limited to documentation
 
 - Codex must not commit or push.
 - User manually commits and pushes.
-- Do not install dependencies in Phase 0.
-- Do not scaffold FastAPI, Next.js, `apps/api`, or `apps/web` in Phase 0.
-- Do not call real external APIs in Phase 0.
-- Do not create real secrets or a real `.env` file.
+- Use `uv` for backend dependencies.
+- Do not scaffold Next.js, `apps/web`, or frontend code in Phase 1.
+- Do not call real external APIs.
+- Do not create real secrets or commit a real `.env` file.
 - Use `.env.example` only for placeholders.
 - Local validation comes before GitHub Actions.
 - GitHub Actions are out of scope until local validation is stable and explicitly requested.
@@ -52,8 +52,8 @@ No application code has been scaffolded yet. Phase 0 is limited to documentation
 
 | Area | Planned choice | Notes |
 |---|---|---|
-| Backend | FastAPI, Python 3.12+, Pydantic, SQLAlchemy, Alembic | Planned for Phase 1 |
-| Backend tooling | `uv`, pytest, Ruff, mypy or pyright | Exact type checker to be finalized in Phase 1 |
+| Backend | FastAPI, Python 3.12+, Pydantic; SQLAlchemy and Alembic planned next | FastAPI foundation added in Phase 1 |
+| Backend tooling | `uv`, pytest, Ruff, mypy | Configured in Phase 1 |
 | Database | PostgreSQL through Docker Compose | SQLite only as a local test fallback if justified |
 | Frontend | Next.js, TypeScript, Tailwind CSS, shadcn/ui, TanStack Table | Planned for Phase 3 |
 | Frontend tooling | `pnpm` | Default for TypeScript/JavaScript |
@@ -63,15 +63,19 @@ No application code has been scaffolded yet. Phase 0 is limited to documentation
 
 ## 6. Planned Repository Shape
 
-Current Phase 0 repository contents are documentation only. Future phases are expected to introduce a monorepo shape similar to:
+Current Phase 1 repository contents include root-level backend foundation code. Future phases may introduce frontend and additional docs/scripts:
 
 ```text
 /
+  backend/
+    app/        # FastAPI app, settings, health endpoint
+  tests/        # backend tests
   apps/
-    api/        # planned FastAPI backend
     web/        # planned Next.js frontend
   docs/         # optional durable docs, diagrams, handoff materials
   scripts/      # optional local validation and seed scripts
+  pyproject.toml
+  uv.lock
   AGENTS.md
   CONTEXT.md
   DESIGN.md
