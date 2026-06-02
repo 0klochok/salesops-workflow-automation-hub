@@ -7,7 +7,7 @@
 | Last updated | 2026-06-02 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 4 slice 6 - read-only run-history contract enrichment |
+| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,9 +20,9 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 4 Slice 6 Test Status
+## 3. Phase 4 Slice 7 Test Status
 
-Phase 4 slice 6 adds backend and frontend tests for additive read-only run-history lead summary fields while preserving existing seed, retry, intake, and admin UI tests.
+Phase 4 slice 7 adds backend and frontend tests for additive read-only selected run detail visibility while preserving existing seed, retry, intake, run-history, and admin UI tests.
 
 Current backend commands:
 
@@ -58,6 +58,9 @@ Current backend intake API tests cover:
 - sanitized latest attempt summaries without raw payload, phone, message, or secret-like material;
 - repeatable demo seed behavior across multiple runs.
 - enriched run-history contract fields from persisted lead records.
+- selected run-detail contract with persisted lead identity, timestamps, all attempts, sanitized intake payload, and allowlisted audit/mock result payloads.
+- unknown run-detail lookups returning `404`.
+- run-detail responses excluding unsafe lead payload fields and unsanitized secret-like text.
 
 Current frontend commands:
 
@@ -82,6 +85,10 @@ Current frontend tests still cover:
 - older run-history rows remain readable if enriched identity fields are absent from a mocked response;
 - empty and error states for `/admin/runs`;
 - absence of retry controls or non-GET run-history fetches.
+- selected run detail fetches through `GET /api/leads/runs/{runId}`;
+- selected run detail loading and error states;
+- read-only detail rendering of lead/run metadata, attempts, safe intake payload, and allowlisted mock/audit summaries;
+- absence of retry/mutation controls in the run detail experience.
 
 Existing backend tests also cover:
 
@@ -102,7 +109,7 @@ Existing backend tests also cover:
 | Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
 | Retry logic tests | Failed/queued run retry, new attempt creation, history preservation, status transitions, rejection of non-retryable runs | Backend unit/API tests | `uv run pytest` |
 | Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run pytest` |
-| Admin run history tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability | Backend API tests and frontend component tests | `uv run pytest`; `pnpm --dir apps/web test -- --run` |
+| Admin run history/detail tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility | Backend API tests and frontend component tests | `uv run pytest`; `pnpm --dir apps/web test -- --run` |
 | Demo seed tests | Success/failed/queued/retried examples, repeatability, local-only deterministic records | Backend API/repository tests | `uv run pytest` |
 | Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test -- --run` |
 | CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test -- --run` |

@@ -130,6 +130,92 @@ def test_repository_run_history_includes_persisted_lead_summary(session: Session
     assert history[0].company_domain == "example.com"
 
 
+def test_repository_run_detail_returns_safe_persisted_fields(session: Session) -> None:
+    lead = LeadIntakeRequest.model_validate(
+        {
+            "email": "Ada@Example.COM",
+            "first_name": "Ada",
+            "last_name": "Lovelace",
+            "company_name": "Example Co",
+            "company_domain": "www.example.com",
+            "source": "demo_form",
+            "job_title": "Revenue token=plain-text-secret",
+            "phone": "555-0100",
+            "message": "Do not expose token=plain-text-secret",
+            "lead_score": 90,
+        }
+    )
+    run_log = LocalRunLog()
+    queued = run_log.create_run(run_id="run_detail", lead_id="lead_detail")
+    failed = run_log.record_failure(
+        queued,
+        error_type=ErrorType.ADAPTER,
+        error_message="Mock CRM adapter failed token=plain-text-secret",
+        suggested_action="Retry after reviewing token=plain-text-secret.",
+    )
+    dedupe = DedupeResult(status=DedupeStatus.UNIQUE)
+    crm = MockCrmAdapter().upsert_lead(lead=lead, lead_id=failed.lead_id, dedupe=dedupe)
+    slack = MockSlackNotifier().notify_qualified_lead(
+        lead=lead,
+        lead_id=failed.lead_id,
+        run_id=failed.run_id,
+    )
+    repository = LeadPersistenceRepository(session)
+
+    repository.record_workflow_result(lead=lead, run=failed, dedupe=dedupe, crm=crm, slack=slack)
+    session.add(
+        AuditRecord(
+            audit_id="audit_detail_manual_retry",
+            lead_id=failed.lead_id,
+            run_id=failed.run_id,
+            event_type="manual_retry",
+            payload={
+                "run_id": failed.run_id,
+                "lead_id": failed.lead_id,
+                "status": "retried",
+                "attempt_number": 3,
+                "attempt_status": "retried",
+                "suggested_action": "Retry locally after checking token=plain-text-secret.",
+                "raw_secret": "token=plain-text-secret",
+            },
+        )
+    )
+    session.commit()
+
+    detail = repository.get_run_detail("run_detail")
+
+    assert detail is not None
+    assert detail.run_id == "run_detail"
+    assert detail.lead_id == "lead_detail"
+    assert detail.email == "ada@example.com"
+    assert detail.company_name == "Example Co"
+    assert detail.company_domain == "example.com"
+    assert detail.run_status is RunStatus.FAILED
+    assert detail.failure_detail_available is True
+    assert [attempt.status for attempt in detail.attempts] == [
+        RunStatus.QUEUED,
+        RunStatus.FAILED,
+    ]
+    assert detail.attempts[1].error_message == "Mock CRM adapter failed token=[redacted]"
+    assert detail.attempts[1].suggested_action == "Retry after reviewing token=[redacted]"
+    assert detail.intake_payload["job_title"] == "Revenue token=[redacted]"
+    assert "phone" not in detail.intake_payload
+    assert "message" not in detail.intake_payload
+    audit_events = {event.event_type: event.payload for event in detail.audit_events}
+    assert set(audit_events) == {
+        "dedupe",
+        "crm_upsert",
+        "slack_notification",
+        "manual_retry",
+    }
+    assert audit_events["crm_upsert"]["adapter"] == "mock_crm"
+    assert audit_events["slack_notification"]["adapter"] == "mock_slack"
+    assert audit_events["manual_retry"]["suggested_action"] == (
+        "Retry locally after checking token=[redacted]"
+    )
+    assert "raw_secret" not in audit_events["manual_retry"]
+
+
 def test_repository_reuses_matched_lead_for_duplicate_email(session: Session) -> None:
     repository = LeadPersistenceRepository(session)
     first_lead = lead_request()

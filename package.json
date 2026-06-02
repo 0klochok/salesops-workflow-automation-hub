@@ -1,7 +1,7 @@
 {
   "name": "salesops-workflow-automation-hub-workspace",
   "private": true,
-  "packageManager": "pnpm@11.3.0",
+  "packageManager": "pnpm@11.5.0",
   "scripts": {
     "frontend:dev": "pnpm --dir apps/web dev",
     "frontend:lint": "pnpm --dir apps/web lint",

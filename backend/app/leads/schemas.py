@@ -155,3 +155,40 @@ class RunHistoryResponse(BaseModel):
     runs: tuple[RunHistoryItem, ...]
 
     model_config = ConfigDict(frozen=True)
+
+
+class RunDetailAttempt(BaseModel):
+    attempt_number: int
+    status: RunStatus
+    error_type: ErrorType | None = None
+    error_message: str | None = None
+    suggested_action: str | None = None
+    created_at: datetime
+
+    model_config = ConfigDict(frozen=True)
+
+
+class RunDetailAuditEvent(BaseModel):
+    event_type: str
+    payload: dict[str, Any]
+    created_at: datetime
+
+    model_config = ConfigDict(frozen=True)
+
+
+class RunDetailResponse(BaseModel):
+    run_id: str
+    lead_id: str
+    email: str
+    company_name: str
+    company_domain: str
+    source: LeadSource
+    run_status: RunStatus
+    created_at: datetime
+    updated_at: datetime
+    attempts: tuple[RunDetailAttempt, ...]
+    failure_detail_available: bool
+    intake_payload: dict[str, Any]
+    audit_events: tuple[RunDetailAuditEvent, ...]
+
+    model_config = ConfigDict(frozen=True)

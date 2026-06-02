@@ -394,6 +394,78 @@ def test_get_run_history_represents_repeatable_demo_seed_data(
     assert "CSV row should demonstrate" not in first_response.text
 
 
+def test_get_run_detail_returns_persisted_safe_detail(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    run_id = persist_workflow_run(
+        session,
+        run_id="run_detail_failed",
+        lead_id="lead_detail_failed",
+        status=RunStatus.FAILED,
+        email="detail.failed@example.com",
+    )
+    session.add(
+        AuditRecord(
+            audit_id="audit_detail_manual_retry_api",
+            lead_id="lead_detail_failed",
+            run_id=run_id,
+            event_type="manual_retry",
+            payload={
+                "run_id": run_id,
+                "lead_id": "lead_detail_failed",
+                "status": "retried",
+                "attempt_number": 3,
+                "attempt_status": "retried",
+                "suggested_action": "Retry locally after checking token=plain-text-secret.",
+                "raw_secret": "token=plain-text-secret",
+            },
+        )
+    )
+    session.commit()
+
+    response = client.get(f"/leads/runs/{run_id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["run_id"] == "run_detail_failed"
+    assert data["lead_id"] == "lead_detail_failed"
+    assert data["email"] == "detail.failed@example.com"
+    assert data["company_name"] == "Example Co"
+    assert data["company_domain"] == "example.com"
+    assert data["source"] == "demo_form"
+    assert data["run_status"] == "failed"
+    assert data["failure_detail_available"] is True
+    assert [attempt["status"] for attempt in data["attempts"]] == ["queued", "failed"]
+    assert data["attempts"][1]["error_type"] == "adapter"
+    assert data["attempts"][1]["error_message"] == "Mock CRM adapter failed token=[redacted]"
+    assert data["attempts"][1]["suggested_action"] == (
+        "Retry after reviewing the mock adapter payload."
+    )
+    assert data["intake_payload"]["email"] == "detail.failed@example.com"
+    assert data["intake_payload"]["company_domain"] == "example.com"
+    assert "phone" not in data["intake_payload"]
+    assert "message" not in data["intake_payload"]
+    audit_events = {event["event_type"]: event["payload"] for event in data["audit_events"]}
+    assert set(audit_events) == {"dedupe", "crm_upsert", "manual_retry"}
+    assert audit_events["crm_upsert"]["adapter"] == "mock_crm"
+    assert audit_events["manual_retry"]["suggested_action"] == (
+        "Retry locally after checking token=[redacted]"
+    )
+    assert "raw_secret" not in audit_events["manual_retry"]
+    assert "plain-text-secret" not in response.text
+    assert '"phone"' not in response.text
+    assert '"message"' not in response.text
+
+
+def test_get_run_detail_rejects_unknown_run(api_context: tuple[TestClient, Session]) -> None:
+    client, _session = api_context
+
+    response = client.get("/leads/runs/run_missing")
+
+    assert response.status_code == 404
+
+
 def test_get_run_failure_returns_persisted_detail_and_sanitized_payload(
     api_context: tuple[TestClient, Session],
 ) -> None:

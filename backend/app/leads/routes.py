@@ -11,6 +11,7 @@ from backend.app.leads.schemas import (
     LeadIntakeRequest,
     LeadIntakeResponse,
     RetryRunResponse,
+    RunDetailResponse,
     RunHistoryResponse,
 )
 from backend.app.leads.service import LeadIntakeService
@@ -49,6 +50,25 @@ def list_run_history(
 ) -> RunHistoryResponse:
     repository = LeadPersistenceRepository(session)
     return RunHistoryResponse(runs=repository.list_run_history())
+
+
+@router.get(
+    "/runs/{run_id}",
+    response_model=RunDetailResponse,
+)
+def get_run_detail(
+    run_id: str,
+    session: Annotated[Session, Depends(get_db_session)],
+) -> RunDetailResponse:
+    repository = LeadPersistenceRepository(session)
+    detail = repository.get_run_detail(run_id)
+    if detail is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Automation run not found",
+        )
+
+    return detail
 
 
 @router.get(

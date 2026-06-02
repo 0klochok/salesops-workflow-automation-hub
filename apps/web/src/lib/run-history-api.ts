@@ -1,10 +1,26 @@
-import type { ApiErrorResponse, RunHistoryResponse } from "./types";
+import type {
+  ApiErrorResponse,
+  RunDetailResponse,
+  RunHistoryResponse,
+} from "./types";
 
 export type RunHistoryApiResult =
   | {
       ok: true;
       status: number;
       data: RunHistoryResponse;
+    }
+  | {
+      ok: false;
+      status: number;
+      error: ApiErrorResponse;
+    };
+
+export type RunDetailApiResult =
+  | {
+      ok: true;
+      status: number;
+      data: RunDetailResponse;
     }
   | {
       ok: false;
@@ -34,6 +50,31 @@ export async function fetchRunHistory(): Promise<RunHistoryApiResult> {
     ok: true,
     status: response.status,
     data: body as RunHistoryResponse,
+  };
+}
+
+export async function fetchRunDetail(runId: string): Promise<RunDetailApiResult> {
+  const response = await fetch(`/api/leads/runs/${encodeURIComponent(runId)}`, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+    },
+    cache: "no-store",
+  });
+  const body = await parseJsonBody(response);
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      error: normalizeErrorBody(body),
+    };
+  }
+
+  return {
+    ok: true,
+    status: response.status,
+    data: body as RunDetailResponse,
   };
 }
 

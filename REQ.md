@@ -7,14 +7,14 @@
 | Last updated | 2026-06-02 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Phase 4 slice 6 - read-only run-history contract enrichment |
+| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief
 
 SalesOps Workflow Automation Hub is a planned portfolio demo for a growth agency with 5 sales reps. It shows how lead intake, validation, deduplication, CRM sync, Slack notification, backup/audit logging, failure inspection, and manual retries can be automated with a code-first system.
 
-Phase 4 slice 6 enriches the read-only backend `/leads/runs` contract and `/admin/runs` UI with persisted lead email and company identity while keeping CRM/Slack behavior deterministic and mock-only.
+Phase 4 slice 7 adds read-only selected run detail visibility to the backend and `/admin/runs` UI while keeping CRM/Slack behavior deterministic and mock-only.
 
 ## 3. Goals
 
@@ -67,8 +67,8 @@ Phase 4 slice 6 enriches the read-only backend `/leads/runs` contract and `/admi
 | FR-006 | The Slack adapter simulates notification for qualified leads. | P0 | Qualified lead produces a mock notification record; unqualified lead does not. | mock foundation implemented |
 | FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | persisted backend run history and read-only frontend view with persisted lead identity implemented |
 | FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | backend endpoint implemented; UI action planned |
-| FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | backend endpoint implemented; dedicated admin page planned |
-| FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type. | read-only persisted run-history UI implemented with lead email/company identity; full persisted filters planned |
+| FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | backend failure endpoint and read-only selected run detail UI implemented; dedicated failure page/action planned |
+| FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type. | read-only persisted run-history UI implemented with lead identity and selected run detail; full persisted filters planned |
 | FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | deterministic local seed command implemented |
 | FR-012 | Portfolio handoff materials explain how real CRM/Slack credentials would be added safely. | P1 | Handoff doc documents credential boundaries without real secrets. | planned |
 

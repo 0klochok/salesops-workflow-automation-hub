@@ -76,6 +76,37 @@ export type RunHistoryResponse = {
   runs: RunHistoryItem[];
 };
 
+export type RunDetailAttempt = {
+  attempt_number: number;
+  status: RunStatus;
+  error_type: ErrorType | null;
+  error_message: string | null;
+  suggested_action: string | null;
+  created_at: string;
+};
+
+export type RunDetailAuditEvent = {
+  event_type: "dedupe" | "crm_upsert" | "slack_notification" | "manual_retry";
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export type RunDetailResponse = {
+  run_id: string;
+  lead_id: string;
+  email: string;
+  company_name: string;
+  company_domain: string;
+  source: LeadSource;
+  run_status: RunStatus;
+  created_at: string;
+  updated_at: string;
+  attempts: RunDetailAttempt[];
+  failure_detail_available: boolean;
+  intake_payload: Record<string, unknown>;
+  audit_events: RunDetailAuditEvent[];
+};
+
 export type ApiErrorDetail = {
   type?: string;
   loc?: Array<string | number>;

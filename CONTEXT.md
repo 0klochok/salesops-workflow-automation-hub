@@ -7,11 +7,11 @@
 | Last updated | 2026-06-02 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Phase 4 slice 6 - read-only run-history contract enrichment |
+| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
-| Git state | `main`; Phase 4 slice 6 worktree changes remain unstaged for user review |
+| Git state | `main`; Phase 4 slice 7 worktree changes remain unstaged for user review |
 
 ## 2. Project Summary
 
@@ -19,11 +19,11 @@ This is a greenfield portfolio project for a code-first sales operations workflo
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
-The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, a persistence-backed local lead intake path, backend-only failure detail/retry endpoints, enriched persisted run history with lead email/company summary fields, and deterministic demo seed data. The frontend includes a read-only `/admin/runs` page that displays persisted run history and lead identity through the local Next.js proxy. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
+The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, a persistence-backed local lead intake path, backend-only failure detail/retry endpoints, enriched persisted run history with lead email/company summary fields, read-only selected run detail, and deterministic demo seed data. The frontend includes a read-only `/admin/runs` page that displays persisted run history, lead identity, and a same-page selected run detail panel through local Next.js GET proxies. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
 
 The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, and a current-session dashboard stored in browser `sessionStorage`.
 
-Phase 4 slice 6 enriches read-only web admin run-history visibility with persisted lead email and company identity on top of the SQLAlchemy/Alembic foundation.
+Phase 4 slice 7 adds read-only web admin selected run detail visibility on top of the SQLAlchemy/Alembic foundation.
 
 ## 3. Source-of-Truth Files
 
@@ -102,10 +102,10 @@ Phase 4 slice 6 enriches read-only web admin run-history visibility with persist
 - Duplicate detection by email and company domain. Backend local foundation exists; frontend same-session hints added.
 - CRM upsert adapter for contact/deal create-or-update behavior. Phase 2 mock boundary implemented.
 - Slack notification adapter for qualified lead notifications. Phase 2 mock boundary implemented.
-- Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake/retry records, run history, seed data, and read-only admin UI implemented.
+- Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake/retry records, run history, selected run detail, seed data, and read-only admin UI implemented.
 - Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; UI action planned later.
-- Error detail page with payload, validation issue, error type, suggested action. Backend failure detail endpoint implemented; dedicated admin page planned later.
-- Admin table with filters by date, source, status, lead owner, and error type. Phase 4 slice 6 has a read-only persisted run-history table with lead email/company identity; full persisted filters and owner/error type support remain future work.
+- Error detail page with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel implemented; dedicated failure page/action planned later.
+- Admin table with filters by date, source, status, lead owner, and error type. Phase 4 slice 7 has a read-only persisted run-history table with lead email/company identity and selected run detail; full persisted filters and owner/error type support remain future work.
 - Backup/audit records. Persisted for local intake and manual retry events.
 
 ## 8. Assumptions

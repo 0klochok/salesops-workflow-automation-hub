@@ -35,6 +35,9 @@ from backend.app.leads.models import (
 from backend.app.leads.schemas import (
     LeadIntakeRequest,
     LeadSource,
+    RunDetailAttempt,
+    RunDetailAuditEvent,
+    RunDetailResponse,
     RunHistoryAttemptSummary,
     RunHistoryItem,
 )
@@ -63,6 +66,25 @@ SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
     flags=re.IGNORECASE,
 )
 RUN_HISTORY_SUMMARY_MAX_LENGTH = 240
+RUN_DETAIL_AUDIT_PAYLOAD_FIELDS: dict[str, tuple[str, ...]] = {
+    "dedupe": ("status", "is_duplicate", "matched_lead_id", "matched_fields"),
+    "crm_upsert": ("adapter", "action", "contact_id", "deal_id"),
+    "slack_notification": (
+        "adapter",
+        "notification_id",
+        "channel",
+        "message_preview",
+        "delivered",
+    ),
+    "manual_retry": (
+        "run_id",
+        "lead_id",
+        "status",
+        "attempt_number",
+        "attempt_status",
+        "suggested_action",
+    ),
+}
 
 
 def sanitize_detail_text(value: str | None) -> str | None:
@@ -93,6 +115,31 @@ def sanitize_intake_payload(payload: dict[str, Any]) -> dict[str, Any]:
         safe_payload[field_name] = (
             sanitize_detail_text(value) if isinstance(value, str) else value
         )
+    return safe_payload
+
+
+def sanitize_audit_payload_value(value: Any) -> Any:
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return sanitize_detail_text(value)
+    if isinstance(value, (list, tuple)):
+        return [sanitize_audit_payload_value(item) for item in value]
+    return sanitize_detail_text(str(value))
+
+
+def sanitize_run_detail_audit_payload(
+    event_type: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    allowed_fields = RUN_DETAIL_AUDIT_PAYLOAD_FIELDS.get(event_type)
+    if allowed_fields is None:
+        return {}
+
+    safe_payload: dict[str, Any] = {}
+    for field_name in allowed_fields:
+        if field_name in payload:
+            safe_payload[field_name] = sanitize_audit_payload_value(payload[field_name])
     return safe_payload
 
 
@@ -261,6 +308,21 @@ class LeadPersistenceRepository:
             .order_by(AutomationRunRecord.created_at.desc(), AutomationRunRecord.run_id.asc())
         ).all()
         return tuple(self._run_history_from_record(record) for record in records)
+
+    def get_run_detail(self, run_id: str) -> RunDetailResponse | None:
+        record = self._session.scalar(
+            select(AutomationRunRecord)
+            .options(
+                selectinload(AutomationRunRecord.lead),
+                selectinload(AutomationRunRecord.attempts),
+                selectinload(AutomationRunRecord.audit_records),
+            )
+            .where(AutomationRunRecord.run_id == run_id)
+        )
+        if record is None:
+            return None
+
+        return self._run_detail_from_record(record)
 
     def record_workflow_result(
         self,
@@ -488,5 +550,58 @@ class LeadPersistenceRepository:
             status=record.status,
             error_type=record.error_type,
             summary=summary,
+            created_at=record.created_at,
+        )
+
+    def _run_detail_from_record(self, record: AutomationRunRecord) -> RunDetailResponse:
+        attempts = tuple(record.attempts)
+        return RunDetailResponse(
+            run_id=record.run_id,
+            lead_id=record.lead_id,
+            email=record.lead.email,
+            company_name=record.lead.company_name,
+            company_domain=record.lead.company_domain,
+            source=record.lead.source,
+            run_status=record.status,
+            created_at=record.created_at,
+            updated_at=record.updated_at,
+            attempts=tuple(self._run_detail_attempt_from_record(attempt) for attempt in attempts),
+            failure_detail_available=any(
+                attempt.status is RunStatus.FAILED for attempt in attempts
+            ),
+            intake_payload=self.get_sanitized_intake_payload(record.run_id),
+            audit_events=tuple(
+                self._run_detail_audit_event_from_record(audit_record)
+                for audit_record in sorted(
+                    record.audit_records,
+                    key=lambda audit_record: (
+                        audit_record.created_at,
+                        audit_record.audit_id,
+                    ),
+                )
+                if audit_record.event_type in RUN_DETAIL_AUDIT_PAYLOAD_FIELDS
+            ),
+        )
+
+    def _run_detail_attempt_from_record(
+        self,
+        record: RunAttemptRecord,
+    ) -> RunDetailAttempt:
+        return RunDetailAttempt(
+            attempt_number=record.attempt_number,
+            status=record.status,
+            error_type=record.error_type,
+            error_message=sanitize_detail_text(record.error_message),
+            suggested_action=sanitize_detail_text(record.suggested_action),
+            created_at=record.created_at,
+        )
+
+    def _run_detail_audit_event_from_record(
+        self,
+        record: AuditRecord,
+    ) -> RunDetailAuditEvent:
+        return RunDetailAuditEvent(
+            event_type=record.event_type,
+            payload=sanitize_run_detail_audit_payload(record.event_type, record.payload),
             created_at=record.created_at,
         )

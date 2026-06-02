@@ -7,14 +7,14 @@
 | Last updated | 2026-06-02 |
 | Status | active draft |
 | Scope | Architecture for greenfield portfolio demo |
-| Current phase | Phase 4 slice 6 - read-only run-history contract enrichment |
+| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system remains safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-Phase 4 slice 6 builds on the persisted run-history backend and read-only `/admin/runs` page by adding safe persisted lead summary fields to the run-history contract. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries while using existing local lead, automation run, attempt, and audit tables. Real integrations, auth, retry UI, deployment, and GitHub Actions remain planned later or out of scope.
+Phase 4 slice 7 builds on the persisted run-history backend and read-only `/admin/runs` page by adding selected run detail visibility. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries while using existing local lead, automation run, attempt, and audit tables. Real integrations, auth, retry UI, deployment, and GitHub Actions remain planned later or out of scope.
 
 ## 3. Stack
 
@@ -63,12 +63,12 @@ Phase 4 slice 6 builds on the persisted run-history backend and read-only `/admi
 
 ## 5. Architecture Flow
 
-Current Phase 4 slice 6 local flow:
+Current Phase 4 slice 7 local flow:
 
 ```text
 Next.js UI -> Next.js local proxy -> FastAPI intake -> validation -> persisted snapshots -> dedupe -> mock CRM -> mock Slack -> persistence repository -> UI session dashboard
 FastAPI failure/retry endpoints -> persistence repository -> stored runs, attempts, and audit records
-Next.js admin UI -> Next.js local run-history proxy -> FastAPI run-history endpoint -> persistence repository -> stored run list with latest attempt summaries
+Next.js admin UI -> Next.js local run-history/detail proxies -> FastAPI run-history/detail endpoints -> persistence repository -> stored run list and selected run detail
 Demo seed command -> SQLAlchemy session -> deterministic local run records
 ```
 
@@ -96,6 +96,9 @@ flowchart LR
     V["Admin run-history UI"] --> W["GET /api/leads/runs"]
     W --> T["Run-history endpoint"]
     T --> H
+    V --> X["GET /api/leads/runs/[runId]"]
+    X --> Y["Run-detail endpoint"]
+    Y --> H
     U["Demo seed command"] --> P
 ```
 
@@ -128,6 +131,8 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 
 `GET /leads/runs` returns persisted run history sorted by `automation_runs.created_at` descending and `automation_runs.run_id` ascending for timestamp ties. Each item includes `run_id`, `lead_id`, persisted lead `email`, `company_name`, `company_domain`, `source`, `run_status`, `created_at`, `updated_at`, `attempt_count`, `failure_detail_available`, and a sanitized `latest_attempt` summary. It does not expose raw audit payloads, phone, message, or unrestricted error detail.
 
+`GET /leads/runs/{run_id}` returns one persisted run detail. Unknown run IDs return `404`. The response includes persisted lead identity, source, status, timestamps, all persisted attempts, failure-detail availability, a sanitized intake payload allowlist, and allowlisted audit/mock result payloads for dedupe, CRM upsert, Slack notification, and manual retry records. It does not expose raw audit payloads, phone, message, secrets, retry actions, mutation behavior, or real external calls.
+
 ## 7. Data And State Boundaries
 
 - Backend intake uses an explicit SQLAlchemy session dependency and commits local records after successful workflow processing.
@@ -138,7 +143,8 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - Failure detail responses use a safe allowlist from the stored intake audit payload and omit high-risk freeform fields such as `phone` and `message`.
 - Manual retry records update only local persistence; they do not call CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
 - Run-history responses are built from persisted runs, leads, and attempts and expose only a safe summary contract with stored email and company identity.
-- The read-only frontend admin run-history UI consumes the persisted run list through a local Next.js proxy, displays the stored lead summary, and exposes no retry or mutation action.
+- Run-detail responses are built from existing persisted run, lead, attempt, and audit records with allowlisted/sanitized payload fields only.
+- The read-only frontend admin run-history UI consumes the persisted run list and selected run detail through local Next.js GET proxies, displays stored lead/run/audit summaries, and exposes no retry or mutation action.
 - Demo seed data writes fixed synthetic success, failed, queued, and retried runs through local SQLAlchemy records only.
 - Repository tests validate persistence behavior with SQLite as a unit-test fallback; PostgreSQL remains the local integration target.
 - Owner assignment, broader failure taxonomies, frontend persisted admin wiring, and admin filters beyond the current contract require future API/UI work.

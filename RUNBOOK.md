@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 slice 6 - read-only run-history contract enrichment |
+| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
 
 ## 2. Operating Rules
 
@@ -115,6 +115,19 @@ Expected behavior:
 - each run includes `lead_id`, persisted lead `email`, `company_name`, `company_domain`, source, current status, created/updated timestamps, attempt count, latest attempt summary, and whether failure detail is available;
 - raw audit payloads, phone, message, and unrestricted error detail are not returned.
 
+Manual persisted run-detail lookup for a known run:
+
+```powershell
+$runId = "run_demo_failed"
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/$runId"
+```
+
+Expected behavior:
+
+- unknown run IDs return `404`;
+- the selected run includes stored lead identity, source, status, timestamps, all persisted attempts, failure-detail availability, sanitized intake payload, and allowlisted audit/mock result data;
+- raw audit payloads, phone, message, secrets, retry buttons/actions, mutation behavior, real CRM, Slack, Google Sheets, OpenAI, paid APIs, and external webhooks are not returned or called.
+
 Manual failure detail lookup for a known failed run:
 
 ```powershell
@@ -211,11 +224,23 @@ In a second PowerShell window, call the persisted run-history endpoint:
 Invoke-RestMethod -Uri "http://127.0.0.1:8010/leads/runs"
 ```
 
-Expected result:
+Expected run-history result:
 
 - HTTP 200 with sanitized run-history JSON;
 - records include stored lead identity, run metadata, and latest attempt summaries;
 - raw audit payloads, phone, message, and unrestricted error fields are not returned.
+
+Call a selected persisted run detail:
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:8010/leads/runs/run_demo_failed"
+```
+
+Expected run-detail result:
+
+- HTTP 200 with the selected run, all persisted attempts, sanitized intake payload, and allowlisted audit/mock result data;
+- unknown IDs return HTTP 404;
+- raw audit payloads, phone, message, secrets, retry actions, mutation behavior, and real external calls are absent.
 
 ## 8. Frontend Commands
 
@@ -228,7 +253,7 @@ pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
 
-The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake` and read-only persisted run history through `GET /api/leads/runs` to the FastAPI backend.
+The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, read-only persisted run history through `GET /api/leads/runs`, and selected run detail through `GET /api/leads/runs/[runId]` to the FastAPI backend.
 
 ## 9. Manual Frontend Verification
 
@@ -274,7 +299,9 @@ Test read-only persisted admin run history:
 2. Open `http://localhost:3000/admin/runs`.
 3. Confirm the page shows persisted seeded runs such as `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
 4. Confirm the page shows persisted lead email/company identity, run status, source, timestamps, attempt count, latest attempt summary, and failure-detail availability.
-5. Confirm no retry button or mutation action is visible.
+5. Select `View details` for a run such as `run_demo_failed`.
+6. Confirm the same-page detail panel shows the selected run, persisted attempts, sanitized intake payload, and allowlisted mock/audit result data.
+7. Confirm no retry button, mutation action, edit action, delete action, or real external API call is visible or triggered.
 
 ## 10. Phase 3 Validation
 
@@ -297,7 +324,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 6 Validation
+## 10.1 Phase 4 Slice 7 Validation
 
 ```powershell
 uv sync --frozen
@@ -314,7 +341,7 @@ git diff --check
 Test-Path -LiteralPath ".github\workflows"
 ```
 
-Live Docker/PostgreSQL and manual HTTP smoke checks require starting containers and local servers. For Phase 4 slice 4, Codex skipped live Docker/PostgreSQL and manual HTTP smoke checks to avoid mutating Docker volumes or starting long-running local services. Static `docker compose config`, offline `uv run alembic upgrade head --sql`, and automated SQLite-backed API/repository tests remain required.
+Live Docker/PostgreSQL and manual HTTP smoke checks require starting containers and local servers. If they cannot be run on a machine, record the reason in `STATE.md`; static `docker compose config`, automated API/repository tests, and frontend tests remain required.
 
 ## 11. Docker/PostgreSQL Validation
 
