@@ -61,6 +61,7 @@ export type RunHistoryItem = {
   run_id: string;
   lead_id: string;
   email?: string;
+  lead_name?: string;
   company_name?: string;
   company_domain?: string;
   source: LeadSource;

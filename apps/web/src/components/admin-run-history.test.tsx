@@ -4,12 +4,36 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AdminRunHistory } from "./admin-run-history";
 
+const navigationMock = vi.hoisted(() => {
+  let searchParams = new URLSearchParams();
+  return {
+    getSearchParams: () => searchParams,
+    replace: vi.fn((href: string) => {
+      const nextUrl = new URL(href, "http://localhost");
+      searchParams = nextUrl.searchParams;
+    }),
+    reset: () => {
+      searchParams = new URLSearchParams();
+    },
+    setSearchParams: (queryString: string) => {
+      searchParams = new URLSearchParams(queryString);
+    },
+  };
+});
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/runs",
+  useRouter: () => ({ replace: navigationMock.replace }),
+  useSearchParams: () => navigationMock.getSearchParams(),
+}));
+
 const runHistoryResponse = {
   runs: [
     {
       run_id: "run_demo_failed",
       lead_id: "lead_demo_failed",
       email: "failed.demo@example.com",
+      lead_name: "Marcus Rivera",
       company_name: "Pipeline Labs",
       company_domain: "pipelinelabs.example",
       source: "demo_form",
@@ -30,6 +54,7 @@ const runHistoryResponse = {
       run_id: "run_demo_success",
       lead_id: "lead_demo_success",
       email: "success.demo@example.com",
+      lead_name: "Sofia Chen",
       company_name: "Northstar Growth",
       company_domain: "northstar.example",
       source: "csv_upload",
@@ -43,6 +68,27 @@ const runHistoryResponse = {
         error_type: null,
         summary: "Run completed successfully.",
         created_at: "2026-06-01T09:01:00Z",
+      },
+      failure_detail_available: false,
+    },
+    {
+      run_id: "run_demo_queued",
+      lead_id: "lead_demo_queued",
+      email: "queued.demo@example.com",
+      lead_name: "Noah Kim",
+      company_name: "LaunchWorks",
+      company_domain: "launchworks.example",
+      source: "manual",
+      run_status: "queued",
+      created_at: "2026-05-31T08:00:00Z",
+      updated_at: "2026-05-31T08:00:00Z",
+      attempt_count: 1,
+      latest_attempt: {
+        attempt_number: 1,
+        status: "queued",
+        error_type: null,
+        summary: "Latest attempt recorded as queued.",
+        created_at: "2026-05-31T08:00:00Z",
       },
       failure_detail_available: false,
     },
@@ -136,6 +182,8 @@ const runDetailResponse = {
 
 describe("AdminRunHistory", () => {
   beforeEach(() => {
+    navigationMock.reset();
+    navigationMock.replace.mockClear();
     vi.stubGlobal("fetch", vi.fn());
   });
 
@@ -151,6 +199,7 @@ describe("AdminRunHistory", () => {
     expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
     expect(screen.getByText("lead_demo_failed")).toBeInTheDocument();
     expect(screen.getByText("failed.demo@example.com")).toBeInTheDocument();
+    expect(screen.getByText("Marcus Rivera")).toBeInTheDocument();
     expect(screen.getByText("Pipeline Labs")).toBeInTheDocument();
     expect(screen.getByText("pipelinelabs.example")).toBeInTheDocument();
     expect(screen.getByText("demo_form")).toBeInTheDocument();
@@ -161,8 +210,11 @@ describe("AdminRunHistory", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("run_demo_success")).toBeInTheDocument();
     expect(screen.getByText("success.demo@example.com")).toBeInTheDocument();
+    expect(screen.getByText("Sofia Chen")).toBeInTheDocument();
     expect(screen.getByText("Northstar Growth")).toBeInTheDocument();
     expect(screen.getByText("csv_upload")).toBeInTheDocument();
+    expect(screen.getByText("run_demo_queued")).toBeInTheDocument();
+    expect(screen.getByText("Noah Kim")).toBeInTheDocument();
     expect(
       screen.getByText("Select a run to inspect read-only details.")
     ).toBeInTheDocument();
@@ -183,6 +235,65 @@ describe("AdminRunHistory", () => {
     expect(
       await screen.findByText("No persisted automation runs yet.")
     ).toBeInTheDocument();
+  });
+
+  it("filters persisted runs by status and preserves the status in the URL", async () => {
+    const user = userEvent.setup();
+    mockFetch(runHistoryResponse, 200);
+    const { rerender } = render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Status"), "success");
+
+    expect(navigationMock.replace).toHaveBeenLastCalledWith(
+      "/admin/runs?status=success",
+      { scroll: false }
+    );
+    rerender(<AdminRunHistory />);
+
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("run_demo_success")).toBeInTheDocument();
+    expect(table.queryByText("run_demo_failed")).not.toBeInTheDocument();
+    expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
+  it("filters persisted runs by run, lead, and company search text", async () => {
+    navigationMock.setSearchParams("q=marcus");
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    expect(screen.getByText("Marcus Rivera")).toBeInTheDocument();
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.queryByText("run_demo_success")).not.toBeInTheDocument();
+    expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
+  it("filters persisted runs by created date range", async () => {
+    navigationMock.setSearchParams("from=2026-06-01&to=2026-06-01");
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    expect(screen.getByText("run_demo_success")).toBeInTheDocument();
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
+  it("renders a distinct empty state for filters with no matches", async () => {
+    navigationMock.setSearchParams("q=no-local-match");
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    expect(
+      await screen.findByText("No runs match these filters.")
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /reset filters/i })
+    ).toHaveLength(2);
   });
 
   it("keeps older run-history rows readable when enriched identity is absent", async () => {
@@ -257,6 +368,64 @@ describe("AdminRunHistory", () => {
     });
     expect(fetchMock.mock.calls.every((call) => call[1]?.method === "GET")).toBe(
       true
+    );
+  });
+
+  it("loads selected run details after filtering the run list", async () => {
+    navigationMock.setSearchParams("status=failed");
+    const user = userEvent.setup();
+    const fetchMock = mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+    const { rerender } = render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.queryByText("run_demo_success")).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+    expect(navigationMock.replace).toHaveBeenLastCalledWith(
+      "/admin/runs?status=failed&runId=run_demo_failed",
+      { scroll: false }
+    );
+
+    rerender(<AdminRunHistory />);
+
+    await screen.findByText("Run detail");
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "run_demo_failed"
+    );
+    expect(fetchMock.mock.calls.every((call) => call[1]?.method === "GET")).toBe(
+      true
+    );
+  });
+
+  it("keeps selected read-only detail visible when filters hide the selected run", async () => {
+    navigationMock.setSearchParams("status=success&runId=run_demo_failed");
+    mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_success")).toBeInTheDocument();
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.queryByText("run_demo_failed")).not.toBeInTheDocument();
+    expect(
+      await screen.findByText(/outside the current filtered list/i)
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "run_demo_failed"
     );
   });
 

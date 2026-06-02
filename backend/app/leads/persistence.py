@@ -118,6 +118,10 @@ def sanitize_intake_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return safe_payload
 
 
+def format_lead_name(first_name: str, last_name: str) -> str:
+    return sanitize_detail_text(f"{first_name} {last_name}") or ""
+
+
 def sanitize_audit_payload_value(value: Any) -> Any:
     if value is None or isinstance(value, (bool, int, float)):
         return value
@@ -520,6 +524,7 @@ class LeadPersistenceRepository:
             run_id=record.run_id,
             lead_id=record.lead_id,
             email=record.lead.email,
+            lead_name=format_lead_name(record.lead.first_name, record.lead.last_name),
             company_name=record.lead.company_name,
             company_domain=record.lead.company_domain,
             source=record.lead.source,

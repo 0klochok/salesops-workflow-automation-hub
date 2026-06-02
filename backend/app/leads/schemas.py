@@ -138,6 +138,7 @@ class RunHistoryItem(BaseModel):
     run_id: str
     lead_id: str
     email: str
+    lead_name: str
     company_name: str
     company_domain: str
     source: LeadSource

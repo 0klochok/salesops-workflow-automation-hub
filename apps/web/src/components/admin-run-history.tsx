@@ -1,10 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { formatApiError } from "@/lib/format";
 import { fetchRunDetail, fetchRunHistory } from "@/lib/run-history-api";
 import type {
@@ -25,11 +36,77 @@ type DetailState =
   | { status: "loaded"; detail: RunDetailResponse }
   | { status: "error"; runId: string; error: ApiErrorResponse };
 
+type FilterStatus = RunStatus | "all";
+
+type RunHistoryFilters = {
+  status: FilterStatus;
+  query: string;
+  fromDate: string;
+  toDate: string;
+};
+
+type SearchParamReader = {
+  get(name: string): string | null;
+  toString(): string;
+};
+
+const RUN_STATUS_OPTIONS = [
+  "queued",
+  "success",
+  "failed",
+  "retried",
+] as const satisfies readonly RunStatus[];
+
+const RUN_STATUS_SET = new Set<string>(RUN_STATUS_OPTIONS);
+
 export function AdminRunHistory() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [detailState, setDetailState] = useState<DetailState>({
     status: "idle",
   });
+  const lastRequestedRunIdRef = useRef<string | null>(null);
+  const filters = useMemo(
+    () => parseRunHistoryFilters(searchParams),
+    [searchParams]
+  );
+  const selectedRunId = useMemo(
+    () => parseSelectedRunId(searchParams),
+    [searchParams]
+  );
+  const hasActiveFilters = hasRunHistoryFilters(filters);
+
+  function replaceQuery(nextFilters: RunHistoryFilters, nextRunId: string | null) {
+    const queryString = buildRunHistoryQueryString(nextFilters, nextRunId);
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
+      scroll: false,
+    });
+  }
+
+  const loadRunDetail = useCallback(async (runId: string) => {
+    lastRequestedRunIdRef.current = runId;
+    setDetailState({ status: "loading", runId });
+
+    try {
+      const result = await fetchRunDetail(runId);
+      if (result.ok) {
+        setDetailState({ status: "loaded", detail: result.data });
+      } else {
+        setDetailState({ status: "error", runId, error: result.error });
+      }
+    } catch {
+      setDetailState({
+        status: "error",
+        runId,
+        error: {
+          detail: "Unable to load persisted run detail from the local proxy.",
+          suggested_action: "Confirm the Next.js dev server is running.",
+        },
+      });
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,27 +143,52 @@ export function AdminRunHistory() {
     };
   }, []);
 
-  async function handleSelectRun(runId: string) {
-    setDetailState({ status: "loading", runId });
-
-    try {
-      const result = await fetchRunDetail(runId);
-      if (result.ok) {
-        setDetailState({ status: "loaded", detail: result.data });
-      } else {
-        setDetailState({ status: "error", runId, error: result.error });
-      }
-    } catch {
-      setDetailState({
-        status: "error",
-        runId,
-        error: {
-          detail: "Unable to load persisted run detail from the local proxy.",
-          suggested_action: "Confirm the Next.js dev server is running.",
-        },
-      });
+  useEffect(() => {
+    const canonicalQueryString = buildRunHistoryQueryString(filters, selectedRunId);
+    const currentQueryString = searchParams.toString();
+    if (canonicalQueryString !== currentQueryString) {
+      router.replace(
+        canonicalQueryString ? `${pathname}?${canonicalQueryString}` : pathname,
+        { scroll: false }
+      );
     }
+  }, [filters, pathname, router, searchParams, selectedRunId]);
+
+  useEffect(() => {
+    if (!selectedRunId) {
+      lastRequestedRunIdRef.current = null;
+      setDetailState({ status: "idle" });
+      return;
+    }
+
+    if (lastRequestedRunIdRef.current === selectedRunId) {
+      return;
+    }
+
+    void loadRunDetail(selectedRunId);
+  }, [loadRunDetail, selectedRunId]);
+
+  function handleFilterChange(nextFilters: RunHistoryFilters) {
+    replaceQuery(nextFilters, selectedRunId);
   }
+
+  function handleResetFilters() {
+    replaceQuery(emptyRunHistoryFilters(), selectedRunId);
+  }
+
+  function handleSelectRun(runId: string) {
+    replaceQuery(filters, runId);
+    void loadRunDetail(runId);
+  }
+
+  const visibleRuns =
+    state.status === "loaded" ? filterRunHistory(state.runs, filters) : [];
+  const selectedRunIsFilteredOut =
+    state.status === "loaded" &&
+    Boolean(selectedRunId) &&
+    hasActiveFilters &&
+    state.runs.some((run) => run.run_id === selectedRunId) &&
+    !visibleRuns.some((run) => run.run_id === selectedRunId);
 
   return (
     <main className="min-h-screen">
@@ -115,7 +217,22 @@ export function AdminRunHistory() {
         {state.status === "error" ? <ErrorState error={state.error} /> : null}
         {state.status === "loaded" ? (
           <>
-            <RunHistoryTable runs={state.runs} onSelectRun={handleSelectRun} />
+            <RunHistoryFiltersForm
+              filters={filters}
+              hasActiveFilters={hasActiveFilters}
+              onChange={handleFilterChange}
+              onReset={handleResetFilters}
+            />
+            <RunHistoryTable
+              hasActiveFilters={hasActiveFilters}
+              onResetFilters={handleResetFilters}
+              onSelectRun={handleSelectRun}
+              runs={visibleRuns}
+              totalRunCount={state.runs.length}
+            />
+            {selectedRunIsFilteredOut ? (
+              <FilteredOutSelectionNotice runId={selectedRunId ?? ""} />
+            ) : null}
             <RunDetailPanel state={detailState} />
           </>
         ) : null}
@@ -147,14 +264,130 @@ function ErrorState({ error }: { error: ApiErrorResponse }) {
   );
 }
 
+function RunHistoryFiltersForm({
+  filters,
+  hasActiveFilters,
+  onChange,
+  onReset,
+}: {
+  filters: RunHistoryFilters;
+  hasActiveFilters: boolean;
+  onChange: (filters: RunHistoryFilters) => void;
+  onReset: () => void;
+}) {
+  return (
+    <section
+      aria-label="Run history filters"
+      className="rounded-lg border border-border bg-surface p-4 shadow-panel"
+    >
+      <div className="grid gap-4 md:grid-cols-[minmax(12rem,0.8fr)_minmax(16rem,1.4fr)_repeat(2,minmax(10rem,0.7fr))_auto] md:items-end">
+        <div className="space-y-2">
+          <Label htmlFor="run-status-filter">Status</Label>
+          <Select
+            id="run-status-filter"
+            value={filters.status}
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                status: normalizeStatusFilter(event.target.value),
+              })
+            }
+          >
+            <option value="all">All statuses</option>
+            {RUN_STATUS_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="run-search-filter">Search</Label>
+          <Input
+            id="run-search-filter"
+            placeholder="Run ID, email, lead name, company"
+            type="search"
+            value={filters.query}
+            onChange={(event) =>
+              onChange({ ...filters, query: event.target.value })
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="run-from-filter">From</Label>
+          <Input
+            id="run-from-filter"
+            type="date"
+            value={filters.fromDate}
+            onChange={(event) =>
+              onChange({ ...filters, fromDate: event.target.value })
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="run-to-filter">To</Label>
+          <Input
+            id="run-to-filter"
+            type="date"
+            value={filters.toDate}
+            onChange={(event) =>
+              onChange({ ...filters, toDate: event.target.value })
+            }
+          />
+        </div>
+
+        <Button
+          className="h-10 px-3"
+          disabled={!hasActiveFilters}
+          onClick={onReset}
+          type="button"
+          variant="secondary"
+        >
+          Reset filters
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 function RunHistoryTable({
+  hasActiveFilters,
   runs,
+  totalRunCount,
+  onResetFilters,
   onSelectRun,
 }: {
+  hasActiveFilters: boolean;
   runs: RunHistoryItem[];
+  totalRunCount: number;
+  onResetFilters: () => void;
   onSelectRun: (runId: string) => void;
 }) {
   if (runs.length === 0) {
+    if (hasActiveFilters) {
+      return (
+        <section className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground">
+          <h2 className="text-base font-semibold text-foreground">
+            No runs match these filters.
+          </h2>
+          <p className="mt-2">
+            Clear the current filters to return to the full persisted run list.
+          </p>
+          <Button
+            className="mt-4 h-9 px-3"
+            onClick={onResetFilters}
+            type="button"
+            variant="secondary"
+          >
+            Reset filters
+          </Button>
+        </section>
+      );
+    }
+
     return (
       <section className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground">
         No persisted automation runs yet.
@@ -168,6 +401,7 @@ function RunHistoryTable({
         <h2 className="text-base font-semibold">Persisted runs</h2>
         <p className="text-sm text-muted-foreground">
           {runs.length} automation {runs.length === 1 ? "run" : "runs"} shown.
+          {hasActiveFilters ? ` ${totalRunCount} total persisted.` : ""}
         </p>
       </div>
 
@@ -217,6 +451,7 @@ function RunHistoryTable({
                   <p className="break-all font-medium">
                     {run.email ?? run.lead_id}
                   </p>
+                  {run.lead_name ? <p>{run.lead_name}</p> : null}
                   {run.company_name ? <p>{run.company_name}</p> : null}
                   {run.company_domain ? (
                     <p className="break-all text-muted-foreground">
@@ -277,6 +512,19 @@ function RunHistoryTable({
           </tbody>
         </table>
       </div>
+    </section>
+  );
+}
+
+function FilteredOutSelectionNotice({ runId }: { runId: string }) {
+  return (
+    <section
+      className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+      role="status"
+    >
+      Selected run <span className="break-all font-medium">{runId}</span> is
+      outside the current filtered list. The read-only detail panel remains
+      available below.
     </section>
   );
 }
@@ -496,6 +744,123 @@ function formatPayloadValue(value: unknown): string {
     return String(value);
   }
   return JSON.stringify(value);
+}
+
+function emptyRunHistoryFilters(): RunHistoryFilters {
+  return {
+    status: "all",
+    query: "",
+    fromDate: "",
+    toDate: "",
+  };
+}
+
+function parseRunHistoryFilters(searchParams: SearchParamReader): RunHistoryFilters {
+  return {
+    status: normalizeStatusFilter(searchParams.get("status") ?? "all"),
+    query: (searchParams.get("q") ?? "").trim(),
+    fromDate: normalizeDateFilter(searchParams.get("from")),
+    toDate: normalizeDateFilter(searchParams.get("to")),
+  };
+}
+
+function parseSelectedRunId(searchParams: SearchParamReader): string | null {
+  const runId = (searchParams.get("runId") ?? "").trim();
+  return runId || null;
+}
+
+function normalizeStatusFilter(value: string): FilterStatus {
+  return RUN_STATUS_SET.has(value) ? (value as RunStatus) : "all";
+}
+
+function normalizeDateFilter(value: string | null): string {
+  return value && isDateOnlyValue(value) ? value : "";
+}
+
+function isDateOnlyValue(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function hasRunHistoryFilters(filters: RunHistoryFilters): boolean {
+  return (
+    filters.status !== "all" ||
+    filters.query !== "" ||
+    filters.fromDate !== "" ||
+    filters.toDate !== ""
+  );
+}
+
+function buildRunHistoryQueryString(
+  filters: RunHistoryFilters,
+  selectedRunId: string | null
+): string {
+  const params = new URLSearchParams();
+  if (filters.status !== "all") {
+    params.set("status", filters.status);
+  }
+  const query = filters.query.trim();
+  if (query) {
+    params.set("q", query);
+  }
+  if (normalizeDateFilter(filters.fromDate)) {
+    params.set("from", filters.fromDate);
+  }
+  if (normalizeDateFilter(filters.toDate)) {
+    params.set("to", filters.toDate);
+  }
+  if (selectedRunId) {
+    params.set("runId", selectedRunId);
+  }
+  return params.toString();
+}
+
+function filterRunHistory(
+  runs: RunHistoryItem[],
+  filters: RunHistoryFilters
+): RunHistoryItem[] {
+  const searchTerm = filters.query.trim().toLowerCase();
+
+  return runs.filter((run) => {
+    if (filters.status !== "all" && run.run_status !== filters.status) {
+      return false;
+    }
+
+    const createdDate = run.created_at.slice(0, 10);
+    if (filters.fromDate && createdDate < filters.fromDate) {
+      return false;
+    }
+    if (filters.toDate && createdDate > filters.toDate) {
+      return false;
+    }
+
+    if (!searchTerm) {
+      return true;
+    }
+
+    return searchableRunFields(run).some((value) =>
+      value.toLowerCase().includes(searchTerm)
+    );
+  });
+}
+
+function searchableRunFields(run: RunHistoryItem): string[] {
+  return [
+    run.run_id,
+    run.email,
+    run.lead_name,
+    run.company_name,
+    run.company_domain,
+  ].filter((value): value is string => Boolean(value));
 }
 
 function formatTimestamp(value: string): string {

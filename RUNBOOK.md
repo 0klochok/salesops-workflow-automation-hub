@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
+| Current phase | Phase 4 slice 8 - read-only persisted admin run filters |
 
 ## 2. Operating Rules
 
@@ -112,7 +112,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs"
 Expected behavior:
 
 - runs are loaded from local persistence and sorted by created timestamp descending, then run ID ascending;
-- each run includes `lead_id`, persisted lead `email`, `company_name`, `company_domain`, source, current status, created/updated timestamps, attempt count, latest attempt summary, and whether failure detail is available;
+- each run includes `lead_id`, persisted lead `email`, `lead_name`, `company_name`, `company_domain`, source, current status, created/updated timestamps, attempt count, latest attempt summary, and whether failure detail is available;
 - raw audit payloads, phone, message, and unrestricted error detail are not returned.
 
 Manual persisted run-detail lookup for a known run:
@@ -298,10 +298,16 @@ Test read-only persisted admin run history:
 1. Seed local demo data with `uv run python -m backend.app.leads.demo_seed` after PostgreSQL is running and migrations are applied.
 2. Open `http://localhost:3000/admin/runs`.
 3. Confirm the page shows persisted seeded runs such as `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
-4. Confirm the page shows persisted lead email/company identity, run status, source, timestamps, attempt count, latest attempt summary, and failure-detail availability.
-5. Select `View details` for a run such as `run_demo_failed`.
-6. Confirm the same-page detail panel shows the selected run, persisted attempts, sanitized intake payload, and allowlisted mock/audit result data.
-7. Confirm no retry button, mutation action, edit action, delete action, or real external API call is visible or triggered.
+4. Confirm the page shows persisted lead email/name/company identity, run status, source, timestamps, attempt count, latest attempt summary, and failure-detail availability.
+5. Apply the status filter `failed` and confirm only `run_demo_failed` remains visible while the URL includes `status=failed`.
+6. Clear the status filter, search for `atlas`, and confirm only `run_demo_retried` remains visible while the URL includes `q=atlas`.
+7. Search for a value with no matches and confirm the filtered empty state says no runs match the filters.
+8. Apply date filters such as `from=2026-06-01` and `to=2026-06-01` and confirm the date values persist in the URL.
+9. Select `View details` for a run such as `run_demo_failed`.
+10. Confirm the same-page detail panel shows the selected run, persisted attempts, sanitized intake payload, and allowlisted mock/audit result data.
+11. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the read-only detail visible.
+12. Confirm the browser Network tab shows only local GET requests such as `/api/leads/runs` and `/api/leads/runs/run_demo_failed`.
+13. Confirm no retry button, mutation action, edit action, delete action, POST, PUT, PATCH, DELETE, real external API call, or webhook is visible or triggered.
 
 ## 10. Phase 3 Validation
 
@@ -324,7 +330,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 7 Validation
+## 10.1 Phase 4 Slice 8 Validation
 
 ```powershell
 uv sync --frozen
@@ -339,9 +345,29 @@ pnpm --dir apps/web build
 docker compose config
 git diff --check
 Test-Path -LiteralPath ".github\workflows"
+git diff --cached --name-only
 ```
 
 Live Docker/PostgreSQL and manual HTTP smoke checks require starting containers and local servers. If they cannot be run on a machine, record the reason in `STATE.md`; static `docker compose config`, automated API/repository tests, and frontend tests remain required.
+
+For a local filtered run-history smoke with temporary ports:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level info
+```
+
+In another PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered runs load, apply status/search/date filters, confirm the filtered empty state, select a run detail after filtering, and verify browser requests remain local GET-only.
 
 ## 11. Docker/PostgreSQL Validation
 

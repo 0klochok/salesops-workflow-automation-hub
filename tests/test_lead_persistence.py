@@ -30,12 +30,14 @@ def session() -> Iterator[Session]:
 def lead_request(
     email: str = "Ada@Example.COM",
     company_domain: str = "www.example.com",
+    first_name: str = "Ada",
+    last_name: str = "Lovelace",
 ) -> LeadIntakeRequest:
     return LeadIntakeRequest.model_validate(
         {
             "email": email,
-            "first_name": "Ada",
-            "last_name": "Lovelace",
+            "first_name": first_name,
+            "last_name": last_name,
             "company_name": "Example Co",
             "company_domain": company_domain,
             "source": "demo_form",
@@ -111,7 +113,10 @@ def test_repository_snapshots_feed_persistent_dedupe(session: Session) -> None:
 
 
 def test_repository_run_history_includes_persisted_lead_summary(session: Session) -> None:
-    lead = lead_request()
+    lead = lead_request(
+        first_name="Ada token=plain-text-secret",
+        last_name="Lovelace",
+    )
     run_log = LocalRunLog()
     run = run_log.record_success(run_log.create_run(run_id="run_demo", lead_id="lead_demo"))
     dedupe = DedupeResult(status=DedupeStatus.UNIQUE)
@@ -126,6 +131,7 @@ def test_repository_run_history_includes_persisted_lead_summary(session: Session
     assert len(history) == 1
     assert history[0].lead_id == "lead_demo"
     assert history[0].email == "ada@example.com"
+    assert history[0].lead_name == "Ada token=[redacted] Lovelace"
     assert history[0].company_name == "Example Co"
     assert history[0].company_domain == "example.com"
 
