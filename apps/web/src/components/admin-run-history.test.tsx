@@ -8,6 +8,9 @@ const runHistoryResponse = {
     {
       run_id: "run_demo_failed",
       lead_id: "lead_demo_failed",
+      email: "failed.demo@example.com",
+      company_name: "Pipeline Labs",
+      company_domain: "pipelinelabs.example",
       source: "demo_form",
       run_status: "failed",
       created_at: "2026-06-01T10:00:00Z",
@@ -25,6 +28,9 @@ const runHistoryResponse = {
     {
       run_id: "run_demo_success",
       lead_id: "lead_demo_success",
+      email: "success.demo@example.com",
+      company_name: "Northstar Growth",
+      company_domain: "northstar.example",
       source: "csv_upload",
       run_status: "success",
       created_at: "2026-06-01T09:00:00Z",
@@ -58,6 +64,9 @@ describe("AdminRunHistory", () => {
 
     expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
     expect(screen.getByText("lead_demo_failed")).toBeInTheDocument();
+    expect(screen.getByText("failed.demo@example.com")).toBeInTheDocument();
+    expect(screen.getByText("Pipeline Labs")).toBeInTheDocument();
+    expect(screen.getByText("pipelinelabs.example")).toBeInTheDocument();
     expect(screen.getByText("demo_form")).toBeInTheDocument();
     expect(screen.getByText("Attempt 2: failed")).toBeInTheDocument();
     expect(screen.getByText("Error type: adapter")).toBeInTheDocument();
@@ -65,6 +74,8 @@ describe("AdminRunHistory", () => {
       screen.getByText("Mock CRM adapter failed token=[redacted]")
     ).toBeInTheDocument();
     expect(screen.getByText("run_demo_success")).toBeInTheDocument();
+    expect(screen.getByText("success.demo@example.com")).toBeInTheDocument();
+    expect(screen.getByText("Northstar Growth")).toBeInTheDocument();
     expect(screen.getByText("csv_upload")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs", {
       method: "GET",
@@ -83,6 +94,33 @@ describe("AdminRunHistory", () => {
     expect(
       await screen.findByText("No persisted automation runs yet.")
     ).toBeInTheDocument();
+  });
+
+  it("keeps older run-history rows readable when enriched identity is absent", async () => {
+    mockFetch(
+      {
+        runs: [
+          {
+            run_id: "run_legacy",
+            lead_id: "lead_legacy",
+            source: "manual",
+            run_status: "queued",
+            created_at: "2026-06-01T11:00:00Z",
+            updated_at: "2026-06-01T11:00:00Z",
+            attempt_count: 1,
+            latest_attempt: null,
+            failure_detail_available: false,
+          },
+        ],
+      },
+      200
+    );
+
+    render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_legacy")).toBeInTheDocument();
+    expect(screen.getAllByText("lead_legacy")).toHaveLength(2);
+    expect(screen.getByText("manual")).toBeInTheDocument();
   });
 
   it("renders an error state when the run-history request fails", async () => {

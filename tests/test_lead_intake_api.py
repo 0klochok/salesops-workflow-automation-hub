@@ -335,6 +335,9 @@ def test_get_run_history_returns_persisted_records_sorted_and_sanitized(
     assert [run["run_id"] for run in runs] == ["run_sort_c", "run_sort_a", "run_sort_b"]
     failed_run = runs[1]
     assert failed_run["lead_id"] == "lead_sort_a"
+    assert failed_run["email"] == "sort.a@example.com"
+    assert failed_run["company_name"] == "Example Co"
+    assert failed_run["company_domain"] == "example.com"
     assert failed_run["source"] == "demo_form"
     assert failed_run["run_status"] == "failed"
     assert failed_run["attempt_count"] == 2
@@ -379,6 +382,9 @@ def test_get_run_history_represents_repeatable_demo_seed_data(
     assert len(runs) == 4
     assert {run["run_status"] for run in runs} == {"success", "failed", "queued", "retried"}
     assert by_run_id["run_demo_success"]["failure_detail_available"] is False
+    assert by_run_id["run_demo_success"]["email"] == "success.demo@example.com"
+    assert by_run_id["run_demo_success"]["company_name"] == "Northstar Growth"
+    assert by_run_id["run_demo_success"]["company_domain"] == "northstar.example"
     assert by_run_id["run_demo_queued"]["failure_detail_available"] is False
     assert by_run_id["run_demo_failed"]["failure_detail_available"] is True
     assert by_run_id["run_demo_retried"]["failure_detail_available"] is True

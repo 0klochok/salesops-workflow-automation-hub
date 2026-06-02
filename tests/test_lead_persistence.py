@@ -110,6 +110,26 @@ def test_repository_snapshots_feed_persistent_dedupe(session: Session) -> None:
     assert duplicate_result.matched_fields == ("email",)
 
 
+def test_repository_run_history_includes_persisted_lead_summary(session: Session) -> None:
+    lead = lead_request()
+    run_log = LocalRunLog()
+    run = run_log.record_success(run_log.create_run(run_id="run_demo", lead_id="lead_demo"))
+    dedupe = DedupeResult(status=DedupeStatus.UNIQUE)
+    crm = MockCrmAdapter().upsert_lead(lead=lead, lead_id=run.lead_id, dedupe=dedupe)
+    repository = LeadPersistenceRepository(session)
+
+    repository.record_workflow_result(lead=lead, run=run, dedupe=dedupe, crm=crm, slack=None)
+    session.commit()
+
+    history = repository.list_run_history()
+
+    assert len(history) == 1
+    assert history[0].lead_id == "lead_demo"
+    assert history[0].email == "ada@example.com"
+    assert history[0].company_name == "Example Co"
+    assert history[0].company_domain == "example.com"
+
+
 def test_repository_reuses_matched_lead_for_duplicate_email(session: Session) -> None:
     repository = LeadPersistenceRepository(session)
     first_lead = lead_request()

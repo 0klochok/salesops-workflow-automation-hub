@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Phase 4 slice 5 is implemented as a read-only web admin run-history UI after the Phase 4 slice 4 persisted run-history and demo seed work. It keeps mock CRM/Slack behavior and the intake response contract unchanged, uses existing backend run-history data without a migration, and does not add auth, retry UI, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Phase 4 slice 6 is implemented as read-only run-history contract enrichment after the Phase 4 slice 5 admin UI work. It keeps mock CRM/Slack behavior and the intake response contract unchanged, uses existing persisted lead data without a migration, and does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -69,6 +69,14 @@ Phase 4 slice 5 is implemented as a read-only web admin run-history UI after the
 - Added frontend types and component tests for run rows, empty state, error state, and no retry/mutation action.
 - Kept backend workflow behavior, retry mutation behavior, real integrations, deployment, and GitHub Actions unchanged.
 
+## 4.6 Completed Phase 4 Slice 6 Work Items
+
+- Enriched `GET /leads/runs` with persisted lead `email`, `company_name`, and `company_domain`.
+- Updated `/admin/runs` to display stored lead email/company identity while preserving read-only behavior.
+- Added backend repository/API coverage for the enriched contract.
+- Added frontend component coverage for enriched rows, older-response fallback, and no retry/mutation behavior.
+- Reused existing lead/run persistence; no migration, background worker, real integration, retry UI, deployment, or GitHub Actions were added.
+
 ## 5. Quality Gate Expectations By Phase
 
 | Gate | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
@@ -86,7 +94,7 @@ Phase 4 slice 5 is implemented as a read-only web admin run-history UI after the
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Phase 4 slice 5 changes are limited to read-only frontend run-history UI, local proxy/types/tests, and source-of-truth docs.
+- Phase 4 slice 6 changes are limited to additive read-only run-history contract fields, UI display/types/tests, and source-of-truth docs.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.

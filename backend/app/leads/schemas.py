@@ -137,6 +137,9 @@ class RunHistoryAttemptSummary(BaseModel):
 class RunHistoryItem(BaseModel):
     run_id: str
     lead_id: str
+    email: str
+    company_name: str
+    company_domain: str
     source: LeadSource
     run_status: RunStatus
     created_at: datetime

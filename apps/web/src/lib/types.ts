@@ -60,6 +60,9 @@ export type RunHistoryAttemptSummary = {
 export type RunHistoryItem = {
   run_id: string;
   lead_id: string;
+  email?: string;
+  company_name?: string;
+  company_domain?: string;
   source: LeadSource;
   run_status: RunStatus;
   created_at: string;

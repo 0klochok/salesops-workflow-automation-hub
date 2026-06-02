@@ -457,6 +457,9 @@ class LeadPersistenceRepository:
         return RunHistoryItem(
             run_id=record.run_id,
             lead_id=record.lead_id,
+            email=record.lead.email,
+            company_name=record.lead.company_name,
+            company_domain=record.lead.company_domain,
             source=record.lead.source,
             run_status=record.status,
             created_at=record.created_at,

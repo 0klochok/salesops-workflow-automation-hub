@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 5: a read-only admin run-history UI on top of persisted local demo data.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 6: read-only run-history contract enrichment for persisted local demo data.
 
 ## Problem
 
@@ -43,8 +43,8 @@ The current local demo includes:
 - Phase 4 wires SQLAlchemy/Alembic persistence into `POST /leads/intake` through explicit DB session dependencies;
 - local intake now records leads, automation runs, attempts, and audit records while keeping CRM and Slack mocked by default;
 - backend-only failure detail and manual retry endpoints are available for persisted workflow runs;
-- a persisted run-history endpoint returns stored runs with latest attempt summaries;
-- `/admin/runs` provides a read-only frontend view of persisted run history through `GET /api/leads/runs`;
+- a persisted run-history endpoint returns stored runs with persisted lead email, company name, company domain, and latest attempt summaries;
+- `/admin/runs` provides a read-only frontend view of persisted run history and lead identity through `GET /api/leads/runs`;
 - deterministic local demo seed data can create success, failed, queued, and retried workflow runs;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
@@ -99,6 +99,8 @@ Manual persisted run-history smoke check while the server is running:
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs"
 ```
 
+Expected run rows include persisted `lead_id`, `email`, `company_name`, `company_domain`, source, status, timestamps, attempt count, latest attempt summary, and failure-detail availability. The response remains read-only and does not expose phone, message, raw audit payloads, or unrestricted error detail.
+
 ## Local Frontend Setup
 
 From the repository root:
@@ -108,7 +110,7 @@ pnpm install
 pnpm --dir apps/web dev
 ```
 
-Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs`. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
+Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs` and shows persisted lead email/company identity from the backend contract. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
 
 Frontend validation:
 

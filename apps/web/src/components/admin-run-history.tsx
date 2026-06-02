@@ -128,13 +128,14 @@ function RunHistoryTable({ runs }: { runs: RunHistoryItem[] }) {
       </div>
 
       <div className="overflow-x-auto" data-testid="run-history-table">
-        <table className="w-full min-w-[960px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border">
               <th className="px-3 py-2 font-semibold text-muted-foreground">
                 Created
               </th>
               <th className="px-3 py-2 font-semibold text-muted-foreground">Run</th>
+              <th className="px-3 py-2 font-semibold text-muted-foreground">Lead</th>
               <th className="px-3 py-2 font-semibold text-muted-foreground">
                 Status
               </th>
@@ -164,6 +165,17 @@ function RunHistoryTable({ runs }: { runs: RunHistoryItem[] }) {
                 <td className="px-3 py-3">
                   <p className="break-all font-medium">{run.run_id}</p>
                   <p className="break-all text-muted-foreground">{run.lead_id}</p>
+                </td>
+                <td className="px-3 py-3">
+                  <p className="break-all font-medium">
+                    {run.email ?? run.lead_id}
+                  </p>
+                  {run.company_name ? <p>{run.company_name}</p> : null}
+                  {run.company_domain ? (
+                    <p className="break-all text-muted-foreground">
+                      {run.company_domain}
+                    </p>
+                  ) : null}
                 </td>
                 <td className="px-3 py-3">
                   <Badge tone={runStatusTone(run.run_status)}>

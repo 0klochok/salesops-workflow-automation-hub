@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-01 |
+| Last updated | 2026-06-02 |
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 slice 5 - read-only web admin run-history UI |
+| Current phase | Phase 4 slice 6 - read-only run-history contract enrichment |
 
 ## 2. Operating Rules
 
@@ -112,7 +112,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs"
 Expected behavior:
 
 - runs are loaded from local persistence and sorted by created timestamp descending, then run ID ascending;
-- each run includes source, current status, created/updated timestamps, attempt count, latest attempt summary, and whether failure detail is available;
+- each run includes `lead_id`, persisted lead `email`, `company_name`, `company_domain`, source, current status, created/updated timestamps, attempt count, latest attempt summary, and whether failure detail is available;
 - raw audit payloads, phone, message, and unrestricted error detail are not returned.
 
 Manual failure detail lookup for a known failed run:
@@ -214,7 +214,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8010/leads/runs"
 Expected result:
 
 - HTTP 200 with sanitized run-history JSON;
-- records include stored run metadata and latest attempt summaries;
+- records include stored lead identity, run metadata, and latest attempt summaries;
 - raw audit payloads, phone, message, and unrestricted error fields are not returned.
 
 ## 8. Frontend Commands
@@ -273,7 +273,7 @@ Test read-only persisted admin run history:
 1. Seed local demo data with `uv run python -m backend.app.leads.demo_seed` after PostgreSQL is running and migrations are applied.
 2. Open `http://localhost:3000/admin/runs`.
 3. Confirm the page shows persisted seeded runs such as `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
-4. Confirm the page shows run status, source, timestamps, attempt count, latest attempt summary, and failure-detail availability.
+4. Confirm the page shows persisted lead email/company identity, run status, source, timestamps, attempt count, latest attempt summary, and failure-detail availability.
 5. Confirm no retry button or mutation action is visible.
 
 ## 10. Phase 3 Validation
@@ -297,22 +297,20 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 5 Validation
+## 10.1 Phase 4 Slice 6 Validation
 
 ```powershell
-pnpm install --frozen-lockfile
 uv sync --frozen
 uv run pytest
 uv run ruff check .
 uv run mypy backend tests
+pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
 pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 docker compose config
-uv run alembic upgrade head --sql
 git diff --check
-git diff --cached --name-only
 Test-Path -LiteralPath ".github\workflows"
 ```
 

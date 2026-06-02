@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-01 |
+| Last updated | 2026-06-02 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 4 slice 5 - read-only web admin run-history UI |
+| Current phase | Phase 4 slice 6 - read-only run-history contract enrichment |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,9 +20,9 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 4 Slice 5 Test Status
+## 3. Phase 4 Slice 6 Test Status
 
-Phase 4 slice 5 adds frontend tests for a read-only admin run-history UI while preserving existing backend API, seed, retry, and intake tests.
+Phase 4 slice 6 adds backend and frontend tests for additive read-only run-history lead summary fields while preserving existing seed, retry, intake, and admin UI tests.
 
 Current backend commands:
 
@@ -39,6 +39,7 @@ Current backend persistence tests cover:
 - stored lead snapshots feeding the existing dedupe service;
 - duplicate-email storage reusing the matched persisted lead id;
 - failed-run error details and suggested actions.
+- run-history summaries include persisted lead email, company name, and company domain.
 - deterministic demo seed data is exercised through the API test database.
 
 Current backend intake API tests cover:
@@ -56,6 +57,7 @@ Current backend intake API tests cover:
 - correct failure-detail availability for failed and retried runs;
 - sanitized latest attempt summaries without raw payload, phone, message, or secret-like material;
 - repeatable demo seed behavior across multiple runs.
+- enriched run-history contract fields from persisted lead records.
 
 Current frontend commands:
 
@@ -76,6 +78,8 @@ Current frontend tests still cover:
 - same-session duplicate hint behavior;
 - dashboard filtering by source.
 - read-only persisted run-history rows;
+- persisted lead email/company identity in run-history rows;
+- older run-history rows remain readable if enriched identity fields are absent from a mocked response;
 - empty and error states for `/admin/runs`;
 - absence of retry controls or non-GET run-history fetches.
 
