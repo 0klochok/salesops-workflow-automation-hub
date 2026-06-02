@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Phase 4 slice 4 is implemented as persisted admin run history and deterministic demo seed data after the Phase 4 slice 3 failure detail and manual retry work. It keeps mock CRM/Slack behavior and the intake response contract unchanged, uses existing persistence tables without a migration, and does not add auth, frontend admin persistence wiring, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Phase 4 slice 5 is implemented as a read-only web admin run-history UI after the Phase 4 slice 4 persisted run-history and demo seed work. It keeps mock CRM/Slack behavior and the intake response contract unchanged, uses existing backend run-history data without a migration, and does not add auth, retry UI, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -62,6 +62,13 @@ Phase 4 slice 4 is implemented as persisted admin run history and deterministic 
 - Reused existing persistence tables; no Alembic migration was needed.
 - Kept frontend persisted admin wiring, owner assignment, broad admin filters, and portfolio polish documents for later slices.
 
+## 4.5 Completed Phase 4 Slice 5 Work Items
+
+- Added a read-only `/admin/runs` frontend route for persisted run history.
+- Added `GET /api/leads/runs` as a local Next.js proxy to the FastAPI run-history endpoint.
+- Added frontend types and component tests for run rows, empty state, error state, and no retry/mutation action.
+- Kept backend workflow behavior, retry mutation behavior, real integrations, deployment, and GitHub Actions unchanged.
+
 ## 5. Quality Gate Expectations By Phase
 
 | Gate | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
@@ -79,7 +86,7 @@ Phase 4 slice 4 is implemented as persisted admin run history and deterministic 
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Phase 4 slice 4 changes are limited to backend run history, deterministic demo seed data, local tests, and source-of-truth docs.
+- Phase 4 slice 5 changes are limited to read-only frontend run-history UI, local proxy/types/tests, and source-of-truth docs.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.
@@ -87,4 +94,4 @@ Phase 4 slice 4 is implemented as persisted admin run history and deterministic 
 
 ## 7. Recommended Next Phase
 
-Continue Phase 4 by wiring a minimal admin UI to persisted run history, then add portfolio polish docs.
+Continue Phase 4 with portfolio polish docs such as architecture diagram, before/after workflow explanation, safe credentials handoff notes, and demo script/video plan.

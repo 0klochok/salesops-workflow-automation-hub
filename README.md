@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 4: persisted admin run history and deterministic demo seed data after the Phase 4 failure detail and retry slice.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 5: a read-only admin run-history UI on top of persisted local demo data.
 
 ## Problem
 
@@ -43,7 +43,8 @@ The current local demo includes:
 - Phase 4 wires SQLAlchemy/Alembic persistence into `POST /leads/intake` through explicit DB session dependencies;
 - local intake now records leads, automation runs, attempts, and audit records while keeping CRM and Slack mocked by default;
 - backend-only failure detail and manual retry endpoints are available for persisted workflow runs;
-- a backend-only persisted run-history endpoint returns stored runs with latest attempt summaries;
+- a persisted run-history endpoint returns stored runs with latest attempt summaries;
+- `/admin/runs` provides a read-only frontend view of persisted run history through `GET /api/leads/runs`;
 - deterministic local demo seed data can create success, failed, queued, and retried workflow runs;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
@@ -107,7 +108,7 @@ pnpm install
 pnpm --dir apps/web dev
 ```
 
-Open `http://localhost:3000` after the frontend server starts. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
+Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs`. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
 
 Frontend validation:
 

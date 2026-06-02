@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   flexRender,
   getCoreRowModel,
@@ -173,11 +174,19 @@ export function LeadDemo() {
     <main className="min-h-screen">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-2 border-b border-border pb-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-normal text-foreground">
-              SalesOps Workflow Automation Hub
-            </h1>
-            <Badge>Phase 3 local demo</Badge>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-semibold tracking-normal text-foreground">
+                SalesOps Workflow Automation Hub
+              </h1>
+              <Badge>Phase 3 local demo</Badge>
+            </div>
+            <Link
+              className="inline-flex min-h-9 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel hover:bg-muted"
+              href="/admin/runs"
+            >
+              Admin runs
+            </Link>
           </div>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
             Submit synthetic leads to the deterministic backend, import local CSV

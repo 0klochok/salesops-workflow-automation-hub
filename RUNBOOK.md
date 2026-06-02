@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 slice 4 - persisted admin run history and demo seed data |
+| Current phase | Phase 4 slice 5 - read-only web admin run-history UI |
 
 ## 2. Operating Rules
 
@@ -228,7 +228,7 @@ pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
 
-The frontend app runs at `http://localhost:3000` by default and proxies local intake submissions through `POST /api/leads/intake` to the FastAPI backend.
+The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake` and read-only persisted run history through `GET /api/leads/runs` to the FastAPI backend.
 
 ## 9. Manual Frontend Verification
 
@@ -268,6 +268,14 @@ grace@example.com,Grace,Hopper,Example Co,example.com,88,Director
 3. Confirm the import summary reports one local submission and the dashboard includes the CSV row with source `csv_upload`.
 4. Remove a required CSV value and import again to verify row-level validation errors appear before invalid rows are submitted.
 
+Test read-only persisted admin run history:
+
+1. Seed local demo data with `uv run python -m backend.app.leads.demo_seed` after PostgreSQL is running and migrations are applied.
+2. Open `http://localhost:3000/admin/runs`.
+3. Confirm the page shows persisted seeded runs such as `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
+4. Confirm the page shows run status, source, timestamps, attempt count, latest attempt summary, and failure-detail availability.
+5. Confirm no retry button or mutation action is visible.
+
 ## 10. Phase 3 Validation
 
 ```powershell
@@ -289,7 +297,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 4 Validation
+## 10.1 Phase 4 Slice 5 Validation
 
 ```powershell
 pnpm install --frozen-lockfile

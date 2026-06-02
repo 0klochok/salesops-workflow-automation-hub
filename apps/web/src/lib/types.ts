@@ -2,6 +2,10 @@ export const leadSources = ["demo_form", "csv_upload", "manual"] as const;
 
 export type LeadSource = (typeof leadSources)[number];
 
+export type RunStatus = "queued" | "success" | "failed" | "retried";
+
+export type ErrorType = "validation" | "adapter" | "unknown";
+
 export type LeadIntakeRequest = {
   email: string;
   first_name: string;
@@ -23,7 +27,7 @@ export type DedupeStatus =
 export type LeadIntakeResponse = {
   lead_id: string;
   run_id: string;
-  run_status: "queued" | "success" | "failed" | "retried";
+  run_status: RunStatus;
   dedupe: {
     status: DedupeStatus;
     is_duplicate: boolean;
@@ -43,6 +47,30 @@ export type LeadIntakeResponse = {
     message_preview: string;
     delivered: boolean;
   } | null;
+};
+
+export type RunHistoryAttemptSummary = {
+  attempt_number: number;
+  status: RunStatus;
+  error_type: ErrorType | null;
+  summary: string;
+  created_at: string;
+};
+
+export type RunHistoryItem = {
+  run_id: string;
+  lead_id: string;
+  source: LeadSource;
+  run_status: RunStatus;
+  created_at: string;
+  updated_at: string;
+  attempt_count: number;
+  latest_attempt: RunHistoryAttemptSummary | null;
+  failure_detail_available: boolean;
+};
+
+export type RunHistoryResponse = {
+  runs: RunHistoryItem[];
 };
 
 export type ApiErrorDetail = {
