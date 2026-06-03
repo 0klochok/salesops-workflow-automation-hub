@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 slice 8 - read-only persisted admin run filters |
+| Current phase | Phase 4 Slice 9 - portfolio demo and handoff polish |
 
 ## 2. Operating Rules
 
@@ -253,7 +253,7 @@ pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
 
-The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, read-only persisted run history through `GET /api/leads/runs`, and selected run detail through `GET /api/leads/runs/[runId]` to the FastAPI backend.
+The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, read-only persisted run history through `GET /api/leads/runs`, and selected run detail through `GET /api/leads/runs/[runId]` to the FastAPI backend. The `/admin/runs` screen stays read-only and does not trigger retry, edit, delete, submit, resubmit, rerun, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` actions.
 
 ## 9. Manual Frontend Verification
 
@@ -330,7 +330,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 8 Validation
+## 10.1 Phase 4 Slice 9 Validation
 
 ```powershell
 uv sync --frozen
@@ -350,7 +350,7 @@ git diff --cached --name-only
 
 Live Docker/PostgreSQL and manual HTTP smoke checks require starting containers and local servers. If they cannot be run on a machine, record the reason in `STATE.md`; static `docker compose config`, automated API/repository tests, and frontend tests remain required.
 
-For a local filtered run-history smoke with temporary ports:
+For a local portfolio demo smoke with temporary ports:
 
 ```powershell
 docker compose up -d postgres
@@ -367,7 +367,7 @@ $env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
 pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
 
-Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered runs load, apply status/search/date filters, confirm the filtered empty state, select a run detail after filtering, and verify browser requests remain local GET-only.
+Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/search/date filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
 
 ## 11. Docker/PostgreSQL Validation
 

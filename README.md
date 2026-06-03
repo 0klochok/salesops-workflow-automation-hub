@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 slice 7: read-only admin run detail visibility for persisted local demo data.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 Slice 9: portfolio demo and handoff polish for a local-only persisted run-history demo.
 
 ## Problem
 
@@ -45,9 +45,51 @@ The current local demo includes:
 - backend-only failure detail and manual retry endpoints are available for persisted workflow runs;
 - a persisted run-history endpoint returns stored runs with persisted lead email, company name, company domain, and latest attempt summaries;
 - a persisted run-detail endpoint returns one selected run with sanitized attempts, intake payload, and allowlisted mock/audit result data;
-- `/admin/runs` provides a read-only frontend view of persisted run history and selected run detail through local `GET` proxy routes;
+- `/admin/runs` provides a read-only frontend view of persisted run history, URL-preserved filters, selected run detail, filtered empty state, and selected-run-hidden notice through local `GET` proxy routes;
 - deterministic local demo seed data can create success, failed, queued, and retried workflow runs;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
+
+## Current Portfolio Demo Path
+
+The current demo shows how a growth agency lead can move from intake to an auditable admin view without manual CRM or Slack copy/paste work. It demonstrates local lead validation, persisted dedupe evidence, mock CRM upsert results, mock Slack notification decisions, run attempts, status history, and read-only admin inspection.
+
+The demo is local-only and mock-safe. CRM and Slack behavior is simulated by local adapters, seeded data is synthetic, and the app should not call real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, webhooks, or external services unless explicitly approved for a later phase.
+
+Current data flow:
+
+```text
+lead form or CSV upload
+-> POST /api/leads/intake
+-> POST /leads/intake
+-> persisted lead, automation run, attempt, and audit records
+-> GET /leads/runs and GET /leads/runs/{run_id}
+-> GET /api/leads/runs and GET /api/leads/runs/[runId]
+-> /admin/runs
+```
+
+To prepare reviewer data locally, start PostgreSQL, apply migrations, and run the deterministic seed command:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+```
+
+Start the backend and frontend in separate PowerShell windows:
+
+```powershell
+uv run uvicorn backend.app.main:app --reload
+```
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
+pnpm --dir apps/web dev
+```
+
+Open `http://localhost:3000/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/search/date filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
+
+The admin screen is read-only. Interacting with `/admin/runs` should only issue local `GET` requests for run history and selected run detail through the Next.js API proxy. It must not expose retry, edit, delete, submit, resubmit, rerun, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
 
 ## Local Backend Setup
 
