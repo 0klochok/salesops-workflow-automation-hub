@@ -7,14 +7,14 @@
 | Last updated | 2026-06-03 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Repair Slice 11 - public portfolio readiness review completion |
+| Current phase | Slice 12 - read-only owner and error-type admin filters |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief
 
 SalesOps Workflow Automation Hub is a planned portfolio demo for a growth agency with 5 sales reps. It shows how lead intake, validation, deduplication, CRM sync, Slack notification, backup/audit logging, failure inspection, and manual retries can be automated with a code-first system.
 
-Repair Slice 11 completes the public portfolio readiness review for the local read-only `/admin/runs` demo while keeping CRM/Slack behavior deterministic and mock-only.
+Slice 12 adds read-only owner and error-type filters to the local `/admin/runs` demo while keeping CRM/Slack behavior deterministic and mock-only.
 
 ## 3. Goals
 
@@ -68,7 +68,7 @@ Repair Slice 11 completes the public portfolio readiness review for the local re
 | FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | persisted backend run history and read-only frontend view with persisted lead identity implemented |
 | FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | backend endpoint implemented; UI action planned |
 | FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | backend failure endpoint and read-only selected run detail UI implemented; dedicated failure page/action planned |
-| FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type. | read-only persisted run-history UI implemented with lead identity and selected run detail; full persisted filters planned |
+| FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type. | read-only persisted run-history UI implemented with status, search, date, derived owner, and run-level error-type filters; source-specific admin filter remains planned |
 | FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | deterministic local seed command implemented |
 | FR-012 | Portfolio handoff materials explain how real CRM/Slack credentials would be added safely. | P1 | Handoff doc documents credential boundaries without real secrets. | planned |
 
@@ -114,7 +114,7 @@ Repair Slice 11 completes the public portfolio readiness review for the local re
 |---|---|---|---|
 | Q-001 | Real HubSpot vs mock CRM? | Live integration scope and security posture | Mock CRM |
 | Q-002 | Real Slack webhook vs mock/log notifier? | Notification adapter behavior | Mock/log notifier |
-| Q-003 | Owner assignment rule? | Lead routing and admin filters | TBD |
+| Q-003 | Owner assignment rule? | Lead routing and admin filters | Current admin demo derives owner from `lead_id`; real routing remains TBD |
 | Q-004 | Qualification rule? | CRM/Slack trigger behavior | Phase 2 default: `lead_score >= 70` |
 | Q-005 | Dedupe edge cases? | False positives/negatives | Email first, domain second |
 | Q-006 | PostgreSQL-only tests vs SQLite unit fallback? | Test speed and fidelity | PostgreSQL integration, SQLite only if justified |

@@ -20,6 +20,7 @@ import { formatApiError } from "@/lib/format";
 import { fetchRunDetail, fetchRunHistory } from "@/lib/run-history-api";
 import type {
   ApiErrorResponse,
+  ErrorType,
   RunDetailResponse,
   RunHistoryItem,
   RunStatus,
@@ -37,9 +38,12 @@ type DetailState =
   | { status: "error"; runId: string; error: ApiErrorResponse };
 
 type FilterStatus = RunStatus | "all";
+type FilterErrorType = ErrorType | "all";
 
 type RunHistoryFilters = {
   status: FilterStatus;
+  owner: string;
+  errorType: FilterErrorType;
   query: string;
   fromDate: string;
   toDate: string;
@@ -58,6 +62,12 @@ const RUN_STATUS_OPTIONS = [
 ] as const satisfies readonly RunStatus[];
 
 const RUN_STATUS_SET = new Set<string>(RUN_STATUS_OPTIONS);
+const RUN_ERROR_TYPE_OPTIONS = [
+  "validation",
+  "adapter",
+  "unknown",
+] as const satisfies readonly ErrorType[];
+const RUN_ERROR_TYPE_SET = new Set<string>(RUN_ERROR_TYPE_OPTIONS);
 
 export function AdminRunHistory() {
   const pathname = usePathname();
@@ -77,6 +87,10 @@ export function AdminRunHistory() {
     [searchParams]
   );
   const hasActiveFilters = hasRunHistoryFilters(filters);
+  const ownerOptions = useMemo(
+    () => (state.status === "loaded" ? getRunOwnerOptions(state.runs) : []),
+    [state]
+  );
 
   function replaceQuery(nextFilters: RunHistoryFilters, nextRunId: string | null) {
     const queryString = buildRunHistoryQueryString(nextFilters, nextRunId);
@@ -220,6 +234,7 @@ export function AdminRunHistory() {
             <RunHistoryFiltersForm
               filters={filters}
               hasActiveFilters={hasActiveFilters}
+              ownerOptions={ownerOptions}
               onChange={handleFilterChange}
               onReset={handleResetFilters}
             />
@@ -267,20 +282,27 @@ function ErrorState({ error }: { error: ApiErrorResponse }) {
 function RunHistoryFiltersForm({
   filters,
   hasActiveFilters,
+  ownerOptions,
   onChange,
   onReset,
 }: {
   filters: RunHistoryFilters;
   hasActiveFilters: boolean;
+  ownerOptions: string[];
   onChange: (filters: RunHistoryFilters) => void;
   onReset: () => void;
 }) {
+  const ownerFilterOptions =
+    filters.owner && !ownerOptions.includes(filters.owner)
+      ? [filters.owner, ...ownerOptions]
+      : ownerOptions;
+
   return (
     <section
       aria-label="Run history filters"
       className="rounded-lg border border-border bg-surface p-4 shadow-panel"
     >
-      <div className="grid gap-4 md:grid-cols-[minmax(12rem,0.8fr)_minmax(16rem,1.4fr)_repeat(2,minmax(10rem,0.7fr))_auto] md:items-end">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[minmax(10rem,0.8fr)_minmax(12rem,1fr)_minmax(10rem,0.8fr)_minmax(16rem,1.4fr)_repeat(2,minmax(10rem,0.7fr))_auto] 2xl:items-end">
         <div className="space-y-2">
           <Label htmlFor="run-status-filter">Status</Label>
           <Select
@@ -297,6 +319,46 @@ function RunHistoryFiltersForm({
             {RUN_STATUS_OPTIONS.map((status) => (
               <option key={status} value={status}>
                 {status}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="run-owner-filter">Owner</Label>
+          <Select
+            disabled={ownerFilterOptions.length === 0}
+            id="run-owner-filter"
+            value={filters.owner}
+            onChange={(event) =>
+              onChange({ ...filters, owner: event.target.value.trim() })
+            }
+          >
+            <option value="">All owners</option>
+            {ownerFilterOptions.map((owner) => (
+              <option key={owner} value={owner}>
+                {owner}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="run-error-type-filter">Error type</Label>
+          <Select
+            id="run-error-type-filter"
+            value={filters.errorType}
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                errorType: normalizeErrorTypeFilter(event.target.value),
+              })
+            }
+          >
+            <option value="all">All error types</option>
+            {RUN_ERROR_TYPE_OPTIONS.map((errorType) => (
+              <option key={errorType} value={errorType}>
+                {errorType}
               </option>
             ))}
           </Select>
@@ -339,15 +401,17 @@ function RunHistoryFiltersForm({
           />
         </div>
 
-        <Button
-          className="h-10 px-3"
-          disabled={!hasActiveFilters}
-          onClick={onReset}
-          type="button"
-          variant="secondary"
-        >
-          Reset filters
-        </Button>
+        <div className="col-span-full flex justify-stretch sm:justify-end 2xl:col-auto 2xl:self-end">
+          <Button
+            className="h-10 w-full px-3 sm:w-auto"
+            disabled={!hasActiveFilters}
+            onClick={onReset}
+            type="button"
+            variant="secondary"
+          >
+            Reset filters
+          </Button>
+        </div>
       </div>
     </section>
   );
@@ -406,7 +470,7 @@ function RunHistoryTable({
       </div>
 
       <div className="overflow-x-auto" data-testid="run-history-table">
-        <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1280px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border">
               <th className="px-3 py-2 font-semibold text-muted-foreground">
@@ -421,6 +485,12 @@ function RunHistoryTable({
                 Source
               </th>
               <th className="px-3 py-2 font-semibold text-muted-foreground">
+                Owner
+              </th>
+              <th className="px-3 py-2 font-semibold text-muted-foreground">
+                Error type
+              </th>
+              <th className="px-3 py-2 font-semibold text-muted-foreground">
                 Attempts
               </th>
               <th className="px-3 py-2 font-semibold text-muted-foreground">
@@ -429,7 +499,7 @@ function RunHistoryTable({
               <th className="px-3 py-2 font-semibold text-muted-foreground">
                 Failure detail
               </th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="w-32 px-3 py-2 text-center font-semibold text-muted-foreground">
                 Detail
               </th>
             </tr>
@@ -465,6 +535,16 @@ function RunHistoryTable({
                   </Badge>
                 </td>
                 <td className="px-3 py-3">{run.source}</td>
+                <td className="px-3 py-3">{run.owner ?? "Unassigned"}</td>
+                <td className="px-3 py-3">
+                  {getRunErrorType(run) ? (
+                    <Badge tone={errorTypeTone(getRunErrorType(run))}>
+                      {getRunErrorType(run)}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">None</span>
+                  )}
+                </td>
                 <td className="px-3 py-3">{run.attempt_count}</td>
                 <td className="px-3 py-3">
                   {run.latest_attempt ? (
@@ -497,10 +577,10 @@ function RunHistoryTable({
                     {run.failure_detail_available ? "Available" : "None"}
                   </Badge>
                 </td>
-                <td className="px-3 py-3">
+                <td className="w-32 px-3 py-3 text-center">
                   <Button
                     aria-label={`View details for ${run.run_id}`}
-                    className="h-9 px-3"
+                    className="h-9 min-w-[7.25rem] whitespace-nowrap px-4"
                     onClick={() => onSelectRun(run.run_id)}
                     variant="secondary"
                   >
@@ -594,6 +674,8 @@ function RunDetailPanel({ state }: { state: DetailState }) {
                 ["Lead email", detail.email],
                 ["Company", detail.company_name],
                 ["Domain", detail.company_domain],
+                ["Owner", detail.owner ?? "Unassigned"],
+                ["Error type", detail.error_type ?? "None"],
                 ["Lead ID", detail.lead_id],
                 ["Source", detail.source],
                 ["Created", formatTimestamp(detail.created_at)],
@@ -749,6 +831,8 @@ function formatPayloadValue(value: unknown): string {
 function emptyRunHistoryFilters(): RunHistoryFilters {
   return {
     status: "all",
+    owner: "",
+    errorType: "all",
     query: "",
     fromDate: "",
     toDate: "",
@@ -758,6 +842,8 @@ function emptyRunHistoryFilters(): RunHistoryFilters {
 function parseRunHistoryFilters(searchParams: SearchParamReader): RunHistoryFilters {
   return {
     status: normalizeStatusFilter(searchParams.get("status") ?? "all"),
+    owner: (searchParams.get("owner") ?? "").trim(),
+    errorType: normalizeErrorTypeFilter(searchParams.get("errorType") ?? "all"),
     query: (searchParams.get("q") ?? "").trim(),
     fromDate: normalizeDateFilter(searchParams.get("from")),
     toDate: normalizeDateFilter(searchParams.get("to")),
@@ -771,6 +857,10 @@ function parseSelectedRunId(searchParams: SearchParamReader): string | null {
 
 function normalizeStatusFilter(value: string): FilterStatus {
   return RUN_STATUS_SET.has(value) ? (value as RunStatus) : "all";
+}
+
+function normalizeErrorTypeFilter(value: string): FilterErrorType {
+  return RUN_ERROR_TYPE_SET.has(value) ? (value as ErrorType) : "all";
 }
 
 function normalizeDateFilter(value: string | null): string {
@@ -794,6 +884,8 @@ function isDateOnlyValue(value: string): boolean {
 function hasRunHistoryFilters(filters: RunHistoryFilters): boolean {
   return (
     filters.status !== "all" ||
+    filters.owner !== "" ||
+    filters.errorType !== "all" ||
     filters.query !== "" ||
     filters.fromDate !== "" ||
     filters.toDate !== ""
@@ -811,6 +903,13 @@ function buildRunHistoryQueryString(
   const query = filters.query.trim();
   if (query) {
     params.set("q", query);
+  }
+  const owner = filters.owner.trim();
+  if (owner) {
+    params.set("owner", owner);
+  }
+  if (filters.errorType !== "all") {
+    params.set("errorType", filters.errorType);
   }
   if (normalizeDateFilter(filters.fromDate)) {
     params.set("from", filters.fromDate);
@@ -832,6 +931,15 @@ function filterRunHistory(
 
   return runs.filter((run) => {
     if (filters.status !== "all" && run.run_status !== filters.status) {
+      return false;
+    }
+    if (filters.owner && (run.owner ?? "") !== filters.owner) {
+      return false;
+    }
+    if (
+      filters.errorType !== "all" &&
+      getRunErrorType(run) !== filters.errorType
+    ) {
       return false;
     }
 
@@ -860,7 +968,23 @@ function searchableRunFields(run: RunHistoryItem): string[] {
     run.lead_name,
     run.company_name,
     run.company_domain,
+    run.owner,
+    getRunErrorType(run),
   ].filter((value): value is string => Boolean(value));
+}
+
+function getRunOwnerOptions(runs: RunHistoryItem[]): string[] {
+  return Array.from(
+    new Set(
+      runs
+        .map((run) => run.owner?.trim())
+        .filter((owner): owner is string => Boolean(owner))
+    )
+  ).sort((left, right) => left.localeCompare(right));
+}
+
+function getRunErrorType(run: RunHistoryItem): ErrorType | null {
+  return run.error_type ?? run.latest_attempt?.error_type ?? null;
 }
 
 function formatTimestamp(value: string): string {
@@ -883,6 +1007,16 @@ function runStatusTone(status: RunStatus): "neutral" | "success" | "warning" | "
     return "danger";
   }
   if (status === "queued") {
+    return "warning";
+  }
+  return "neutral";
+}
+
+function errorTypeTone(errorType: ErrorType | null): "neutral" | "warning" | "danger" {
+  if (errorType === "adapter") {
+    return "danger";
+  }
+  if (errorType === "validation") {
     return "warning";
   }
   return "neutral";

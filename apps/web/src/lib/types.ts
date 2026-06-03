@@ -64,8 +64,10 @@ export type RunHistoryItem = {
   lead_name?: string;
   company_name?: string;
   company_domain?: string;
+  owner?: string;
   source: LeadSource;
   run_status: RunStatus;
+  error_type?: ErrorType | null;
   created_at: string;
   updated_at: string;
   attempt_count: number;
@@ -98,8 +100,10 @@ export type RunDetailResponse = {
   email: string;
   company_name: string;
   company_domain: string;
+  owner?: string;
   source: LeadSource;
   run_status: RunStatus;
+  error_type?: ErrorType | null;
   created_at: string;
   updated_at: string;
   attempts: RunDetailAttempt[];

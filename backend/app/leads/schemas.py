@@ -141,8 +141,10 @@ class RunHistoryItem(BaseModel):
     lead_name: str
     company_name: str
     company_domain: str
+    owner: str
     source: LeadSource
     run_status: RunStatus
+    error_type: ErrorType | None = None
     created_at: datetime
     updated_at: datetime
     attempt_count: int
@@ -183,8 +185,10 @@ class RunDetailResponse(BaseModel):
     email: str
     company_name: str
     company_domain: str
+    owner: str
     source: LeadSource
     run_status: RunStatus
+    error_type: ErrorType | None = None
     created_at: datetime
     updated_at: datetime
     attempts: tuple[RunDetailAttempt, ...]

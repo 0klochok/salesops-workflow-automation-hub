@@ -17,6 +17,7 @@ from backend.app.leads.persistence import (
     LeadPersistenceRepository,
     LeadRecord,
     RunAttemptRecord,
+    derive_demo_owner,
 )
 from backend.app.leads.retry import RetryPolicy
 from backend.app.leads.run_log import LocalRunLog
@@ -339,8 +340,10 @@ def test_get_run_history_returns_persisted_records_sorted_and_sanitized(
     assert failed_run["lead_name"] == "Ada Lovelace"
     assert failed_run["company_name"] == "Example Co"
     assert failed_run["company_domain"] == "example.com"
+    assert failed_run["owner"] == derive_demo_owner("lead_sort_a")
     assert failed_run["source"] == "demo_form"
     assert failed_run["run_status"] == "failed"
+    assert failed_run["error_type"] == "adapter"
     assert failed_run["attempt_count"] == 2
     assert failed_run["failure_detail_available"] is True
     assert failed_run["latest_attempt"]["attempt_number"] == 2
@@ -348,7 +351,9 @@ def test_get_run_history_returns_persisted_records_sorted_and_sanitized(
     assert failed_run["latest_attempt"]["error_type"] == "adapter"
     assert failed_run["latest_attempt"]["summary"] == "Mock CRM adapter failed token=[redacted]"
     assert runs[0]["failure_detail_available"] is False
+    assert runs[0]["error_type"] is None
     assert runs[2]["failure_detail_available"] is False
+    assert runs[2]["error_type"] is None
     assert "plain-text-secret" not in response.text
     assert "phone" not in response.text
     assert "message" not in response.text
@@ -387,9 +392,13 @@ def test_get_run_history_represents_repeatable_demo_seed_data(
     assert by_run_id["run_demo_success"]["lead_name"] == "Sofia Chen"
     assert by_run_id["run_demo_success"]["company_name"] == "Northstar Growth"
     assert by_run_id["run_demo_success"]["company_domain"] == "northstar.example"
+    assert by_run_id["run_demo_success"]["owner"] == derive_demo_owner("lead_demo_success")
+    assert by_run_id["run_demo_success"]["error_type"] is None
     assert by_run_id["run_demo_queued"]["failure_detail_available"] is False
     assert by_run_id["run_demo_failed"]["failure_detail_available"] is True
+    assert by_run_id["run_demo_failed"]["error_type"] == "adapter"
     assert by_run_id["run_demo_retried"]["failure_detail_available"] is True
+    assert by_run_id["run_demo_retried"]["error_type"] == "adapter"
     assert by_run_id["run_demo_retried"]["attempt_count"] == 3
     assert by_run_id["run_demo_queued"]["latest_attempt"]["status"] == "queued"
     assert "555-010" not in first_response.text
@@ -435,8 +444,10 @@ def test_get_run_detail_returns_persisted_safe_detail(
     assert data["email"] == "detail.failed@example.com"
     assert data["company_name"] == "Example Co"
     assert data["company_domain"] == "example.com"
+    assert data["owner"] == derive_demo_owner("lead_detail_failed")
     assert data["source"] == "demo_form"
     assert data["run_status"] == "failed"
+    assert data["error_type"] == "adapter"
     assert data["failure_detail_available"] is True
     assert [attempt["status"] for attempt in data["attempts"]] == ["queued", "failed"]
     assert data["attempts"][1]["error_type"] == "adapter"

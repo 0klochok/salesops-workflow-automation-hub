@@ -7,11 +7,11 @@
 | Last updated | 2026-06-03 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Repair Slice 11 - public portfolio readiness review completion |
+| Current phase | Slice 12 - read-only owner and error-type admin filters |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
-| Git state | `main`; Repair Slice 11 documentation changes remain unstaged for user review |
+| Git state | `main`; Slice 12 implementation and documentation changes remain unstaged for user review |
 
 ## 2. Project Summary
 
@@ -19,11 +19,11 @@ This is a greenfield portfolio project for a code-first sales operations workflo
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
-The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, a persistence-backed local lead intake path, backend-only failure detail/retry endpoints, enriched persisted run history with lead email/company summary fields, read-only selected run detail, and deterministic demo seed data. The frontend includes a read-only `/admin/runs` page that displays persisted run history, lead identity, and a same-page selected run detail panel through local Next.js GET proxies. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
+The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, a persistence-backed local lead intake path, backend-only failure detail/retry endpoints, enriched persisted run history with lead email/company summary fields, derived demo owner and run-level error type, read-only selected run detail, and deterministic demo seed data. The frontend includes a read-only `/admin/runs` page that displays persisted run history, lead identity, owner/error-type fields, URL-backed filters, and a same-page selected run detail panel through local Next.js GET proxies. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
 
-The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, and a current-session dashboard stored in browser `sessionStorage`.
+The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, a current-session dashboard stored in browser `sessionStorage`, and read-only admin filtering for status, search, date range, derived owner, and run-level error type.
 
-Repair Slice 11 is a documentation-first public portfolio readiness completion pass over the local read-only admin demo, full local quality gate, manual smoke path, generated artifact handling, skipped external checks, and Git safety status.
+Slice 12 adds the owner and error-type filters to `/admin/runs` while keeping the admin experience local-only, GET-only, and free of retry/edit/delete/send/archive/mutation controls.
 
 ## 3. Source-of-Truth Files
 
@@ -105,7 +105,7 @@ Repair Slice 11 is a documentation-first public portfolio readiness completion p
 - Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake/retry records, run history, selected run detail, seed data, and read-only admin UI implemented.
 - Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; UI action planned later.
 - Error detail page with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel implemented; dedicated failure page/action planned later.
-- Admin table with filters by date, source, status, lead owner, and error type. The current read-only persisted run-history table supports status, search, and date filtering with lead email/company identity and selected run detail; full owner/error type filters remain future work.
+- Admin table with filters by date, source, status, lead owner, and error type. The current read-only persisted run-history table supports status, search, date, derived owner, and run-level error-type filtering with lead email/company identity and selected run detail. Source-specific admin filtering remains future work.
 - Backup/audit records. Persisted for local intake and manual retry events.
 
 ## 8. Assumptions
@@ -125,7 +125,7 @@ Repair Slice 11 is a documentation-first public portfolio readiness completion p
 |---|---|---|---|
 | Q-001 | Should the final demo use real HubSpot or only a mock CRM? | Before live integration work | Mock CRM |
 | Q-002 | Should Slack use a real webhook or a mock/log notifier? | Before live notification work | Mock/log notifier |
-| Q-003 | What rule assigns leads to the 5 sales reps? | Before lead routing implementation | Round-robin or deterministic placeholder |
+| Q-003 | What rule assigns leads to the 5 sales reps? | Before lead routing implementation | Current admin demo derives a deterministic owner from `lead_id`; real routing remains TBD |
 | Q-004 | Should `lead_score >= 70` remain the qualification rule? | Before demo polish | Current backend default |
 | Q-005 | How should dedupe handle shared domains, aliases, and updated emails? | Before persistence/admin workflow | Email first, company domain second |
 | Q-006 | Should tests require PostgreSQL only, or allow SQLite unit fallback? | Before persistence work | PostgreSQL for integration, SQLite only if justified |

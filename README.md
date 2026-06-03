@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Repair Slice 11: public portfolio readiness review completion.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Slice 12: read-only owner and error-type filters for the run-history admin view.
 
 ## Problem
 
@@ -43,11 +43,11 @@ The current local demo includes:
 - Phase 4 wires SQLAlchemy/Alembic persistence into `POST /leads/intake` through explicit DB session dependencies;
 - local intake now records leads, automation runs, attempts, and audit records while keeping CRM and Slack mocked by default;
 - backend-only failure detail and manual retry endpoints are available for persisted workflow runs;
-- a persisted run-history endpoint returns stored runs with persisted lead email, company name, company domain, and latest attempt summaries;
+- a persisted run-history endpoint returns stored runs with persisted lead email, company name, company domain, a derived demo owner, run-level error type, and latest attempt summaries;
 - a persisted run-detail endpoint returns one selected run with sanitized attempts, intake payload, and allowlisted mock/audit result data;
-- `/admin/runs` provides a read-only frontend view of persisted run history, URL-preserved filters, selected run detail, filtered empty state, and selected-run-hidden notice through local `GET` proxy routes;
+- `/admin/runs` provides a read-only frontend view of persisted run history, URL-preserved status/search/date/owner/error-type filters, selected run detail, filtered empty state, and selected-run-hidden notice through local `GET` proxy routes;
 - deterministic local demo seed data can create success, failed, queued, and retried workflow runs;
-- Repair Slice 11 is a documentation-first public readiness review that verifies local setup, smoke steps, generated artifacts, skipped external checks, and Git safety status;
+- Slice 12 adds read-only owner and error-type filters using existing persisted/demo data without a migration or mutation controls;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
 ## Current Portfolio Demo Path
@@ -88,7 +88,7 @@ $env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
 pnpm --dir apps/web dev
 ```
 
-Open `http://localhost:3000/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/search/date filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
+Open `http://localhost:3000/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/search/date/owner/error-type filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
 
 The admin screen is read-only. Interacting with `/admin/runs` should only issue local `GET` requests for run history and selected run detail through the Next.js API proxy. It must not expose retry, edit, delete, submit, resubmit, rerun, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
 
@@ -99,7 +99,7 @@ Final local handoff checklist:
 3. Run `uv run python -m backend.app.leads.demo_seed`.
 4. Start the backend on a free local port with `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port <backend-port>`.
 5. Start the frontend in another PowerShell window with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the backend port.
-6. Open `/admin/runs`, confirm seeded rows render, filters work, selected detail opens, and the selected-run-hidden notice appears for a filtered-out selected run.
+6. Open `/admin/runs`, confirm seeded rows render, status/search/date/owner/error-type filters work, selected detail opens, and the selected-run-hidden notice appears for a filtered-out selected run.
 7. Confirm the admin path uses local `GET` requests only and has no retry, edit, delete, submit, resubmit, rerun, worker, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
 8. Before any manual commit, review generated artifacts. `apps/web/tsconfig.tsbuildinfo` is ignored by `.gitignore` but is currently tracked, so validation may modify it even though it is not an intentional source change.
 
@@ -154,7 +154,7 @@ Manual persisted run-history smoke check while the server is running:
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs"
 ```
 
-Expected run rows include persisted `lead_id`, `email`, `company_name`, `company_domain`, source, status, timestamps, attempt count, latest attempt summary, and failure-detail availability. The response remains read-only and does not expose phone, message, raw audit payloads, or unrestricted error detail.
+Expected run rows include persisted `lead_id`, `email`, `company_name`, `company_domain`, derived demo owner, source, status, run-level error type, timestamps, attempt count, latest attempt summary, and failure-detail availability. The response remains read-only and does not expose phone, message, raw audit payloads, or unrestricted error detail.
 
 Manual persisted run-detail smoke check for a known seeded run:
 
@@ -162,7 +162,7 @@ Manual persisted run-detail smoke check for a known seeded run:
 Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/run_demo_failed"
 ```
 
-Expected detail includes the selected run, lead identity, timestamps, all persisted attempts, sanitized intake payload, and allowlisted mock/audit result data. It remains read-only and does not expose phone, message, raw audit payloads, secrets, retry actions, or mutation behavior.
+Expected detail includes the selected run, lead identity, derived demo owner, run-level error type, timestamps, all persisted attempts, sanitized intake payload, and allowlisted mock/audit result data. It remains read-only and does not expose phone, message, raw audit payloads, secrets, retry actions, or mutation behavior.
 
 ## Local Frontend Setup
 
@@ -173,7 +173,7 @@ pnpm install
 pnpm --dir apps/web dev
 ```
 
-Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs` and shows persisted lead email/company identity plus a same-page selected run detail panel. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
+Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs` and shows persisted lead email/company identity, derived owner/error-type fields, URL-backed filters, and a same-page selected run detail panel. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
 
 Frontend validation:
 

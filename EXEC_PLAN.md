@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Repair Slice 11 completes the public portfolio readiness review after the prior Slice 11 output was only a phase prompt. It keeps mock CRM/Slack behavior and the intake response contract unchanged, uses existing persisted run/lead/attempt/audit data without a migration, and does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Slice 12 adds read-only owner and error-type filters to the persisted run-history admin view. It keeps mock CRM/Slack behavior and the intake response contract unchanged, derives owner/error-type data from existing persisted records without a migration, and does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -85,6 +85,21 @@ Repair Slice 11 completes the public portfolio readiness review after the prior 
 - Added backend and frontend tests for selected run detail, loading/error states, safe payload boundaries, and no retry/mutation controls.
 - Reused existing persistence tables; no migration, background worker, real integration, retry UI, deployment, or GitHub Actions were added.
 
+## 4.8 Completed Repair Slice 11 Work Items
+
+- Completed the public portfolio readiness review after the prior Slice 11 output was only a phase prompt.
+- Updated source-of-truth docs with full local validation evidence, manual smoke evidence, generated artifact status, skipped-check reasons, and Git safety status.
+- Verified the local read-only `/admin/runs` demo, selected detail panel, selected-run-hidden notice, absence of public mutation controls, absence of `.github/workflows`, and unstaged-only Git safety posture.
+- Did not change app code, add migrations, add mutation UI, call real integrations, create GitHub Actions, stage, commit, or push.
+
+## 4.9 Completed Slice 12 Work Items
+
+- Added derived `owner` and run-level `error_type` fields to persisted run-history and selected run-detail responses without a database migration.
+- Derived owner deterministically from existing `lead_id` values for the local portfolio demo.
+- Derived run-level error type from the latest non-null persisted attempt error type.
+- Added read-only `/admin/runs` Owner and Error type filters using the same URL-preserved client-side filter pattern as existing filters.
+- Added backend and frontend tests for the derived contract fields, filter controls, URL preservation, empty states, selected detail preservation, selected-hidden notice behavior, and absence of mutation controls.
+
 ## 5. Quality Gate Expectations By Phase
 
 | Gate | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
@@ -102,7 +117,7 @@ Repair Slice 11 completes the public portfolio readiness review after the prior 
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Repair Slice 11 changes are limited to source-of-truth documentation, local validation evidence, manual smoke evidence, generated artifact notes, skipped-check reasons, and Git safety status.
+- Slice 12 changes are limited to derived read-only run-history contract fields, admin filter UI/tests, and source-of-truth documentation.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.

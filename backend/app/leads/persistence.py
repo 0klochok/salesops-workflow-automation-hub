@@ -85,6 +85,13 @@ RUN_DETAIL_AUDIT_PAYLOAD_FIELDS: dict[str, tuple[str, ...]] = {
         "suggested_action",
     ),
 }
+DEMO_OWNER_NAMES = (
+    "Avery Brooks",
+    "Jordan Lee",
+    "Maya Patel",
+    "Noah Kim",
+    "Sofia Chen",
+)
 
 
 def sanitize_detail_text(value: str | None) -> str | None:
@@ -120,6 +127,14 @@ def sanitize_intake_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 def format_lead_name(first_name: str, last_name: str) -> str:
     return sanitize_detail_text(f"{first_name} {last_name}") or ""
+
+
+def derive_demo_owner(lead_id: str) -> str:
+    checksum = sum(
+        (index + 1) * ord(character)
+        for index, character in enumerate(lead_id.strip().lower())
+    )
+    return DEMO_OWNER_NAMES[checksum % len(DEMO_OWNER_NAMES)]
 
 
 def sanitize_audit_payload_value(value: Any) -> Any:
@@ -285,6 +300,15 @@ class AuditRecord(Base):
 
     lead: Mapped[LeadRecord] = relationship(back_populates="audit_records")
     run: Mapped[AutomationRunRecord] = relationship(back_populates="audit_records")
+
+
+def _derive_run_error_type(
+    attempts: tuple[RunAttemptRecord, ...],
+) -> ErrorType | None:
+    for attempt in reversed(attempts):
+        if attempt.error_type is not None:
+            return attempt.error_type
+    return None
 
 
 class LeadPersistenceRepository:
@@ -527,8 +551,10 @@ class LeadPersistenceRepository:
             lead_name=format_lead_name(record.lead.first_name, record.lead.last_name),
             company_name=record.lead.company_name,
             company_domain=record.lead.company_domain,
+            owner=derive_demo_owner(record.lead_id),
             source=record.lead.source,
             run_status=record.status,
+            error_type=_derive_run_error_type(attempts),
             created_at=record.created_at,
             updated_at=record.updated_at,
             attempt_count=len(attempts),
@@ -566,8 +592,10 @@ class LeadPersistenceRepository:
             email=record.lead.email,
             company_name=record.lead.company_name,
             company_domain=record.lead.company_domain,
+            owner=derive_demo_owner(record.lead_id),
             source=record.lead.source,
             run_status=record.status,
+            error_type=_derive_run_error_type(attempts),
             created_at=record.created_at,
             updated_at=record.updated_at,
             attempts=tuple(self._run_detail_attempt_from_record(attempt) for attempt in attempts),

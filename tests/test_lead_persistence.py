@@ -14,6 +14,7 @@ from backend.app.leads.persistence import (
     LeadPersistenceRepository,
     LeadRecord,
     RunAttemptRecord,
+    derive_demo_owner,
 )
 from backend.app.leads.run_log import LocalRunLog
 from backend.app.leads.schemas import LeadIntakeRequest
@@ -134,6 +135,8 @@ def test_repository_run_history_includes_persisted_lead_summary(session: Session
     assert history[0].lead_name == "Ada token=[redacted] Lovelace"
     assert history[0].company_name == "Example Co"
     assert history[0].company_domain == "example.com"
+    assert history[0].owner == derive_demo_owner("lead_demo")
+    assert history[0].error_type is None
 
 
 def test_repository_run_detail_returns_safe_persisted_fields(session: Session) -> None:
@@ -196,7 +199,9 @@ def test_repository_run_detail_returns_safe_persisted_fields(session: Session) -
     assert detail.email == "ada@example.com"
     assert detail.company_name == "Example Co"
     assert detail.company_domain == "example.com"
+    assert detail.owner == derive_demo_owner("lead_detail")
     assert detail.run_status is RunStatus.FAILED
+    assert detail.error_type is ErrorType.ADAPTER
     assert detail.failure_detail_available is True
     assert [attempt.status for attempt in detail.attempts] == [
         RunStatus.QUEUED,

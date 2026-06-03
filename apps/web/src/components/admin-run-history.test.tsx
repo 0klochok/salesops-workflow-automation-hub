@@ -36,8 +36,10 @@ const runHistoryResponse = {
       lead_name: "Marcus Rivera",
       company_name: "Pipeline Labs",
       company_domain: "pipelinelabs.example",
+      owner: "Maya Patel",
       source: "demo_form",
       run_status: "failed",
+      error_type: "adapter",
       created_at: "2026-06-01T10:00:00Z",
       updated_at: "2026-06-01T10:01:00Z",
       attempt_count: 2,
@@ -57,8 +59,10 @@ const runHistoryResponse = {
       lead_name: "Sofia Chen",
       company_name: "Northstar Growth",
       company_domain: "northstar.example",
+      owner: "Avery Brooks",
       source: "csv_upload",
       run_status: "success",
+      error_type: null,
       created_at: "2026-06-01T09:00:00Z",
       updated_at: "2026-06-01T09:01:00Z",
       attempt_count: 2,
@@ -78,8 +82,10 @@ const runHistoryResponse = {
       lead_name: "Noah Kim",
       company_name: "LaunchWorks",
       company_domain: "launchworks.example",
+      owner: "Jordan Lee",
       source: "manual",
       run_status: "queued",
+      error_type: null,
       created_at: "2026-05-31T08:00:00Z",
       updated_at: "2026-05-31T08:00:00Z",
       attempt_count: 1,
@@ -101,8 +107,10 @@ const runDetailResponse = {
   email: "failed.demo@example.com",
   company_name: "Pipeline Labs",
   company_domain: "pipelinelabs.example",
+  owner: "Maya Patel",
   source: "demo_form",
   run_status: "failed",
+  error_type: "adapter",
   created_at: "2026-06-01T10:00:00Z",
   updated_at: "2026-06-01T10:01:00Z",
   attempts: [
@@ -197,11 +205,13 @@ describe("AdminRunHistory", () => {
     render(<AdminRunHistory />);
 
     expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    const table = within(screen.getByTestId("run-history-table"));
     expect(screen.getByText("lead_demo_failed")).toBeInTheDocument();
     expect(screen.getByText("failed.demo@example.com")).toBeInTheDocument();
     expect(screen.getByText("Marcus Rivera")).toBeInTheDocument();
     expect(screen.getByText("Pipeline Labs")).toBeInTheDocument();
     expect(screen.getByText("pipelinelabs.example")).toBeInTheDocument();
+    expect(table.getByText("Maya Patel")).toBeInTheDocument();
     expect(screen.getByText("demo_form")).toBeInTheDocument();
     expect(screen.getByText("Attempt 2: failed")).toBeInTheDocument();
     expect(screen.getByText("Error type: adapter")).toBeInTheDocument();
@@ -212,6 +222,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByText("success.demo@example.com")).toBeInTheDocument();
     expect(screen.getByText("Sofia Chen")).toBeInTheDocument();
     expect(screen.getByText("Northstar Growth")).toBeInTheDocument();
+    expect(table.getByText("Avery Brooks")).toBeInTheDocument();
     expect(screen.getByText("csv_upload")).toBeInTheDocument();
     expect(screen.getByText("run_demo_queued")).toBeInTheDocument();
     expect(screen.getByText("Noah Kim")).toBeInTheDocument();
@@ -257,6 +268,48 @@ describe("AdminRunHistory", () => {
     expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
   });
 
+  it("filters persisted runs by owner and preserves the owner in the URL", async () => {
+    const user = userEvent.setup();
+    mockFetch(runHistoryResponse, 200);
+    const { rerender } = render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Owner"), "Maya Patel");
+
+    expect(navigationMock.replace).toHaveBeenLastCalledWith(
+      "/admin/runs?owner=Maya+Patel",
+      { scroll: false }
+    );
+    rerender(<AdminRunHistory />);
+
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("run_demo_failed")).toBeInTheDocument();
+    expect(table.getByText("Maya Patel")).toBeInTheDocument();
+    expect(table.queryByText("run_demo_success")).not.toBeInTheDocument();
+    expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
+  it("filters persisted runs by error type and preserves it in the URL", async () => {
+    const user = userEvent.setup();
+    mockFetch(runHistoryResponse, 200);
+    const { rerender } = render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Error type"), "adapter");
+
+    expect(navigationMock.replace).toHaveBeenLastCalledWith(
+      "/admin/runs?errorType=adapter",
+      { scroll: false }
+    );
+    rerender(<AdminRunHistory />);
+
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("run_demo_failed")).toBeInTheDocument();
+    expect(table.getByText("adapter")).toBeInTheDocument();
+    expect(table.queryByText("run_demo_success")).not.toBeInTheDocument();
+    expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
   it("filters persisted runs by run, lead, and company search text", async () => {
     navigationMock.setSearchParams("q=marcus");
     mockFetch(runHistoryResponse, 200);
@@ -294,6 +347,56 @@ describe("AdminRunHistory", () => {
     expect(
       screen.getAllByRole("button", { name: /reset filters/i })
     ).toHaveLength(2);
+  });
+
+  it("clears filters from the filter panel reset while preserving the selected run", async () => {
+    navigationMock.setSearchParams(
+      "status=success&owner=Maya+Patel&errorType=adapter&q=no-local-match&from=2026-06-01&to=2026-06-01&runId=run_demo_failed"
+    );
+    const user = userEvent.setup();
+    const fetchMock = mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+    const { rerender } = render(<AdminRunHistory />);
+
+    expect(
+      await screen.findByText("No runs match these filters.")
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+
+    await user.click(
+      within(
+        screen.getByRole("region", { name: /run history filters/i })
+      ).getByRole("button", { name: /reset filters/i })
+    );
+
+    expect(navigationMock.replace).toHaveBeenLastCalledWith(
+      "/admin/runs?runId=run_demo_failed",
+      { scroll: false }
+    );
+
+    rerender(<AdminRunHistory />);
+
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("run_demo_failed")).toBeInTheDocument();
+    expect(table.getByText("run_demo_success")).toBeInTheDocument();
+    expect(table.getByText("run_demo_queued")).toBeInTheDocument();
+    expect(
+      screen.queryByText("No runs match these filters.")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/outside the current filtered list/i)
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "run_demo_failed"
+    );
+    expect(fetchMock.mock.calls.every((call) => call[1]?.method === "GET")).toBe(
+      true
+    );
   });
 
   it("keeps older run-history rows readable when enriched identity is absent", async () => {
@@ -346,6 +449,7 @@ describe("AdminRunHistory", () => {
     expect(within(panel).getAllByText("failed.demo@example.com")).toHaveLength(2);
     expect(within(panel).getAllByText("Pipeline Labs")).toHaveLength(2);
     expect(within(panel).getAllByText("pipelinelabs.example")).toHaveLength(2);
+    expect(within(panel).getByText("Maya Patel")).toBeInTheDocument();
     expect(within(panel).getByText("Attempt 1")).toBeInTheDocument();
     expect(within(panel).getByText("Attempt 2")).toBeInTheDocument();
     expect(within(panel).getByText("Error type: adapter")).toBeInTheDocument();
@@ -521,8 +625,21 @@ describe("AdminRunHistory", () => {
     render(<AdminRunHistory />);
 
     await screen.findByText("run_demo_failed");
-    expect(screen.queryByRole("button", { name: /retry/i })).not.toBeInTheDocument();
-    expect(screen.queryByText(/^Retry$/i)).not.toBeInTheDocument();
+    for (const mutationLabel of [
+      /archive/i,
+      /create/i,
+      /delete/i,
+      /edit/i,
+      /resubmit/i,
+      /retry/i,
+      /rerun/i,
+      /send/i,
+      /submit/i,
+    ]) {
+      expect(
+        screen.queryByRole("button", { name: mutationLabel })
+      ).not.toBeInTheDocument();
+    }
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const table = within(screen.getByTestId("run-history-table"));

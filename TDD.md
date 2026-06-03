@@ -7,7 +7,7 @@
 | Last updated | 2026-06-03 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Repair Slice 11 - public portfolio readiness review completion |
+| Current phase | Slice 12 - read-only owner and error-type admin filters |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,9 +20,9 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Repair Slice 11 Test Status
+## 3. Slice 12 Test Status
 
-Repair Slice 11 does not add product behavior. It re-runs the full local backend/frontend quality gate and records public portfolio readiness, skipped external checks, manual smoke results, generated artifact status, and Git safety status.
+Slice 12 adds read-only owner and error-type filtering to `/admin/runs` by extending the persisted run-history/detail response contract with fields derived from existing local records. The slice does not add mutation controls, real integrations, auth, deployment, GitHub Actions, or database migrations.
 
 Current backend commands:
 
@@ -39,7 +39,7 @@ Current backend persistence tests cover:
 - stored lead snapshots feeding the existing dedupe service;
 - duplicate-email storage reusing the matched persisted lead id;
 - failed-run error details and suggested actions.
-- run-history summaries include persisted lead email, company name, and company domain.
+- run-history summaries include persisted lead email, company name, company domain, derived demo owner, and run-level error type.
 - deterministic demo seed data is exercised through the API test database.
 
 Current backend intake API tests cover:
@@ -57,7 +57,7 @@ Current backend intake API tests cover:
 - correct failure-detail availability for failed and retried runs;
 - sanitized latest attempt summaries without raw payload, phone, message, or secret-like material;
 - repeatable demo seed behavior across multiple runs.
-- enriched run-history contract fields from persisted lead records.
+- enriched run-history contract fields from persisted lead records and derived attempt data.
 - selected run-detail contract with persisted lead identity, timestamps, all attempts, sanitized intake payload, and allowlisted audit/mock result payloads.
 - unknown run-detail lookups returning `404`.
 - run-detail responses excluding unsafe lead payload fields and unsanitized secret-like text.
@@ -81,10 +81,11 @@ Current frontend tests still cover:
 - same-session duplicate hint behavior;
 - dashboard filtering by source.
 - read-only persisted run-history rows;
-- persisted lead email/company identity in run-history rows;
+- persisted lead email/company identity, derived owner, and run-level error type in run-history rows;
+- owner and error-type filters preserve URL state and filter the read-only table;
 - older run-history rows remain readable if enriched identity fields are absent from a mocked response;
 - empty and error states for `/admin/runs`;
-- absence of retry controls or non-GET run-history fetches.
+- absence of retry/edit/delete/send/archive/mutation controls or non-GET run-history fetches.
 - selected run detail fetches through `GET /api/leads/runs/{runId}`;
 - selected run detail loading and error states;
 - read-only detail rendering of lead/run metadata, attempts, safe intake payload, and allowlisted mock/audit summaries;

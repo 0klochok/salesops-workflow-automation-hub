@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Repair Slice 11 - public portfolio readiness review completion |
+| Current phase | Slice 12 - read-only owner and error-type admin filters |
 
 ## 2. Operating Rules
 
@@ -33,7 +33,7 @@ git status --short --branch
 git remote -v
 ```
 
-Expected Slice 11 observation: worktree changes should stay documentation-only unless validation exposes a tiny truthfulness fix. No files should be staged, committed, or pushed by Codex.
+Expected Slice 12 observation: worktree changes should stay limited to the read-only owner/error-type filter slice. No files should be staged, committed, or pushed by Codex.
 
 ## 5. Check Tool Versions
 
@@ -112,7 +112,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs"
 Expected behavior:
 
 - runs are loaded from local persistence and sorted by created timestamp descending, then run ID ascending;
-- each run includes `lead_id`, persisted lead `email`, `lead_name`, `company_name`, `company_domain`, source, current status, created/updated timestamps, attempt count, latest attempt summary, and whether failure detail is available;
+- each run includes `lead_id`, persisted lead `email`, `lead_name`, `company_name`, `company_domain`, derived demo owner, source, current status, run-level error type, created/updated timestamps, attempt count, latest attempt summary, and whether failure detail is available;
 - raw audit payloads, phone, message, and unrestricted error detail are not returned.
 
 Manual persisted run-detail lookup for a known run:
@@ -125,7 +125,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/$runId"
 Expected behavior:
 
 - unknown run IDs return `404`;
-- the selected run includes stored lead identity, source, status, timestamps, all persisted attempts, failure-detail availability, sanitized intake payload, and allowlisted audit/mock result data;
+- the selected run includes stored lead identity, derived demo owner, source, status, run-level error type, timestamps, all persisted attempts, failure-detail availability, sanitized intake payload, and allowlisted audit/mock result data;
 - raw audit payloads, phone, message, secrets, retry buttons/actions, mutation behavior, real CRM, Slack, Google Sheets, OpenAI, paid APIs, and external webhooks are not returned or called.
 
 Manual failure detail lookup for a known failed run:
@@ -253,7 +253,7 @@ pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
 
-The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, read-only persisted run history through `GET /api/leads/runs`, and selected run detail through `GET /api/leads/runs/[runId]` to the FastAPI backend. The `/admin/runs` screen stays read-only and does not trigger retry, edit, delete, submit, resubmit, rerun, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` actions.
+The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, read-only persisted run history through `GET /api/leads/runs`, and selected run detail through `GET /api/leads/runs/[runId]` to the FastAPI backend. The `/admin/runs` screen stays read-only, supports URL-backed status/search/date/owner/error-type filters client-side, and does not trigger retry, edit, delete, submit, resubmit, rerun, send, archive, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` actions.
 
 ## 9. Manual Frontend Verification
 
@@ -298,16 +298,19 @@ Test read-only persisted admin run history:
 1. Seed local demo data with `uv run python -m backend.app.leads.demo_seed` after PostgreSQL is running and migrations are applied.
 2. Open `http://localhost:3000/admin/runs`.
 3. Confirm the page shows persisted seeded runs such as `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
-4. Confirm the page shows persisted lead email/name/company identity, run status, source, timestamps, attempt count, latest attempt summary, and failure-detail availability.
+4. Confirm the page shows persisted lead email/name/company identity, derived demo owner, run status, source, run-level error type, timestamps, attempt count, latest attempt summary, and failure-detail availability.
 5. Apply the status filter `failed` and confirm only `run_demo_failed` remains visible while the URL includes `status=failed`.
 6. Clear the status filter, search for `atlas`, and confirm only `run_demo_retried` remains visible while the URL includes `q=atlas`.
-7. Search for a value with no matches and confirm the filtered empty state says no runs match the filters.
-8. Apply date filters such as `from=2026-06-01` and `to=2026-06-01` and confirm the date values persist in the URL.
-9. Select `View details` for a run such as `run_demo_failed`.
-10. Confirm the same-page detail panel shows the selected run, persisted attempts, sanitized intake payload, and allowlisted mock/audit result data.
-11. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the read-only detail visible.
-12. Confirm the browser Network tab shows only local GET requests such as `/api/leads/runs` and `/api/leads/runs/run_demo_failed`.
-13. Confirm no retry button, mutation action, edit action, delete action, POST, PUT, PATCH, DELETE, real external API call, or webhook is visible or triggered.
+7. Use the Owner filter and confirm only rows for that derived owner remain visible while the URL includes `owner=<owner-name>`.
+8. Use the Error type filter with `adapter` and confirm failed/retried adapter-error rows remain visible while rows without a run-level error type are hidden.
+9. Confirm `Reset filters` stays visually secondary, is aligned with the filter group, wraps cleanly on narrow layouts, and clears active filters.
+10. Search for a value with no matches and confirm the filtered empty state says no runs match the filters.
+11. Apply date filters such as `from=2026-06-01` and `to=2026-06-01` and confirm the date values persist in the URL.
+12. Select `View details` for a run such as `run_demo_failed`.
+13. Confirm the same-page detail panel shows the selected run, derived owner/error type, persisted attempts, sanitized intake payload, and allowlisted mock/audit result data.
+14. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the read-only detail visible.
+15. Confirm the browser Network tab shows only local GET requests such as `/api/leads/runs` and `/api/leads/runs/run_demo_failed`.
+16. Confirm no retry button, mutation action, edit action, delete action, send action, archive action, POST, PUT, PATCH, DELETE, real external API call, or webhook is visible or triggered.
 
 ## 10. Phase 3 Validation
 
@@ -330,7 +333,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Repair Slice 11 Validation
+## 10.1 Slice 12 Validation
 
 ```powershell
 uv sync --frozen
@@ -372,7 +375,7 @@ $env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
 pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
 
-Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/search/date filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
+Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/search/date/owner/error-type filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
 
 ## 10.2 Final Local Portfolio Handoff Checklist
 
@@ -410,11 +413,12 @@ pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port <frontend-port>
 5. Open `http://127.0.0.1:<frontend-port>/admin/runs` and verify:
 
 - seeded success, failed, queued, and retried rows render;
-- status, search, and date filters work and update the URL;
+- status, search, date, owner, and error-type filters work and update the URL;
+- `Reset filters` is visually secondary, aligns with the filter group, wraps cleanly on narrow layouts, and clears active filters;
 - selected detail opens on the same page;
 - `?status=success&runId=run_demo_failed` shows the selected-run-hidden notice while keeping detail visible;
 - admin interactions issue local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>` only;
-- no retry, edit, delete, submit, resubmit, rerun, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered.
+- no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered.
 
 6. Review generated artifacts before any manual commit:
 
