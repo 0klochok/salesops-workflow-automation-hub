@@ -9,130 +9,142 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final portfolio readiness docs refresh |
+| Current phase | Final local portfolio-readiness audit |
 | Overall status | on-track |
-| Quality gate status | Required frontend and Git/artifact gates passed |
-| Completion | Final portfolio-readiness docs refresh complete |
+| Quality gate status | Required frontend, Git/artifact, forbidden-pattern, and local smoke checks passed |
+| Completion | Phase 4 Slice 15 final local portfolio-readiness audit complete |
 | Main blocker | none |
 
 ## 1. Current Objective
 
-- Refresh final portfolio-readiness docs after the read-only owner/error-type admin filter slice.
-- Correct stale current-state wording in `README.md`, `CONTEXT.md`, and `STATE.md`.
-- Confirm generated artifacts are ignored and not tracked.
-- Record frontend validation, Git/artifact checks, skipped checks, known risks, and Git safety posture.
-- Avoid backend, API route, admin UI behavior, dependency, database schema, migration, test, GitHub Actions, external API, commit, and push changes.
+- Perform the final local portfolio-readiness audit after the docs-only refresh.
+- Verify public-facing README setup, validation, demo usage, and mock/no-paid-service posture against the current app shape.
+- Confirm the frontend still passes local quality gates and production build.
+- Confirm ignored/generated artifacts are not tracked.
+- Confirm GitHub Actions were not added.
+- Confirm tracked files do not contain token-shaped secrets, live paid-service endpoints, or approval-bypassing wording.
+- Perform a local frontend smoke check without real external API calls.
+- Update `STATE.md` only with audit evidence, pass/fail results, skipped checks, known risks, and Git safety posture.
 
 ## 2. What Was Inspected
 
-- Pre-edit Git status for this docs refresh: `git status --short` returned no output.
-- Tracked ignored files: `git ls-files -ci --exclude-standard` returned no output.
-- TypeScript build-info tracking: `git ls-files -- apps/web/tsconfig.tsbuildinfo` returned no output.
-- Generated-artifact ignore rules were verified for `*.tsbuildinfo`, `.next`, `node_modules`, `coverage`, Python caches, `.venv`, `.env`, and logs.
-- GitHub Actions workflow absence was verified with `Test-Path -LiteralPath ".github\workflows"`, which returned `False`.
-- Source-code forbidden-pattern scan found no live HubSpot, Slack, OpenAI, or Google Sheets endpoints and no token-shaped secrets.
-- Documentation references to real external services were reviewed; they describe forbidden or explicitly approval-gated usage, not required paid API usage.
-- Reviewed `README.md`, `RUNBOOK.md`, `CONTEXT.md`, and `STATE.md` for final-project setup, validation, generated-artifact, and mock/local-only guidance.
+- `README.md`, `CONTEXT.md`, `STATE.md`, and relevant app/docs files were reviewed for stale or overstated claims.
+- `apps/web/package.json` was inspected to confirm the requested frontend script names map to local `eslint`, `vitest`, `tsc --noEmit`, and `next build` commands.
+- `apps/web/src/app/api/leads/intake/route.ts`, `apps/web/src/app/api/leads/runs/route.ts`, and `apps/web/src/app/api/leads/runs/[runId]/route.ts` were inspected to confirm local proxy behavior.
+- `apps/web/src/components/admin-run-history.tsx` and `apps/web/src/app/admin/runs/page.tsx` were inspected to confirm the public admin demo remains read-only.
+- `.gitignore` was reviewed for generated artifact coverage.
+- Tracked files were scanned for token-shaped secrets, private-key patterns, live paid-service endpoints, and external-service wording.
+- Local HTTP smoke covered the main app route and read-only admin route through a temporary Next.js dev server.
 
 ## 3. What Changed
 
 | Path | Purpose |
 |---|---|
-| `README.md` | Updated opening status from Slice 12 implementation wording to final local portfolio-readiness review |
-| `CONTEXT.md` | Updated the current phase and replaced the stale hard-coded worktree description with a durable Git-state instruction |
-| `STATE.md` | Refreshed final review evidence, validation results, skipped checks, known risks, and Git safety posture |
+| `STATE.md` | Recorded the final local portfolio-readiness audit evidence from this pass |
 
-No backend code, frontend behavior, UI design, dependencies, tests, database schema, migrations, generated files, GitHub Actions, real integrations, secrets, commits, or pushes were changed.
+No README, CONTEXT, backend code, frontend behavior, UI design, API route, dependency, test, database schema, migration, generated file, GitHub Actions, real integration, secret, commit, or push changes were made.
+
+Public APIs, interfaces, schemas, and types remain unchanged.
 
 ## 4. Automated Validation
 
 | Gate | Command | Status | Exact result |
 |---|---|---|---|
-| Frontend lint | `pnpm --dir apps/web lint` | pass | `$ eslint .` completed with exit 0 |
-| Frontend tests | `pnpm --dir apps/web test -- --run` | pass | `Test Files 4 passed (4)`; `Tests 26 passed (26)`; duration `25.37s` |
-| Frontend typecheck | `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit` completed with exit 0 |
-| Frontend build | `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `4.4s`; generated 8 static pages |
-| Git status before docs edits | `git status --short` | pass | No output |
-| Git whitespace check after docs edits | `git diff --check` | pass | Exit 0; Git reported LF-to-CRLF normalization warnings for `CONTEXT.md`, `README.md`, and `STATE.md` |
-| Git status after docs edits | `git status --short` | pass | Output showed only ` M CONTEXT.md`, ` M README.md`, and ` M STATE.md` |
-| Git diff names after docs edits | `git diff --name-only` | pass | Output showed only `CONTEXT.md`, `README.md`, and `STATE.md`; Git reported LF-to-CRLF normalization warnings |
-| Git diff stat after docs edits | `git diff --stat` | pass | Output showed a docs-only diff across `CONTEXT.md`, `README.md`, and `STATE.md`; Git reported LF-to-CRLF normalization warnings |
+| Initial Git status | `git status --short` | pass | No output |
+| Git whitespace check before `STATE.md` update | `git diff --check` | pass | No output; exit 0 |
+| Git diff names before `STATE.md` update | `git diff --name-only` | pass | No output |
+| Git diff stat before `STATE.md` update | `git diff --stat` | pass | No output |
+| Tracked ignored files | `git ls-files -ci --exclude-standard` | pass | No output |
+| Build-info tracking | `git ls-files -- apps/web/tsconfig.tsbuildinfo` | pass | No output; file is not tracked |
+| GitHub Actions workflows | `Test-Path .github\workflows` | pass | `False`; no workflow directory exists |
+| Frontend lint | `pnpm -C apps/web lint` | pass | `$ eslint .` completed with exit 0 |
+| Frontend tests | `pnpm -C apps/web test` | pass | `Test Files 4 passed (4)`; `Tests 26 passed (26)`; duration `14.04s` |
+| Frontend typecheck | `pnpm -C apps/web typecheck` | pass | `$ tsc --noEmit` completed with exit 0 |
+| Frontend build | `pnpm -C apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `3.2s`; generated 8 static pages |
 
-Additional generated-artifact verification:
+Additional forbidden-pattern and posture checks:
 
 | Check | Command | Status | Result |
 |---|---|---|---|
-| Tracked ignored files | `git ls-files -ci --exclude-standard` | pass | No output |
-| Build-info tracking | `git ls-files -- apps/web/tsconfig.tsbuildinfo` | pass | No output; file is not tracked |
-| Ignore coverage | `git check-ignore -v apps/web/tsconfig.tsbuildinfo apps/web/.next apps/web/node_modules node_modules coverage/ apps/web/coverage/ .mypy_cache .pytest_cache .ruff_cache .venv .env logs/uvicorn-smoke.out.log` | pass | Each path matched the expected `.gitignore` rule |
-| GitHub Actions workflows | `Test-Path -LiteralPath ".github\workflows"` | pass | `False`; no workflow directory exists |
-| Source forbidden-pattern scan | `rg -n --glob "*.{py,ts,tsx,js,mjs}" "api\.hubapi\.com|hooks\.slack\.com|api\.openai\.com|sheets\.googleapis\.com|sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}"` | pass | No output; command exited 1 because there were no matches |
-| Docs external-service wording scan | `rg -n --glob "*.md" "paid API|paid APIs|real HubSpot|real Slack|Google Sheets|OpenAI|external service|external services|external API|external APIs|webhook|webhooks"` | pass | Matches describe forbidden, mocked, optional, or explicitly approval-gated usage; docs do not require paid APIs |
-
-Validated ignore matches:
-
-- `.gitignore:44:*.tsbuildinfo` for `apps/web/tsconfig.tsbuildinfo`
-- `.gitignore:28:.next/` for `apps/web/.next`
-- `.gitignore:27:node_modules/` for root and frontend `node_modules`
-- `.gitignore:39:coverage/` for root and frontend coverage directories
-- `.gitignore:16:.mypy_cache/`, `.gitignore:14:.pytest_cache/`, `.gitignore:15:.ruff_cache/`, and `.gitignore:11:.venv/`
-- `.gitignore:2:.env`
-- `.gitignore:47:logs/`
+| Tracked token/private-key scan | `git grep -n -I -E 'sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,}|ya29\.[0-9A-Za-z_-]+|SG\.[0-9A-Za-z_-]{20,}|supabase_service_role|service_role|-----BEGIN (RSA|OPENSSH|DSA|EC|PGP|PRIVATE) KEY-----' -- .` | pass | No output; command exited 1 because there were no matches |
+| Tracked live-endpoint scan | `git grep -n -I -E 'api\.hubapi\.com|hooks\.slack\.com|slack\.com/api|api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|sheets\.googleapis\.com|supabase\.co/auth|supabase\.co/rest|service_role' -- .` | pass | No output; command exited 1 because there were no matches |
+| External-service wording scan | `git grep -n -I -E 'HubSpot|Slack|Google Sheets|OpenAI|Anthropic|Gemini|paid API|paid APIs|webhook|webhooks|external API|external APIs|external service|external services|real API|real APIs' -- README.md CONTEXT.md STATE.md DESIGN.md EXEC_PLAN.md REQ.md RUNBOOK.md TDD.md AGENTS.md .env.example backend apps tests` | pass | Matches describe mocked, forbidden, optional, local-only, or explicitly approval-gated usage |
+| Network-call surface scan | `git grep -n -I -E 'fetch\(|axios|XMLHttpRequest|requests\.|httpx\.|aiohttp|urllib|Invoke-RestMethod|Invoke-WebRequest' -- backend apps tests README.md CONTEXT.md DESIGN.md EXEC_PLAN.md REQ.md RUNBOOK.md TDD.md STATE.md` | pass | Matches are local frontend/proxy calls or documented local `127.0.0.1` smoke commands |
+| Admin mutation-control scan | `git grep -n -I -E 'retry|edit|delete|resubmit|rerun|POST|PUT|PATCH|DELETE|worker|archive|send' -- apps/web/src/app/admin apps/web/src/components/admin-run-history.tsx apps/web/src/app/api/leads/runs` | pass | No output; command exited 1 because there were no matches |
 
 Validation notes:
 
 - The Windows sandbox could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
-- A final CI/workflow/status confirmation batch hit an approval-review timeout; the workflow absence check was rerun separately and returned `False`.
-- No dependency installation, dependency update, GitHub Actions, commits, pushes, paid API calls, real external API calls, or local server/browser smoke checks were performed.
+- `Get-Content apps\web\src\app\api\leads\runs\[runId]\route.ts` failed because PowerShell treated the bracketed path as a wildcard pattern; the file was then read successfully with `Get-Content -LiteralPath "apps\web\src\app\api\leads\runs\[runId]\route.ts"`.
+- The direct `Start-Process -FilePath "pnpm"` smoke attempt failed because `pnpm` resolves to a PowerShell script, not a Win32 executable. The smoke was rerun through a hidden PowerShell child process.
+- The first dev-server retry passed `--` through to Next.js and failed with an invalid project-directory error. The successful smoke used direct Next.js flags after the script name.
+- A smoke script variable named `$home` conflicted with PowerShell's read-only `$HOME`; the successful smoke used `$homeResponse`.
 
-## 5. Skipped Checks
+## 5. Local Smoke
+
+| Check | Command | Status | Result |
+|---|---|---|---|
+| Temporary frontend server | `pnpm -C apps/web dev --hostname 127.0.0.1 --port 5499` | pass | Server started on `http://127.0.0.1:5499` and was stopped after smoke |
+| Main app route | `Invoke-WebRequest -Uri "http://127.0.0.1:5499" -UseBasicParsing` | pass | HTTP 200; response contained `Lead intake form` and `CSV import` |
+| Admin run-history route | `Invoke-WebRequest -Uri "http://127.0.0.1:5499/admin/runs" -UseBasicParsing` | pass | HTTP 200; response contained `Admin run history` and `Read-only` |
+
+Smoke notes:
+
+- No real API calls were performed.
+- The smoke fetched pages only through the local frontend server.
+- The FastAPI backend was not started for this smoke, so persisted backend data and browser interaction flows were not exercised.
+- True browser automation was unavailable because Playwright was not installed in the Node runtime and the Browser skill read was rejected; HTTP render-smoke passed instead.
+
+## 6. Skipped Or Limited Checks
 
 | Check | Status | Written reason |
 |---|---|---|
-| Backend tests/lint/typecheck | skipped | No backend/API/schema/migration files changed; this refresh is docs and generated-artifact verification only |
+| Backend tests/lint/typecheck | skipped | This audit found no backend/API/schema/migration/source changes; requested implementation is `STATE.md` documentation only |
 | Backend migration generation | skipped | No persistence models or database schema changed |
-| Manual browser smoke | skipped | No frontend runtime behavior or UI changed; frontend lint, tests, typecheck, and build passed |
+| Full browser visual smoke | limited | Playwright was unavailable in the Node runtime and the Browser skill read was rejected; local HTTP render-smoke passed |
+| Backend/frontend integration smoke with seeded PostgreSQL | skipped | Not required for the docs-only audit update and would broaden scope beyond the final frontend-readiness smoke |
 | Real HubSpot/Slack/Google Sheets/OpenAI/API smoke | skipped | Explicitly forbidden; project remains mock-first, local-only, and demo-safe |
 | Paid API, production API, external CRM, webhook, or external service calls | skipped | Explicitly forbidden without user approval and not needed for this phase |
 | GitHub Actions / CI validation | skipped | The project uses local validation first and this task forbids GitHub Actions changes |
 | Commit and push | skipped | Explicitly forbidden; Codex did not commit or push |
 
-## 6. Known Risks And Non-Blocking Notes
+## 7. Known Risks And Non-Blocking Notes
 
-- `git diff --check` passed after this docs refresh; Git reported LF-to-CRLF normalization warnings for edited Markdown files on Windows.
-- The final worktree should contain documentation-only changes: `CONTEXT.md`, `README.md`, and `STATE.md`.
-- Generated artifacts may continue to exist locally after validation, but `.gitignore` covers the checked build, cache, dependency, log, coverage, and environment outputs.
-- Manual browser smoke was not run, so live backend/frontend integration remains covered by documented RUNBOOK steps rather than this final QA pass.
+- The final audit update is documentation-only and should leave `STATE.md` as the only tracked diff.
+- Ignored generated artifacts may continue to exist locally after `pnpm` test/build/dev commands, but the tracked-artifact checks returned no output.
+- The local HTTP smoke verifies route rendering but not hydrated browser interactions, visual layout, seeded PostgreSQL data, or backend proxy success states.
+- README and CONTEXT were not changed in this implementation because inspected claims aligned with current source and mock/no-paid-service posture.
 
-## 7. Manual Verification Commands
+## 8. Manual Verification Commands
 
 ```powershell
-pnpm --dir apps/web lint
-pnpm --dir apps/web test -- --run
-pnpm --dir apps/web typecheck
-pnpm --dir apps/web build
-git diff --check
 git status --short
+git diff --check
 git diff --name-only
+git diff --stat
 git ls-files -ci --exclude-standard
 git ls-files -- apps/web/tsconfig.tsbuildinfo
-Test-Path -LiteralPath ".github\workflows"
-git check-ignore -v apps/web/tsconfig.tsbuildinfo apps/web/.next apps/web/node_modules node_modules coverage/ apps/web/coverage/ .mypy_cache .pytest_cache .ruff_cache .venv .env logs/uvicorn-smoke.out.log
+Test-Path .github\workflows
+pnpm -C apps/web lint
+pnpm -C apps/web test
+pnpm -C apps/web typecheck
+pnpm -C apps/web build
+pnpm -C apps/web dev --hostname 127.0.0.1 --port 5499
 ```
 
-## 8. Git Safety
+## 9. Git Safety
 
 - No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
 - No commits were created.
 - No pushes were made.
 - User manually commits and pushes after review.
 
-## 9. Next Suggested Phase
+## 10. Next Suggested Phase
 
-After user review, manually commit the docs-only final portfolio-readiness refresh if the diff is acceptable.
+After user review, manually commit the final `STATE.md` audit update if the diff is acceptable.
 
-## 10. Suggested Commit Message
+## 11. Suggested Commit Message
 
 ```text
-Refresh final portfolio readiness docs
+Record final portfolio readiness audit
 ```
