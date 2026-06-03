@@ -635,6 +635,8 @@ describe("AdminRunHistory", () => {
       /rerun/i,
       /send/i,
       /submit/i,
+      /worker/i,
+      /background job/i,
     ]) {
       expect(
         screen.queryByRole("button", { name: mutationLabel })
