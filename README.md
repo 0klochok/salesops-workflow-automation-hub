@@ -101,7 +101,7 @@ Final local handoff checklist:
 5. Start the frontend in another PowerShell window with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the backend port.
 6. Open `/admin/runs`, confirm seeded rows render, status/search/date/owner/error-type filters work, selected detail opens, and the selected-run-hidden notice appears for a filtered-out selected run.
 7. Confirm the admin path uses local `GET` requests only and has no retry, edit, delete, submit, resubmit, rerun, worker, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
-8. Before any manual commit, review generated artifacts. `apps/web/tsconfig.tsbuildinfo` is ignored by `.gitignore` but is currently tracked, so validation may modify it even though it is not an intentional source change.
+8. Before any manual commit, review generated artifacts with `git status --short` and `git diff --stat`. TypeScript build-info, Next.js output, dependency folders, coverage, caches, logs, and local `.env` files are ignored and should not appear as source changes.
 
 ## Local Backend Setup
 

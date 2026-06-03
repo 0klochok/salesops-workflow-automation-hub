@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Slice 12 - read-only owner and error-type admin filters |
+| Current phase | Final local QA after generated-artifact hygiene |
 
 ## 2. Operating Rules
 
@@ -33,7 +33,7 @@ git status --short --branch
 git remote -v
 ```
 
-Expected Slice 12 observation: worktree changes should stay limited to the read-only owner/error-type filter slice. No files should be staged, committed, or pushed by Codex.
+Expected final local QA observation: worktree changes should stay limited to intentional documentation corrections, and generated/build artifacts should not appear as source changes. No files should be staged, committed, or pushed by Codex.
 
 ## 5. Check Tool Versions
 
@@ -343,20 +343,21 @@ uv run mypy backend tests
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
 pnpm --dir apps/web test -- --run
-git diff -- apps/web/tsconfig.tsbuildinfo
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
-git diff -- apps/web/tsconfig.tsbuildinfo
 docker compose config
 git diff --check
 Test-Path -LiteralPath ".github\workflows"
+git ls-files -ci --exclude-standard
+git ls-files -- apps/web/tsconfig.tsbuildinfo
+git check-ignore -v apps/web/tsconfig.tsbuildinfo apps/web/.next apps/web/node_modules node_modules coverage/ apps/web/coverage/ .mypy_cache .pytest_cache .ruff_cache .venv .env logs/uvicorn-smoke.out.log
 git diff --cached --name-only
 git status --short
 ```
 
 Live Docker/PostgreSQL and manual HTTP smoke checks require starting containers and local servers. If they cannot be run on a machine, record the reason in `STATE.md`; static `docker compose config`, automated API/repository tests, and frontend tests remain required.
 
-`apps/web/tsconfig.tsbuildinfo` is a tracked generated artifact even though `*.tsbuildinfo` is ignored. Check it before and after frontend typecheck/build, and record any validation churn in `STATE.md` instead of staging or committing it without review.
+`apps/web/tsconfig.tsbuildinfo` is an ignored generated artifact and should not be tracked. Verify it with `git ls-files -- apps/web/tsconfig.tsbuildinfo` and `git check-ignore -v apps/web/tsconfig.tsbuildinfo`; TypeScript and Next.js validation may rewrite the local ignored file without producing a tracked diff.
 
 For a local portfolio demo smoke with temporary ports:
 
@@ -425,9 +426,12 @@ pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port <frontend-port>
 ```powershell
 git status --short
 git diff --stat
+git ls-files -ci --exclude-standard
+git ls-files -- apps/web/tsconfig.tsbuildinfo
+git check-ignore -v apps/web/tsconfig.tsbuildinfo apps/web/.next apps/web/node_modules node_modules coverage/ apps/web/coverage/ .mypy_cache .pytest_cache .ruff_cache .venv .env logs/uvicorn-smoke.out.log
 ```
 
-`apps/web/tsconfig.tsbuildinfo` is ignored by `.gitignore` but currently tracked. TypeScript and Next.js validation may modify it; treat that as generated validation churn unless the user separately approves repository cleanup.
+Generated artifacts such as TypeScript build-info, Next.js output, dependency folders, coverage, caches, logs, and local `.env` files are ignored and should not appear as source changes.
 
 ## 11. Docker/PostgreSQL Validation
 
