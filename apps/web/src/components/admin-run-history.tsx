@@ -206,17 +206,17 @@ export function AdminRunHistory() {
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-3 border-b border-border pb-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-normal text-foreground">
+      <div className="mx-auto flex min-w-0 w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+        <header className="flex min-w-0 flex-col gap-3 border-b border-border pb-5">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              <h1 className="min-w-0 text-2xl font-semibold tracking-normal text-foreground">
                 Admin run history
               </h1>
               <Badge>Read-only</Badge>
             </div>
             <Link
-              className="inline-flex min-h-9 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel hover:bg-muted"
+              className="inline-flex min-h-9 shrink-0 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel hover:bg-muted"
               href="/"
             >
               Lead demo
@@ -259,7 +259,7 @@ export function AdminRunHistory() {
 function LoadingState() {
   return (
     <section
-      className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground"
+      className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground"
       role="status"
     >
       Loading persisted run history...
@@ -270,11 +270,11 @@ function LoadingState() {
 function ErrorState({ error }: { error: ApiErrorResponse }) {
   return (
     <section
-      className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-danger"
+      className="min-w-0 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-danger"
       role="alert"
     >
       <h2 className="text-base font-semibold">Unable to load run history</h2>
-      <p className="mt-2">{formatApiError(error)}</p>
+      <p className="mt-2 break-words">{formatApiError(error)}</p>
     </section>
   );
 }
@@ -300,10 +300,10 @@ function RunHistoryFiltersForm({
   return (
     <section
       aria-label="Run history filters"
-      className="rounded-lg border border-border bg-surface p-4 shadow-panel"
+      className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel"
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[minmax(10rem,0.8fr)_minmax(12rem,1fr)_minmax(10rem,0.8fr)_minmax(16rem,1.4fr)_repeat(2,minmax(10rem,0.7fr))_auto] 2xl:items-end">
-        <div className="space-y-2">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(9rem,0.8fr)_minmax(10rem,1fr)_minmax(9rem,0.8fr)_minmax(14rem,1.4fr)_repeat(2,minmax(9rem,0.7fr))_auto] xl:items-end">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor="run-status-filter">Status</Label>
           <Select
             id="run-status-filter"
@@ -324,7 +324,7 @@ function RunHistoryFiltersForm({
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor="run-owner-filter">Owner</Label>
           <Select
             disabled={ownerFilterOptions.length === 0}
@@ -343,7 +343,7 @@ function RunHistoryFiltersForm({
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor="run-error-type-filter">Error type</Label>
           <Select
             id="run-error-type-filter"
@@ -364,7 +364,7 @@ function RunHistoryFiltersForm({
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor="run-search-filter">Search</Label>
           <Input
             id="run-search-filter"
@@ -377,7 +377,7 @@ function RunHistoryFiltersForm({
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor="run-from-filter">From</Label>
           <Input
             id="run-from-filter"
@@ -389,7 +389,7 @@ function RunHistoryFiltersForm({
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor="run-to-filter">To</Label>
           <Input
             id="run-to-filter"
@@ -401,7 +401,7 @@ function RunHistoryFiltersForm({
           />
         </div>
 
-        <div className="col-span-full flex justify-stretch sm:justify-end 2xl:col-auto 2xl:self-end">
+        <div className="col-span-full flex min-w-0 justify-stretch sm:justify-end xl:col-auto xl:self-end">
           <Button
             className="h-10 w-full px-3 sm:w-auto"
             disabled={!hasActiveFilters}
@@ -433,7 +433,7 @@ function RunHistoryTable({
   if (runs.length === 0) {
     if (hasActiveFilters) {
       return (
-        <section className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground">
+        <section className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground">
           <h2 className="text-base font-semibold text-foreground">
             No runs match these filters.
           </h2>
@@ -441,7 +441,7 @@ function RunHistoryTable({
             Clear the current filters to return to the full persisted run list.
           </p>
           <Button
-            className="mt-4 h-9 px-3"
+            className="mt-4 h-10 w-full px-3 sm:w-auto"
             onClick={onResetFilters}
             type="button"
             variant="secondary"
@@ -453,14 +453,14 @@ function RunHistoryTable({
     }
 
     return (
-      <section className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground">
+      <section className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground">
         No persisted automation runs yet.
       </section>
     );
   }
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-4 shadow-panel">
+    <section className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel">
       <div className="mb-4 flex flex-col gap-1">
         <h2 className="text-base font-semibold">Persisted runs</h2>
         <p className="text-sm text-muted-foreground">
@@ -469,8 +469,8 @@ function RunHistoryTable({
         </p>
       </div>
 
-      <div className="overflow-x-auto" data-testid="run-history-table">
-        <table className="w-full min-w-[1280px] border-collapse text-left text-sm">
+      <div className="max-w-full overflow-x-auto" data-testid="run-history-table">
+        <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border">
               <th className="px-3 py-2 font-semibold text-muted-foreground">
@@ -548,7 +548,7 @@ function RunHistoryTable({
                 <td className="px-3 py-3">{run.attempt_count}</td>
                 <td className="px-3 py-3">
                   {run.latest_attempt ? (
-                    <div className="max-w-md">
+                    <div className="min-w-0 max-w-md">
                       <p>
                         Attempt {run.latest_attempt.attempt_number}:{" "}
                         {run.latest_attempt.status}
@@ -599,7 +599,7 @@ function RunHistoryTable({
 function FilteredOutSelectionNotice({ runId }: { runId: string }) {
   return (
     <section
-      className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+      className="min-w-0 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
       role="status"
     >
       Selected run <span className="break-all font-medium">{runId}</span> is
@@ -759,7 +759,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
                       <p className="min-w-0 break-words font-medium">
                         {event.event_type}
                       </p>
-                      <p className="break-words text-muted-foreground">
+                      <p className="min-w-0 break-words text-muted-foreground">
                         {formatTimestamp(event.created_at)}
                       </p>
                     </div>
