@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-02 |
+| Last updated | 2026-06-03 |
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 Slice 9 - portfolio demo and handoff polish |
+| Current phase | Phase 4 Slice 10 - final local portfolio readiness audit |
 
 ## 2. Operating Rules
 
@@ -330,7 +330,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 9 Validation
+## 10.1 Phase 4 Slice 10 Validation
 
 ```powershell
 uv sync --frozen
@@ -368,6 +368,57 @@ pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
 
 Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/search/date filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
+
+## 10.2 Final Local Portfolio Handoff Checklist
+
+Use this checklist before recording screenshots, handing the project to a reviewer, or manually preparing a commit.
+
+1. Confirm the worktree before validation:
+
+```powershell
+git status --short
+git diff --cached --name-only
+```
+
+2. Start local PostgreSQL, apply migrations, and seed synthetic demo data:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+```
+
+3. Start the backend on a free local-only port:
+
+```powershell
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port <backend-port>
+```
+
+4. Start the frontend in a second PowerShell window, pointed at that backend:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:<backend-port>"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:<backend-port>"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port <frontend-port>
+```
+
+5. Open `http://127.0.0.1:<frontend-port>/admin/runs` and verify:
+
+- seeded success, failed, queued, and retried rows render;
+- status, search, and date filters work and update the URL;
+- selected detail opens on the same page;
+- `?status=success&runId=run_demo_failed` shows the selected-run-hidden notice while keeping detail visible;
+- admin interactions issue local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>` only;
+- no retry, edit, delete, submit, resubmit, rerun, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered.
+
+6. Review generated artifacts before any manual commit:
+
+```powershell
+git status --short
+git diff --stat
+```
+
+`apps/web/tsconfig.tsbuildinfo` is ignored by `.gitignore` but currently tracked. TypeScript and Next.js validation may modify it; treat that as generated validation churn unless the user separately approves repository cleanup.
 
 ## 11. Docker/PostgreSQL Validation
 

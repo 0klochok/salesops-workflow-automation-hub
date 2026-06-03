@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 Slice 9: portfolio demo and handoff polish for a local-only persisted run-history demo.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 Slice 10: final local portfolio readiness audit and screenshot/handoff checklist.
 
 ## Problem
 
@@ -90,6 +90,17 @@ pnpm --dir apps/web dev
 Open `http://localhost:3000/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/search/date filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
 
 The admin screen is read-only. Interacting with `/admin/runs` should only issue local `GET` requests for run history and selected run detail through the Next.js API proxy. It must not expose retry, edit, delete, submit, resubmit, rerun, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
+
+Final local handoff checklist:
+
+1. From PowerShell at the repository root, run `docker compose up -d postgres`.
+2. Run `uv run alembic upgrade head`.
+3. Run `uv run python -m backend.app.leads.demo_seed`.
+4. Start the backend on a free local port with `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port <backend-port>`.
+5. Start the frontend in another PowerShell window with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the backend port.
+6. Open `/admin/runs`, confirm seeded rows render, filters work, selected detail opens, and the selected-run-hidden notice appears for a filtered-out selected run.
+7. Confirm the admin path uses local `GET` requests only and has no retry, edit, delete, submit, resubmit, rerun, worker, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
+8. Before any manual commit, review generated artifacts. `apps/web/tsconfig.tsbuildinfo` is ignored by `.gitignore` but is currently tracked, so validation may modify it even though it is not an intentional source change.
 
 ## Local Backend Setup
 
