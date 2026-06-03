@@ -4,17 +4,17 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-02 |
+| Last updated | 2026-06-03 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
+| Current phase | Repair Slice 11 - public portfolio readiness review completion |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief
 
 SalesOps Workflow Automation Hub is a planned portfolio demo for a growth agency with 5 sales reps. It shows how lead intake, validation, deduplication, CRM sync, Slack notification, backup/audit logging, failure inspection, and manual retries can be automated with a code-first system.
 
-Phase 4 slice 7 adds read-only selected run detail visibility to the backend and `/admin/runs` UI while keeping CRM/Slack behavior deterministic and mock-only.
+Repair Slice 11 completes the public portfolio readiness review for the local read-only `/admin/runs` demo while keeping CRM/Slack behavior deterministic and mock-only.
 
 ## 3. Goals
 
@@ -22,7 +22,7 @@ Phase 4 slice 7 adds read-only selected run detail visibility to the backend and
 |---|---|---|---|
 | G-001 | Replace manual lead copy/paste with a traceable automation workflow | P0 | Demo flow shows validated lead intake through run logging |
 | G-002 | Reduce duplicate lead handling | P0 | Duplicate checks by email and company domain are tested |
-| G-003 | Make failures inspectable and retryable | P0 | Admin view shows failure details and retry action |
+| G-003 | Make failures inspectable and retryable | P0 | Admin view shows failure details; backend retry behavior is tested without exposing public admin mutation controls |
 | G-004 | Keep external integrations safe for a portfolio demo | P0 | CRM and Slack use mocks by default |
 | G-005 | Present the project clearly as portfolio work | P1 | README, architecture diagram, seed data, handoff docs, and demo script exist |
 

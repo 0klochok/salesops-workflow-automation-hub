@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Phase 4 slice 7 adds read-only selected run detail visibility after the Phase 4 slice 6 run-history contract enrichment. It keeps mock CRM/Slack behavior and the intake response contract unchanged, uses existing persisted run/lead/attempt/audit data without a migration, and does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Repair Slice 11 completes the public portfolio readiness review after the prior Slice 11 output was only a phase prompt. It keeps mock CRM/Slack behavior and the intake response contract unchanged, uses existing persisted run/lead/attempt/audit data without a migration, and does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -102,7 +102,7 @@ Phase 4 slice 7 adds read-only selected run detail visibility after the Phase 4 
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Phase 4 slice 7 changes are limited to additive read-only run-detail contract fields, UI display/types/tests, and source-of-truth docs.
+- Repair Slice 11 changes are limited to source-of-truth documentation, local validation evidence, manual smoke evidence, generated artifact notes, skipped-check reasons, and Git safety status.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.

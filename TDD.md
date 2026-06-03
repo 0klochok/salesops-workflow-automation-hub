@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-02 |
+| Last updated | 2026-06-03 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
+| Current phase | Repair Slice 11 - public portfolio readiness review completion |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,9 +20,9 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Phase 4 Slice 7 Test Status
+## 3. Repair Slice 11 Test Status
 
-Phase 4 slice 7 adds backend and frontend tests for additive read-only selected run detail visibility while preserving existing seed, retry, intake, run-history, and admin UI tests.
+Repair Slice 11 does not add product behavior. It re-runs the full local backend/frontend quality gate and records public portfolio readiness, skipped external checks, manual smoke results, generated artifact status, and Git safety status.
 
 Current backend commands:
 

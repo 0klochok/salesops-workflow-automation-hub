@@ -4,14 +4,14 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-02 |
+| Last updated | 2026-06-03 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
+| Current phase | Repair Slice 11 - public portfolio readiness review completion |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
-| Git state | `main`; Phase 4 slice 7 worktree changes remain unstaged for user review |
+| Git state | `main`; Repair Slice 11 documentation changes remain unstaged for user review |
 
 ## 2. Project Summary
 
@@ -23,7 +23,7 @@ The backend includes a `uv`-managed FastAPI app, local-safe settings, a determin
 
 The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, and a current-session dashboard stored in browser `sessionStorage`.
 
-Phase 4 slice 7 adds read-only web admin selected run detail visibility on top of the SQLAlchemy/Alembic foundation.
+Repair Slice 11 is a documentation-first public portfolio readiness completion pass over the local read-only admin demo, full local quality gate, manual smoke path, generated artifact handling, skipped external checks, and Git safety status.
 
 ## 3. Source-of-Truth Files
 
@@ -105,7 +105,7 @@ Phase 4 slice 7 adds read-only web admin selected run detail visibility on top o
 - Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake/retry records, run history, selected run detail, seed data, and read-only admin UI implemented.
 - Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; UI action planned later.
 - Error detail page with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel implemented; dedicated failure page/action planned later.
-- Admin table with filters by date, source, status, lead owner, and error type. Phase 4 slice 7 has a read-only persisted run-history table with lead email/company identity and selected run detail; full persisted filters and owner/error type support remain future work.
+- Admin table with filters by date, source, status, lead owner, and error type. The current read-only persisted run-history table supports status, search, and date filtering with lead email/company identity and selected run detail; full owner/error type filters remain future work.
 - Backup/audit records. Persisted for local intake and manual retry events.
 
 ## 8. Assumptions

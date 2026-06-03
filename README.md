@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Phase 4 Slice 10: final local portfolio readiness audit and screenshot/handoff checklist.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Repair Slice 11: public portfolio readiness review completion.
 
 ## Problem
 
@@ -16,7 +16,7 @@ The planned system demonstrates an automated workflow that:
 - simulates CRM contact/deal create-or-update behavior through an adapter;
 - simulates Slack notifications for qualified leads through an adapter;
 - records backup/audit data and automation run history;
-- provides an admin dashboard for run status, failures, filters, failure details, and manual retries.
+- provides an admin dashboard for run status, failures, filters, and failure details, with backend-only manual retry support kept out of the public read-only admin demo.
 
 ## Stack
 
@@ -47,6 +47,7 @@ The current local demo includes:
 - a persisted run-detail endpoint returns one selected run with sanitized attempts, intake payload, and allowlisted mock/audit result data;
 - `/admin/runs` provides a read-only frontend view of persisted run history, URL-preserved filters, selected run detail, filtered empty state, and selected-run-hidden notice through local `GET` proxy routes;
 - deterministic local demo seed data can create success, failed, queued, and retried workflow runs;
+- Repair Slice 11 is a documentation-first public readiness review that verifies local setup, smoke steps, generated artifacts, skipped external checks, and Git safety status;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
 ## Current Portfolio Demo Path

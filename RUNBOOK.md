@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Phase 4 Slice 10 - final local portfolio readiness audit |
+| Current phase | Repair Slice 11 - public portfolio readiness review completion |
 
 ## 2. Operating Rules
 
@@ -33,7 +33,7 @@ git status --short --branch
 git remote -v
 ```
 
-Expected Phase 3 observation: worktree may show frontend scaffold, lockfile, environment placeholder, and doc changes until the user manually commits.
+Expected Slice 11 observation: worktree changes should stay documentation-only unless validation exposes a tiny truthfulness fix. No files should be staged, committed, or pushed by Codex.
 
 ## 5. Check Tool Versions
 
@@ -330,7 +330,7 @@ $files | Select-String -Pattern "[ \t]+$"
 
 The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Phase 4 Slice 10 Validation
+## 10.1 Repair Slice 11 Validation
 
 ```powershell
 uv sync --frozen
@@ -340,15 +340,20 @@ uv run mypy backend tests
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
 pnpm --dir apps/web test -- --run
+git diff -- apps/web/tsconfig.tsbuildinfo
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
+git diff -- apps/web/tsconfig.tsbuildinfo
 docker compose config
 git diff --check
 Test-Path -LiteralPath ".github\workflows"
 git diff --cached --name-only
+git status --short
 ```
 
 Live Docker/PostgreSQL and manual HTTP smoke checks require starting containers and local servers. If they cannot be run on a machine, record the reason in `STATE.md`; static `docker compose config`, automated API/repository tests, and frontend tests remain required.
+
+`apps/web/tsconfig.tsbuildinfo` is a tracked generated artifact even though `*.tsbuildinfo` is ignored. Check it before and after frontend typecheck/build, and record any validation churn in `STATE.md` instead of staging or committing it without review.
 
 For a local portfolio demo smoke with temporary ports:
 

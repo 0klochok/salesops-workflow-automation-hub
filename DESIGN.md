@@ -4,17 +4,17 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-02 |
+| Last updated | 2026-06-03 |
 | Status | active draft |
 | Scope | Architecture for greenfield portfolio demo |
-| Current phase | Phase 4 slice 7 - read-only admin run detail visibility |
+| Current phase | Repair Slice 11 - public portfolio readiness review completion |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system remains safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-Phase 4 slice 7 builds on the persisted run-history backend and read-only `/admin/runs` page by adding selected run detail visibility. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries while using existing local lead, automation run, attempt, and audit tables. Real integrations, auth, retry UI, deployment, and GitHub Actions remain planned later or out of scope.
+Repair Slice 11 reviews the persisted run-history backend and read-only `/admin/runs` page for public portfolio readiness. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries while verifying local setup, generated artifact handling, skipped external checks, and Git safety status. Real integrations, auth, retry UI, deployment, and GitHub Actions remain planned later or out of scope.
 
 ## 3. Stack
 
@@ -63,7 +63,7 @@ Phase 4 slice 7 builds on the persisted run-history backend and read-only `/admi
 
 ## 5. Architecture Flow
 
-Current Phase 4 slice 7 local flow:
+Current Repair Slice 11 local flow:
 
 ```text
 Next.js UI -> Next.js local proxy -> FastAPI intake -> validation -> persisted snapshots -> dedupe -> mock CRM -> mock Slack -> persistence repository -> UI session dashboard
