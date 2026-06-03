@@ -613,7 +613,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
   if (state.status === "idle") {
     return (
       <section
-        className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground"
+        className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm leading-6 text-muted-foreground sm:p-5"
         data-testid="run-detail-panel"
       >
         Select a run to inspect read-only details.
@@ -624,7 +624,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
   if (state.status === "loading") {
     return (
       <section
-        className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground"
+        className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm leading-6 text-muted-foreground sm:p-5"
         data-testid="run-detail-panel"
         role="status"
       >
@@ -636,12 +636,12 @@ function RunDetailPanel({ state }: { state: DetailState }) {
   if (state.status === "error") {
     return (
       <section
-        className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-danger"
+        className="min-w-0 rounded-lg border border-red-200 bg-red-50 p-4 text-sm leading-6 text-danger sm:p-5"
         data-testid="run-detail-panel"
         role="alert"
       >
         <h2 className="text-base font-semibold">Unable to load run detail</h2>
-        <p className="mt-2">
+        <p className="mt-2 break-words">
           {state.runId}: {formatApiError(state.error)}
         </p>
       </section>
@@ -652,22 +652,24 @@ function RunDetailPanel({ state }: { state: DetailState }) {
 
   return (
     <section
-      className="rounded-lg border border-border bg-surface p-4 shadow-panel"
+      className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel sm:p-5"
       data-testid="run-detail-panel"
     >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="mb-5 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-base font-semibold">Run detail</h2>
-          <p className="break-all text-sm text-muted-foreground">{detail.run_id}</p>
+          <p className="break-words text-sm leading-6 text-muted-foreground">
+            {detail.run_id}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Badge tone={runStatusTone(detail.run_status)}>{detail.run_status}</Badge>
           <Badge>Read-only</Badge>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <DetailSection title="Lead and run">
             <KeyValueList
               entries={[
@@ -693,7 +695,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
           </DetailSection>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <DetailSection title="Attempts">
             {detail.attempts.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -703,30 +705,35 @@ function RunDetailPanel({ state }: { state: DetailState }) {
               <div className="space-y-3">
                 {detail.attempts.map((attempt) => (
                   <div
-                    className="rounded-md border border-border bg-background p-3"
+                    className="min-w-0 rounded-md border border-border bg-background p-3 sm:p-4"
                     key={attempt.attempt_number}
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium">
+                    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                      <p className="min-w-0 break-words font-medium">
                         Attempt {attempt.attempt_number}
                       </p>
-                      <Badge tone={runStatusTone(attempt.status)}>
+                      <Badge
+                        className="shrink-0"
+                        tone={runStatusTone(attempt.status)}
+                      >
                         {attempt.status}
                       </Badge>
                     </div>
-                    <p className="mt-1 text-muted-foreground">
+                    <p className="mt-1 break-words text-muted-foreground">
                       {formatTimestamp(attempt.created_at)}
                     </p>
                     {attempt.error_type ? (
-                      <p className="mt-2">Error type: {attempt.error_type}</p>
+                      <p className="mt-2 break-words">
+                        Error type: {attempt.error_type}
+                      </p>
                     ) : null}
                     {attempt.error_message ? (
-                      <p className="mt-2 text-muted-foreground">
+                      <p className="mt-2 break-words text-muted-foreground">
                         Error: {attempt.error_message}
                       </p>
                     ) : null}
                     {attempt.suggested_action ? (
-                      <p className="mt-2 text-muted-foreground">
+                      <p className="mt-2 break-words text-muted-foreground">
                         Suggested action: {attempt.suggested_action}
                       </p>
                     ) : null}
@@ -745,12 +752,14 @@ function RunDetailPanel({ state }: { state: DetailState }) {
               <div className="space-y-3">
                 {detail.audit_events.map((event) => (
                   <div
-                    className="rounded-md border border-border bg-background p-3"
+                    className="min-w-0 rounded-md border border-border bg-background p-3 sm:p-4"
                     key={`${event.event_type}-${event.created_at}`}
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium">{event.event_type}</p>
-                      <p className="text-muted-foreground">
+                    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                      <p className="min-w-0 break-words font-medium">
+                        {event.event_type}
+                      </p>
+                      <p className="break-words text-muted-foreground">
                         {formatTimestamp(event.created_at)}
                       </p>
                     </div>
@@ -774,7 +783,7 @@ function DetailSection({
   title: string;
 }) {
   return (
-    <section>
+    <section className="min-w-0">
       <h3 className="mb-2 text-sm font-semibold text-muted-foreground">{title}</h3>
       {children}
     </section>
@@ -783,11 +792,11 @@ function DetailSection({
 
 function KeyValueList({ entries }: { entries: Array<[string, string]> }) {
   return (
-    <dl className="grid grid-cols-[minmax(8rem,0.45fr)_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
+    <dl className="grid gap-3 text-sm sm:grid-cols-[minmax(8rem,0.4fr)_minmax(0,1fr)] sm:gap-x-3 sm:gap-y-2">
       {entries.map(([label, value]) => (
-        <div className="contents" key={label}>
+        <div className="grid min-w-0 gap-1 sm:contents" key={label}>
           <dt className="text-muted-foreground">{label}</dt>
-          <dd className="break-all">{value}</dd>
+          <dd className="min-w-0 break-words">{value}</dd>
         </div>
       ))}
     </dl>
@@ -801,11 +810,11 @@ function PayloadList({ payload }: { payload: Record<string, unknown> }) {
   }
 
   return (
-    <dl className="mt-2 grid grid-cols-[minmax(8rem,0.45fr)_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
+    <dl className="mt-2 grid gap-3 text-sm sm:grid-cols-[minmax(8rem,0.4fr)_minmax(0,1fr)] sm:gap-x-3 sm:gap-y-2">
       {entries.map(([label, value]) => (
-        <div className="contents" key={label}>
+        <div className="grid min-w-0 gap-1 sm:contents" key={label}>
           <dt className="text-muted-foreground">{label}</dt>
-          <dd className="break-all">{formatPayloadValue(value)}</dd>
+          <dd className="min-w-0 break-words">{formatPayloadValue(value)}</dd>
         </div>
       ))}
     </dl>
