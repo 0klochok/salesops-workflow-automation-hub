@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is currently in Slice 12: read-only owner and error-type filters for the run-history admin view.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is in final local portfolio-readiness review after the read-only owner and error-type admin filters slice.
 
 ## Problem
 

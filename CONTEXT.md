@@ -7,11 +7,11 @@
 | Last updated | 2026-06-03 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Slice 12 - read-only owner and error-type admin filters |
+| Current phase | Final local portfolio-readiness review |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
-| Git state | `main`; final local QA after generated-artifact hygiene, with worktree changes limited to documentation cleanup |
+| Git state | `main`; local validation first; Codex must not commit or push; check `git status --short` for current worktree state |
 
 ## 2. Project Summary
 
