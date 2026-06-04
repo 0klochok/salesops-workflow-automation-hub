@@ -9,11 +9,83 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Admin run history table polish |
+| Current phase | Phase 4 Slice 15 - admin UI final local QA |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, tests, typecheck, build, local browser smoke, and Git checks passed |
-| Completion | Admin run history table polish complete |
+| Quality gate status | Frontend lint, tests, typecheck, build, local browser QA, and Git checks passed |
+| Completion | Admin UI final local QA complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Admin UI Final QA And Reset Filter Layout
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Moved the filter-panel `Reset filters` button out of the six-control filter grid into a separate action row, right-aligned on `sm+` and full-width on mobile; preserved the same disabled state, handler, variant, and text |
+| `STATE.md` | Recorded Slice 15 validation, local browser verification, skipped checks, and remaining risks |
+
+No backend code, API route, schema, database migration, dependency, GitHub Actions, commit, push, or staged change was introduced. No tests were added because the change is CSS/layout-only and the existing component tests already cover reset behavior and URL preservation.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Final post-documentation status showed `M STATE.md` and `M apps/web/src/components/admin-run-history.tsx` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | `Test Files 4 passed (4)`; `Tests 27 passed (27)`; duration `13.86s` |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `5.5s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `git diff --check` | pass | Exit 0; no whitespace errors; Git warned touched LF files will be replaced by CRLF when Git touches them |
+| `git diff --stat` | pass | Final post-documentation stat showed 2 changed files: `STATE.md` and `apps/web/src/components/admin-run-history.tsx` |
+
+### Manual browser verification
+
+Local setup used documented local-only commands:
+
+- `docker compose up -d postgres`: `Container salesops-postgres Running`
+- `uv run alembic upgrade head`: PostgreSQL Alembic context initialized
+- `uv run python -m backend.app.leads.demo_seed`: `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued`
+- Temporary backend: `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8765 --log-level info`
+- Temporary frontend: `pnpm --dir apps/web dev --hostname 127.0.0.1 --port 5499` with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at `http://127.0.0.1:8765`
+
+Browser tooling:
+
+- Used the in-app Browser plugin with explicit viewport control.
+- Captured desktop and mobile screenshots in the local temp directory.
+- Reset the temporary browser viewport override after verification.
+
+Results:
+
+- `/admin/runs` loaded at desktop viewport `1366x768`; page title was `SalesOps Workflow Automation Hub`; seeded success, failed, queued, and retried rows rendered.
+- The filter reset button now sits in a separate action row below the six filters; at desktop it is right-aligned below the row and the search input has more room.
+- Desktop table stayed contained (`pageScrollWidth=1351`, `tableClientWidth=1182`, `tableScrollWidth=1182`) and all visible detail buttons remained aligned and clickable.
+- Status filter `failed` updated the URL to `/admin/runs?status=failed`, showed only `run_demo_failed`, and enabled `Reset filters`.
+- `Reset filters` returned the URL to `/admin/runs`, restored all four seeded rows, and returned to the disabled no-active-filter state.
+- `View details` for `run_demo_failed` updated the URL to `/admin/runs?runId=run_demo_failed` and loaded the read-only detail panel with seeded failure data and suggested action.
+- Opening `/admin/runs?status=success&runId=run_demo_failed` showed the selected-run-hidden notice, kept only the success row in the table, and kept the failed run detail loaded.
+- Mobile viewport `390x844` rendered without body-level horizontal overflow (`pageScrollWidth=375`); table overflow stayed inside the table scroller (`tableClientWidth=310`, `tableScrollWidth=1075`).
+- On mobile, the reset button is a single full-width action below the stacked filter fields and still clears filters correctly.
+- Browser console error/warning count was `0`; no Next.js, hydration, or framework overlay text was detected.
+- Frontend and backend logs showed local `GET` requests only for admin browser interactions: `/admin/runs`, `/api/leads/runs`, `/api/leads/runs/run_demo_failed`, `/leads/runs`, and `/leads/runs/run_demo_failed`.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service call was made.
+- Temporary backend and frontend processes were stopped after verification; local PostgreSQL was left running.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Additional frontend tests | skipped | The change is layout-only; existing tests already cover reset behavior, URL state, filtering, detail loading, and read-only boundaries |
+| Backend test/lint/typecheck suite | skipped | Backend code and behavior were intentionally untouched |
+| Dependency install | skipped | Existing dependencies were present; no dependency change was needed or introduced |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no CI files were added or run |
+| Real external API smoke | skipped | Explicitly forbidden; project remained local-only and mock-safe |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Browser QA covered the in-app Chromium browser at desktop and mobile viewport sizes; other browsers were not manually checked.
+- The local PostgreSQL container remains running for the user's environment; stop it manually only if desired.
+- Extremely long real-world values still rely on the existing table truncation/title behavior rather than expanding table columns.
 
 ## Latest Update - 2026-06-04 Admin Run History Table Polish
 

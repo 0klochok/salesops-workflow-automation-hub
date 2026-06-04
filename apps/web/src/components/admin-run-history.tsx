@@ -303,7 +303,7 @@ function RunHistoryFiltersForm({
       aria-label="Run history filters"
       className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel"
     >
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(9rem,0.8fr)_minmax(10rem,1fr)_minmax(9rem,0.8fr)_minmax(14rem,1.4fr)_repeat(2,minmax(9rem,0.7fr))_auto] xl:items-end">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(9rem,0.8fr)_minmax(10rem,1fr)_minmax(9rem,0.8fr)_minmax(14rem,1.4fr)_repeat(2,minmax(9rem,0.7fr))]">
         <div className="min-w-0 space-y-2">
           <Label htmlFor="run-status-filter">Status</Label>
           <Select
@@ -401,18 +401,17 @@ function RunHistoryFiltersForm({
             }
           />
         </div>
-
-        <div className="col-span-full flex min-w-0 justify-stretch sm:justify-end xl:col-auto xl:self-end">
-          <Button
-            className="h-10 w-full px-3 sm:w-auto"
-            disabled={!hasActiveFilters}
-            onClick={onReset}
-            type="button"
-            variant="secondary"
-          >
-            Reset filters
-          </Button>
-        </div>
+      </div>
+      <div className="mt-4 flex min-w-0 justify-stretch sm:justify-end">
+        <Button
+          className="h-10 w-full px-3 sm:w-auto"
+          disabled={!hasActiveFilters}
+          onClick={onReset}
+          type="button"
+          variant="secondary"
+        >
+          Reset filters
+        </Button>
       </div>
     </section>
   );
