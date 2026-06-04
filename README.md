@@ -1,14 +1,14 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is in final local portfolio-readiness review after the read-only owner and error-type admin filters slice.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is ready for local reviewer handoff after the read-only admin dashboard QA closure.
 
 ## Problem
 
 A growth agency with 5 sales reps receives leads from forms and CSV uploads. The team manually copies lead details into a CRM and Slack, which creates duplicates, slows response time, misses leads, and leaves weak audit trails.
 
-## Planned Solution
+## Implemented Local Demo
 
-The planned system demonstrates an automated workflow that:
+The local demo demonstrates an automated workflow that:
 
 - accepts leads from a public demo form and CSV imports;
 - validates lead data;
@@ -29,6 +29,46 @@ The planned system demonstrates an automated workflow that:
 | Local database | PostgreSQL through Docker Compose; SQLite is used only as a unit-test fallback for SQLAlchemy mappings |
 | Integrations | Mock CRM and mock Slack by default |
 
+## Reviewer Quick Start
+
+Prerequisites:
+
+- Windows 11 with PowerShell;
+- Python 3.12+ and `uv`;
+- Node.js, Corepack, and `pnpm`;
+- Docker Desktop for local PostgreSQL.
+
+From the repository root:
+
+```powershell
+if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
+uv sync
+pnpm install
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+```
+
+Start the backend in one PowerShell window:
+
+```powershell
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+```
+
+Start the frontend in another PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
+pnpm --dir apps/web dev
+```
+
+Open:
+
+- `http://localhost:3000` for the public demo form and CSV import;
+- `http://localhost:3000/admin/runs` for the read-only persisted run dashboard;
+- `http://127.0.0.1:8000/docs` for local FastAPI API docs.
+
 ## Current Status
 
 The current local demo includes:
@@ -47,7 +87,7 @@ The current local demo includes:
 - a persisted run-detail endpoint returns one selected run with sanitized attempts, intake payload, and allowlisted mock/audit result data;
 - `/admin/runs` provides a read-only frontend view of persisted run history, URL-preserved status/search/date/owner/error-type filters, selected run detail, filtered empty state, and selected-run-hidden notice through local `GET` proxy routes;
 - deterministic local demo seed data can create success, failed, queued, and retried workflow runs;
-- Slice 12 adds read-only owner and error-type filters using existing persisted/demo data without a migration or mutation controls;
+- the read-only admin dashboard includes owner and error-type filters using existing persisted/demo data without migrations or mutation controls;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
 ## Current Portfolio Demo Path
@@ -91,6 +131,14 @@ pnpm --dir apps/web dev
 Open `http://localhost:3000/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/search/date/owner/error-type filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
 
 The admin screen is read-only. Interacting with `/admin/runs` should only issue local `GET` requests for run history and selected run detail through the Next.js API proxy. It must not expose retry, edit, delete, submit, resubmit, rerun, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
+
+## Known Limitations And Local-Only Boundaries
+
+- Authentication, authorization, deployment configuration, and GitHub Actions are intentionally absent.
+- CRM, Slack, Google Sheets, OpenAI, paid APIs, production APIs, and webhooks are not required for the documented demo path and must not be called without explicit approval.
+- CRM upsert and Slack notification behavior is simulated by local mock adapters.
+- The public admin UI is read-only; manual retry exists as a backend-only local endpoint and is intentionally not exposed in `/admin/runs`.
+- `.env.example` contains placeholders only. Keep any local values in ignored `.env` files and do not commit real secrets.
 
 Final local handoff checklist:
 
@@ -175,13 +223,25 @@ pnpm --dir apps/web dev
 
 Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs` and shows persisted lead email/company identity, derived owner/error-type fields, URL-backed filters, and a same-page selected run detail panel. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
 
-Frontend validation:
+## Local Validation
+
+Required frontend validation:
 
 ```powershell
+git status --short
+git diff --check
 pnpm --dir apps/web lint
 pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
+```
+
+Backend validation when backend behavior or backend commands change:
+
+```powershell
+uv run pytest
+uv run ruff check .
+uv run mypy backend tests
 ```
 
 ## Roadmap

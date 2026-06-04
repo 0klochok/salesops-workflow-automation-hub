@@ -9,11 +9,70 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Phase 4 Slice 16 - admin UI final polish and responsive QA sweep |
+| Current phase | Phase 4 Slice 17 - portfolio handoff and public README readiness |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, tests, typecheck, build, local browser QA, and Git checks passed; backend full suite skipped because backend files were untouched |
-| Completion | Admin UI final responsive QA sweep complete |
+| Quality gate status | Frontend lint, tests, typecheck, build, backend tests, backend lint, backend typecheck, Docker Compose config, and Git checks passed; live browser/API smoke skipped because this was documentation-only |
+| Completion | Slice 17 documentation readiness pass complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Portfolio Handoff And Public README Readiness
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Reframed stale planned-solution wording as implemented local demo behavior; added a compact PowerShell reviewer quick start; made local validation and known local-only limitations easier to find |
+| `STATE.md` | Recorded Slice 17 summary, validation, manual README review, skipped checks, risks, and suggested commit message |
+
+No production application code, backend behavior, frontend behavior, API route, database migration, dependency, generated file, GitHub Actions, staged change, commit, or push was introduced.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Starting status had no output; final documentation status showed `M README.md` and `M STATE.md` |
+| `git diff --check` | pass | Exit 0; no whitespace errors; Git warned `README.md` and `STATE.md` LF will be replaced by CRLF when Git touches them |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | `Test Files 4 passed (4)`; `Tests 27 passed (27)`; duration `12.49s` |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `3.0s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `uv run pytest` | pass | `48 passed`, `1 warning`; duration `2.49s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `docker compose config` | pass | Compose config rendered successfully for local PostgreSQL service `salesops-postgres` |
+
+### Manual README verification
+
+- Read the README from a first-time reviewer perspective and moved the shortest runnable path near the top.
+- Confirmed commands are PowerShell-friendly and use local URLs, `$env:` variables, and repo-root execution.
+- Confirmed the documented demo path stays local-only with mocked CRM and Slack behavior.
+- Confirmed README does not require paid APIs, real external API calls, real secrets, CI, commits, or pushes.
+- Confirmed README presents the admin UI as read-only and keeps manual retry described as backend-only.
+- Confirmed README does not claim auth, deployment, live integrations, or GitHub Actions are implemented.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Live backend server smoke | skipped | Documentation-only pass; backend code and runtime behavior were unchanged, and backend tests plus static Compose config passed |
+| Live frontend browser QA | skipped | Documentation-only pass after Slice 16 admin UI QA closure; no UI code changed |
+| PostgreSQL migration/seed execution | skipped | Existing commands were surfaced for reviewer quick start but not materially changed; static `docker compose config` and backend tests passed |
+| Dependency install | skipped | Existing `.venv` and frontend dependencies were already available; validation gates ran without installing or changing dependencies |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no CI files were added or run |
+| Real external API smoke | skipped | Explicitly forbidden; project remained local-only and mock-safe |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- README quick start assumes Docker Desktop is running before `docker compose up -d postgres`.
+- Browser QA was not repeated because no frontend code changed; Slice 16 remains the latest live admin UI QA evidence.
+- Backend tests used the available local Python runtime reported by pytest as Python `3.14.4`, while the project target remains Python `3.12+`.
+
+### Suggested commit message
+
+```text
+Polish portfolio handoff README
+```
 
 ## Latest Update - 2026-06-04 Admin UI Final Responsive QA Sweep
 
