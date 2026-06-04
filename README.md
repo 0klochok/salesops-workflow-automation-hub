@@ -80,7 +80,7 @@ The current local demo includes:
 - CSV rows are parsed client-side/local-app only and submitted through the same local proxy;
 - the dashboard stores current browser-session submissions in `sessionStorage`;
 - same-session duplicate hints are shown by email/domain in the frontend, while backend `dedupe.status` is displayed separately;
-- Phase 4 wires SQLAlchemy/Alembic persistence into `POST /leads/intake` through explicit DB session dependencies;
+- SQLAlchemy/Alembic persistence is wired into `POST /leads/intake` through explicit DB session dependencies;
 - local intake now records leads, automation runs, attempts, and audit records while keeping CRM and Slack mocked by default;
 - backend-only failure detail and manual retry endpoints are available for persisted workflow runs;
 - a persisted run-history endpoint returns stored runs with persisted lead email, company name, company domain, a derived demo owner, run-level error type, and latest attempt summaries;
@@ -138,7 +138,9 @@ The admin screen is read-only. Interacting with `/admin/runs` should only issue 
 - CRM, Slack, Google Sheets, OpenAI, paid APIs, production APIs, and webhooks are not required for the documented demo path and must not be called without explicit approval.
 - CRM upsert and Slack notification behavior is simulated by local mock adapters.
 - The public admin UI is read-only; manual retry exists as a backend-only local endpoint and is intentionally not exposed in `/admin/runs`.
+- Source is displayed in the admin run table and included in text search; there is no dedicated source dropdown yet.
 - `.env.example` contains placeholders only. Keep any local values in ignored `.env` files and do not commit real secrets.
+- Codex must not stage, commit, or push. The user manually reviews, stages, commits, and pushes.
 
 Final local handoff checklist:
 
@@ -158,9 +160,9 @@ From the repository root:
 ```powershell
 if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
 uv sync
-uv run pytest
-uv run ruff check .
-uv run mypy backend tests
+uv run --no-python-downloads --python 3.12 --frozen pytest
+uv run --no-python-downloads --python 3.12 --frozen ruff check .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 docker compose up -d postgres
 uv run alembic upgrade head
 uv run python -m backend.app.leads.demo_seed
@@ -225,23 +227,23 @@ Open `http://localhost:3000` after the frontend server starts. The read-only adm
 
 ## Local Validation
 
-Required frontend validation:
+Required backend validation:
 
 ```powershell
 git status --short
 git diff --check
+uv run --no-python-downloads --python 3.12 --frozen pytest
+uv run --no-python-downloads --python 3.12 --frozen ruff check .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
+```
+
+Required frontend validation:
+
+```powershell
 pnpm --dir apps/web lint
 pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
-```
-
-Backend validation when backend behavior or backend commands change:
-
-```powershell
-uv run pytest
-uv run ruff check .
-uv run mypy backend tests
 ```
 
 ## Roadmap

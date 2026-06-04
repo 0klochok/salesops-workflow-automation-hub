@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Slice 12 adds read-only owner and error-type filters to the persisted run-history admin view. It keeps mock CRM/Slack behavior and the intake response contract unchanged, derives owner/error-type data from existing persisted records without a migration, and does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Final portfolio-readiness documentation pass. This phase updates source-of-truth docs so local setup, mock/demo mode, seed data, validation gates, manual smoke flow, known limitations, and Git safety match the current repository. It does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -89,7 +89,7 @@ Slice 12 adds read-only owner and error-type filters to the persisted run-histor
 
 - Completed the public portfolio readiness review after the prior Slice 11 output was only a phase prompt.
 - Updated source-of-truth docs with full local validation evidence, manual smoke evidence, generated artifact status, skipped-check reasons, and Git safety status.
-- Verified the local read-only `/admin/runs` demo, selected detail panel, selected-run-hidden notice, absence of public mutation controls, absence of `.github/workflows`, and unstaged-only Git safety posture.
+- Verified the local read-only `/admin/runs` demo, selected detail panel, selected-run-hidden notice, absence of public mutation controls, absence of tracked GitHub workflow files, and unstaged-only Git safety posture.
 - Did not change app code, add migrations, add mutation UI, call real integrations, create GitHub Actions, stage, commit, or push.
 
 ## 4.9 Completed Slice 12 Work Items
@@ -117,7 +117,7 @@ Slice 12 adds read-only owner and error-type filters to the persisted run-histor
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Slice 12 changes are limited to derived read-only run-history contract fields, admin filter UI/tests, and source-of-truth documentation.
+- Final portfolio-readiness documentation changes are limited to source-of-truth docs and current-state corrections.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.
@@ -125,4 +125,4 @@ Slice 12 adds read-only owner and error-type filters to the persisted run-histor
 
 ## 7. Recommended Next Phase
 
-Continue Phase 4 with portfolio polish docs such as architecture diagram, before/after workflow explanation, safe credentials handoff notes, and demo script/video plan.
+After user review, manually prepare a commit for the final portfolio-readiness documentation pass if the diff is acceptable. Later implementation work should stay local-first and continue to avoid real integrations, deployment config, and GitHub Actions unless explicitly requested.

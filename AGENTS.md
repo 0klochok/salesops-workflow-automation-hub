@@ -37,16 +37,17 @@ Before non-trivial work:
 
 ## 4. Project commands
 
-Phase 0 is documentation-only; app commands are planned but not runnable until later phases scaffold the backend and frontend.
+Current project commands are runnable locally. Run commands from the repository root unless a section says otherwise.
 
-- Install: Phase 0: n/a. Future backend: `uv sync`. Future frontend: `pnpm install`.
-- Dev: Phase 0: n/a. Future backend: `uv run uvicorn <api_package>.main:app --reload`. Future frontend: `pnpm dev`.
-- Test: Phase 0: n/a. Future backend: `uv run pytest`. Future frontend: `pnpm test`.
-- Lint: Phase 0: n/a. Future backend: `uv run ruff check .`. Future frontend: `pnpm lint`.
-- Typecheck: Phase 0: n/a. Future backend: `uv run mypy .` or `uv run pyright`. Future frontend: `pnpm typecheck`.
-- Build: Phase 0: n/a. Future frontend: `pnpm build`.
-- Quality gate: Phase 0 docs: `git diff --check`, `git diff --stat`, `git status --short`. Future phases must combine tests, lint, type checks, build/smoke checks, and docs updates.
-- Smoke/manual check: Phase 0 docs review. Future phases must document exact local API/UI smoke checks in `RUNBOOK.md`.
+- Install: backend `uv sync`; frontend `pnpm install`.
+- Dev backend: `uv run uvicorn backend.app.main:app --reload`.
+- Dev frontend: set `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` to the local backend, then run `pnpm --dir apps/web dev`.
+- Test: backend `uv run --no-python-downloads --python 3.12 --frozen pytest`; frontend `pnpm --dir apps/web test -- --run`.
+- Lint: backend `uv run --no-python-downloads --python 3.12 --frozen ruff check .`; frontend `pnpm --dir apps/web lint`.
+- Typecheck: backend `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests`; frontend `pnpm --dir apps/web typecheck`.
+- Build: frontend `pnpm --dir apps/web build`.
+- Quality gate: `git status --short`, `git diff --check`, backend tests/lint/typecheck, frontend lint/tests/typecheck/build, scope/safety scans, and docs updates for changed behavior.
+- Smoke/manual check: use the local PostgreSQL, backend, frontend, seeded demo, and admin run-history steps in `RUNBOOK.md`.
 
 ## 4.1 Project-specific safety rails
 

@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-03 |
+| Last updated | 2026-06-04 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Slice 12 - read-only owner and error-type admin filters |
+| Current phase | Final portfolio-readiness documentation pass |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -20,17 +20,16 @@
 - Mock adapters are the default integration test boundary.
 - Write tests first where feasible for validation, business logic, persistence, adapters, retry state, and UI behavior.
 
-## 3. Slice 12 Test Status
+## 3. Current Test Status
 
-Slice 12 adds read-only owner and error-type filtering to `/admin/runs` by extending the persisted run-history/detail response contract with fields derived from existing local records. The slice does not add mutation controls, real integrations, auth, deployment, GitHub Actions, or database migrations.
+The current local demo has backend validation, dedupe, mock adapter, persistence, failure-detail, retry, seed-data, and frontend admin coverage. The public `/admin/runs` page remains read-only and does not add mutation controls, real integrations, auth, deployment, GitHub Actions, or database migrations.
 
 Current backend commands:
 
 ```powershell
-uv sync --frozen
-uv run pytest
-uv run ruff check .
-uv run mypy backend tests
+uv run --no-python-downloads --python 3.12 --frozen pytest
+uv run --no-python-downloads --python 3.12 --frozen ruff check .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 ```
 
 Current backend persistence tests cover:

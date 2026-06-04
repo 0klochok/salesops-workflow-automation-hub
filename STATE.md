@@ -9,11 +9,89 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Phase 4 Slice 19 - manual-smoke closure and Python 3.12 verification |
+| Current phase | Final portfolio-readiness documentation pass |
 | Overall status | on-track |
-| Quality gate status | Full local frontend/backend gate, Python 3.12 backend compatibility gate, scope-creep scans, and local browser/API smoke passed; only documented out-of-scope checks skipped |
-| Completion | Slice 19 manual-smoke closure complete |
+| Quality gate status | Required backend/frontend gates and final scope/safety scans passed for this docs-only pass; long-running browser smoke was not rerun because setup/smoke behavior did not change |
+| Completion | Final portfolio-readiness documentation pass complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Final Portfolio-Readiness Documentation Pass
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `AGENTS.md` | Replaced stale Phase 0/future command text with current local backend/frontend commands and quality-gate expectations |
+| `CONTEXT.md` | Reframed the project as the implemented local/mock demo and documented current admin/retry boundaries |
+| `DESIGN.md` | Updated current phase, local flow wording, table scope, and known future admin filter limits |
+| `EXEC_PLAN.md` | Updated current phase and next-step guidance for portfolio-readiness documentation |
+| `README.md` | Refreshed reviewer-facing setup/validation wording, mock/no-paid-API boundaries, source-filter limitation, and Codex git safety note |
+| `REQ.md` | Updated current status for local demo, backend-only retry, and admin filter coverage |
+| `RUNBOOK.md` | Updated current validation commands, tool-version wording, and scope-scan guidance without embedding self-matching grep patterns |
+| `TDD.md` | Updated current test status and Python 3.12 frozen backend gate commands |
+| `STATE.md` | Recorded this final portfolio-readiness documentation pass, validation, skipped checks, risks, and suggested commit message |
+
+No backend code, frontend code, public API, schema, route, UI behavior, dependency manifest, database migration, generated source file, GitHub Actions workflow, deployment config, screenshot, real integration, secret, staging action, commit, or push was introduced.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Final output listed only docs: `M AGENTS.md`, `M CONTEXT.md`, `M DESIGN.md`, `M EXEC_PLAN.md`, `M README.md`, `M REQ.md`, `M RUNBOOK.md`, `M STATE.md`, `M TDD.md` |
+| `git diff --check` | pass | Exit 0; no whitespace errors. Git printed LF-to-CRLF working-copy warnings for the touched Markdown files |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `2.10s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 27 passed (27)`; duration `16.09s` |
+| `pnpm --dir apps/web typecheck` | pass after rerun | Initial parallel run with `pnpm --dir apps/web build` failed with `TS6053` missing `.next/types` files while Next.js regenerated them. Sequential rerun after build passed with `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `3.0s`; generated `/`, `/admin/runs`, local API proxy routes, and `/icon.svg` |
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- The typecheck/build race was caused by running two local frontend gates in parallel while `next build` regenerated ignored `.next` type artifacts. The final sequential typecheck result is the accepted gate result.
+- No dependency install, package upgrade, code generation into tracked files, or migration command was needed for this documentation-only pass.
+
+### Scope and safety scans
+
+| Check | Status | Exact result |
+|---|---|---|
+| `git ls-files -- .github` | pass | No output; no tracked `.github` files |
+| Required tracked secret-pattern scan | pass | No output; command exited 1 because there were no matches |
+| Required tracked CI/deploy config scan | pass | No output; command exited 1 because there were no matches |
+| Required tracked live-endpoint scan | pass | No output; command exited 1 because there were no matches |
+
+During the pass, an earlier scope scan found documentation self-matches because the exact grep patterns had been added to `RUNBOOK.md`; that wording was revised and the final required scans above are clean.
+
+No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service call was made.
+
+### Manual verification and skipped checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Affected setup/validation command verification | pass | Updated backend/frontend validation commands were run exactly as documented in the final docs |
+| Long-running backend/frontend browser smoke | skipped | Smoke command behavior was not materially changed; this pass changed documentation wording and validation command text only. The 2026-06-04 manual-smoke closure remains the latest live browser/API smoke evidence |
+| Screenshots | skipped | Explicitly out of scope; no suitable tracked docs screenshot section required a new image |
+| Dependency install | skipped | Existing locked environments were sufficient and all required gates ran without dependency changes |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Remaining risks
+
+- Browser smoke was not rerun in this pass; rely on the earlier 2026-06-04 manual-smoke closure for live UI/API evidence.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- The public admin table displays source and includes it in text search, but there is still no dedicated source dropdown.
+- TypeScript and Next.js validation may rewrite ignored local `.next` or build-info artifacts without producing tracked source changes.
+
+### Suggested commit message
+
+```text
+Refresh portfolio-readiness documentation
+```
 
 ## Latest Update - 2026-06-04 Manual-Smoke Closure And Environment Verification
 

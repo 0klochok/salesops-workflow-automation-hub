@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-03 |
+| Last updated | 2026-06-04 |
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Final local QA after generated-artifact hygiene |
+| Current phase | Final portfolio-readiness documentation pass |
 
 ## 2. Operating Rules
 
@@ -46,7 +46,7 @@ pnpm --version
 git --version
 ```
 
-Phase 3 was validated with Node `v24.16.0`, pnpm `11.3.0`, and uv `0.11.16`.
+Recent local validation uses Python 3.12 through `uv`, pnpm `11.5.0`, and the scripts defined in `pyproject.toml` and `apps/web/package.json`. Older phase entries in `STATE.md` preserve their original tool-version evidence.
 
 ## 6. Environment Variables
 
@@ -312,28 +312,24 @@ Test read-only persisted admin run history:
 15. Confirm the browser Network tab shows only local GET requests such as `/api/leads/runs` and `/api/leads/runs/run_demo_failed`.
 16. Confirm no retry button, mutation action, edit action, delete action, send action, archive action, POST, PUT, PATCH, DELETE, real external API call, or webhook is visible or triggered.
 
-## 10. Phase 3 Validation
+## 10. Current Local Validation
 
 ```powershell
-git status --short --branch
-pnpm install
+git status --short
+git diff --check
+uv run --no-python-downloads --python 3.12 --frozen pytest
+uv run --no-python-downloads --python 3.12 --frozen ruff check .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 pnpm --dir apps/web lint
 pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
-git diff --check
-Test-Path -LiteralPath ".github\workflows"
-$files = Get-ChildItem -Recurse -Force -File | Where-Object { $_.FullName -notmatch "\\(\.git|\.venv|node_modules|\.next|__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache)\\" }
-$secretPattern = "sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}"
-$endpointPattern = "hooks\.slack\.com|api\.hubapi\.com|api\.openai\.com|sheets\.googleapis\.com"
-$files | Select-String -Pattern $secretPattern
-$files | Select-String -Pattern $endpointPattern
-$files | Select-String -Pattern "[ \t]+$"
+git ls-files -- .github
 ```
 
-The forbidden-pattern scans should return no matches for likely real secrets/tokens, real integration endpoints/webhooks, or trailing whitespace. `.github/workflows` should remain absent unless the user explicitly requests CI later.
+Also run the current phase's tracked secret-pattern, CI/deploy-config, and live-endpoint `git grep` scans. The secret and live-endpoint scans should return no matches. The CI/deploy scan should return no tracked workflow or deployment config; GitHub workflow files should remain absent unless the user explicitly requests CI later.
 
-## 10.1 Slice 12 Validation
+## 10.1 Full Local Portfolio Handoff Validation
 
 ```powershell
 uv sync --frozen

@@ -4,7 +4,7 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-03 |
+| Last updated | 2026-06-04 |
 | Owner | User |
 | Status | active draft |
 | Current phase | Final local portfolio-readiness review |
@@ -15,7 +15,7 @@
 
 ## 2. Project Summary
 
-This is a greenfield portfolio project for a code-first sales operations workflow automation demo. The planned system captures leads, validates them, deduplicates them, simulates CRM upserts through an adapter, simulates Slack notifications through an adapter, records backup/audit data, and exposes an admin dashboard for runs, failures, and manual retries.
+This is a greenfield portfolio project for a code-first sales operations workflow automation demo. The implemented local demo captures leads, validates them, deduplicates them, simulates CRM upserts through an adapter, simulates Slack notifications through an adapter, records backup/audit data, and exposes a read-only admin dashboard for persisted runs and failure inspection.
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
@@ -23,7 +23,7 @@ The backend includes a `uv`-managed FastAPI app, local-safe settings, a determin
 
 The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, a current-session dashboard stored in browser `sessionStorage`, and read-only admin filtering for status, search, date range, derived owner, and run-level error type.
 
-Slice 12 adds the owner and error-type filters to `/admin/runs` while keeping the admin experience local-only, GET-only, and free of retry/edit/delete/send/archive/mutation controls.
+The current portfolio-readiness pass keeps the project local-only, mock-safe, GET-only for the public admin view, and free of retry/edit/delete/send/archive/mutation controls. Manual retry remains available as a backend-only local endpoint.
 
 ## 3. Source-of-Truth Files
 
@@ -32,7 +32,7 @@ Slice 12 adds the owner and error-type filters to `/admin/runs` while keeping th
 | `AGENTS.md` | Codex and agent operating rules |
 | `CONTEXT.md` | Current context, assumptions, stack, and constraints |
 | `STATE.md` | Current phase, status, validation, and open questions |
-| `DESIGN.md` | Planned architecture, data model, adapter boundaries |
+| `DESIGN.md` | Current architecture, data model, adapter boundaries |
 | `EXEC_PLAN.md` | Delivery phases, acceptance criteria, validation commands |
 | `REQ.md` | Product requirements and out-of-scope items |
 | `RUNBOOK.md` | Local setup, operational commands, troubleshooting |
@@ -94,7 +94,7 @@ Slice 12 adds the owner and error-type filters to `/admin/runs` while keeping th
   .gitignore
 ```
 
-## 7. Core Planned Features
+## 7. Core Feature Status
 
 - Lead intake API endpoint with Pydantic validation. Phase 2 local foundation implemented.
 - Public demo lead form. Phase 3 local frontend implemented.
@@ -103,9 +103,9 @@ Slice 12 adds the owner and error-type filters to `/admin/runs` while keeping th
 - CRM upsert adapter for contact/deal create-or-update behavior. Phase 2 mock boundary implemented.
 - Slack notification adapter for qualified lead notifications. Phase 2 mock boundary implemented.
 - Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake/retry records, run history, selected run detail, seed data, and read-only admin UI implemented.
-- Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; UI action planned later.
-- Error detail page with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel implemented; dedicated failure page/action planned later.
-- Admin table with filters by date, source, status, lead owner, and error type. The current read-only persisted run-history table supports status, search, date, derived owner, and run-level error-type filtering with lead email/company identity and selected run detail. Source-specific admin filtering remains future work.
+- Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; public admin UI intentionally remains read-only.
+- Error detail with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel are implemented.
+- Admin table with filters by date, status, lead owner, and error type. Source is displayed and included in text search; a dedicated source dropdown remains a known limitation.
 - Backup/audit records. Persisted for local intake and manual retry events.
 
 ## 8. Assumptions
@@ -117,7 +117,7 @@ Slice 12 adds the owner and error-type filters to `/admin/runs` while keeping th
 - Synthetic demo data will be used.
 - No production deployment is planned in early phases.
 - PostgreSQL is the primary local database target; SQLite is used only as a test fallback for SQLAlchemy mapping/repository unit tests.
-- Frontend duplicate hints are a Phase 3 UI aid, not a replacement for future backend persistence.
+- Frontend duplicate hints are a UI aid, not a replacement for backend persisted dedupe evidence.
 
 ## 9. Open Questions
 

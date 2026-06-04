@@ -4,17 +4,17 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-03 |
+| Last updated | 2026-06-04 |
 | Status | active draft |
 | Scope | Architecture for greenfield portfolio demo |
-| Current phase | Slice 12 - read-only owner and error-type admin filters |
+| Current phase | Final portfolio-readiness documentation pass |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system remains safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-Slice 12 extends the persisted run-history backend contract and read-only `/admin/runs` page with owner and error-type filter data derived from existing local records. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries unchanged. Real integrations, auth, retry UI, deployment, and GitHub Actions remain planned later or out of scope.
+The current local demo includes persisted intake, deterministic demo seed data, failure detail, backend-only retry, and a read-only `/admin/runs` page with URL-backed status, search, date, owner, and error-type filters. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries unchanged. Real integrations, auth, retry UI, deployment, and GitHub Actions remain out of scope unless explicitly approved later.
 
 ## 3. Stack
 
@@ -22,8 +22,8 @@ Slice 12 extends the persisted run-history backend contract and read-only `/admi
 |---|---|---|---|
 | Backend API | FastAPI, Python 3.12+, Pydantic | Strong validation, clear OpenAPI surface, good portfolio readability | Phase 1 |
 | Lead domain | Pydantic schemas, deterministic services, mock adapters | Local-safe workflow foundation without persistence or network calls | Phase 2 |
-| Frontend | Next.js App Router, TypeScript, Tailwind CSS | Planned portfolio UI stack with local route handlers and component tests | Phase 3 |
-| Tables | TanStack Table | Filterable current-session run dashboard | Phase 3 |
+| Frontend | Next.js App Router, TypeScript, Tailwind CSS | Portfolio UI stack with local route handlers and component tests | Phase 3 |
+| Tables | TanStack Table | Filterable session dashboard and persisted admin run table | Phase 3+ |
 | Frontend tests | Vitest, Testing Library, jsdom | Fast local UI behavior checks | Phase 3 |
 | Persistence | SQLAlchemy, Alembic, PostgreSQL through Docker Compose | Durable relational records for leads, attempts, audit trails | Phase 4 local intake, failure detail, and retry wiring |
 | Integrations | CRM adapter and Slack adapter in mock mode by default | Keeps boundaries clear without real external calls | Phase 2+ |
@@ -63,7 +63,7 @@ Slice 12 extends the persisted run-history backend contract and read-only `/admi
 
 ## 5. Architecture Flow
 
-Current Slice 12 local flow:
+Current local flow:
 
 ```text
 Next.js UI -> Next.js local proxy -> FastAPI intake -> validation -> persisted snapshots -> dedupe -> mock CRM -> mock Slack -> persistence repository -> UI session dashboard
@@ -149,7 +149,7 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - The current run-level error type is derived from the latest non-null persisted attempt error type. It supports the read-only filter without adding a migration or a broader failure taxonomy.
 - Demo seed data writes fixed synthetic success, failed, queued, and retried runs through local SQLAlchemy records only.
 - Repository tests validate persistence behavior with SQLite as a unit-test fallback; PostgreSQL remains the local integration target.
-- Persisted owner assignment, broader failure taxonomies, source-specific admin filtering, and admin filters beyond the current contract require future API/UI work.
+- Persisted owner assignment, broader failure taxonomies, a dedicated source filter, and admin filters beyond the current contract require future API/UI work.
 
 ## 8. Adapter Boundaries And Mock Mode
 
