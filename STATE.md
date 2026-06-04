@@ -9,11 +9,91 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Phase 4 Slice 15 - admin UI final local QA |
+| Current phase | Phase 4 Slice 16 - admin UI final polish and responsive QA sweep |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, tests, typecheck, build, local browser QA, and Git checks passed |
-| Completion | Admin UI final local QA complete |
+| Quality gate status | Frontend lint, tests, typecheck, build, local browser QA, and Git checks passed; backend full suite skipped because backend files were untouched |
+| Completion | Admin UI final responsive QA sweep complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Admin UI Final Responsive QA Sweep
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded Slice 16 final responsive QA, validation results, skipped checks, risks, and suggested commit message |
+
+No admin component, backend code, API route, schema, database migration, dependency, GitHub Actions, commit, push, or staged change was introduced. Live QA found no clear layout issue that justified a JSX/CSS edit after the Slice 15 reset-button and table-truncation polish.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Starting status had no output; final post-documentation status showed only `M STATE.md` |
+| `git diff --check` | pass | Exit 0; no whitespace errors; Git warned `STATE.md` LF will be replaced by CRLF when Git touches it |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | `Test Files 4 passed (4)`; `Tests 27 passed (27)`; duration `17.52s` |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized; already at head |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| `pnpm --dir apps/web exec playwright --version` | expected unavailable | Command failed because project Playwright is not installed; used local Chrome/CDP fallback without adding dependencies |
+
+### Manual browser verification
+
+Local setup used documented local-only commands:
+
+- Temporary backend: `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8765 --log-level info`
+- Temporary frontend: `pnpm --dir apps/web dev --hostname 127.0.0.1 --port 5499`, with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at `http://127.0.0.1:8765`
+- Temporary browser: installed Chrome `148.0.7778.217` in headless mode through Chrome DevTools Protocol because Browser plugin tooling was not exposed and project Playwright was unavailable
+
+Results:
+
+- `/admin/runs` loaded at desktop viewport `1366x768`; page title was `SalesOps Workflow Automation Hub`; seeded success, failed, queued, and retried rows rendered.
+- Desktop had no body-level horizontal overflow: document/client width `1351`, document/body scroll width `1351`.
+- Desktop filters rendered all six controls correctly. `Reset filters` stayed secondary, disabled with no active filters, and right-aligned below the filter grid.
+- Desktop table stayed contained: table scroller `clientWidth=1182`, `scrollWidth=1182`; detail buttons were aligned, visible, and usable.
+- Status filter `failed` updated the URL to `/admin/runs?status=failed`, showed only `run_demo_failed`, and enabled `Reset filters`.
+- `Reset filters` returned the URL to `/admin/runs`, restored all four seeded rows, and returned to the disabled no-active-filter state.
+- `View details` for `run_demo_failed` updated the URL to `/admin/runs?runId=run_demo_failed` and loaded the read-only detail panel.
+- Opening `/admin/runs?status=success&runId=run_demo_failed` showed the selected-run-hidden notice and kept the failed run detail visible.
+- Mobile viewport `390x844` had no body-level horizontal overflow: document/client width `390`, document/body scroll width `390`.
+- Mobile filters stacked cleanly in the filter panel; `Reset filters` rendered as a full-width `324px` action and still cleared active filters correctly.
+- Mobile table overflow stayed inside the table scroller: `clientWidth=324`, `scrollWidth=1075`; the body did not horizontally scroll.
+- Mobile detail actions remained usable after horizontal table scrolling; `View details for run_demo_failed` opened the read-only detail panel.
+- Browser console issues count was `0`; CDP log issues count was `0`; no Next.js, hydration, application, build, or runtime error overlay text was detected.
+- Admin browser interactions issued local `GET` requests only for `/admin/runs`, Next.js route assets, `/api/leads/runs`, and `/api/leads/runs/run_demo_failed`; no non-GET admin requests were observed.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service call was made.
+- Temporary backend, frontend, and Chrome processes started for QA were stopped afterward; local PostgreSQL was left running.
+- QA screenshots were saved outside the repository in the OS temp directory for local inspection.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Admin component edit | skipped | Live desktop/mobile QA found no clear layout issue requiring JSX/CSS changes |
+| Additional frontend tests | skipped | No production code changed; existing frontend tests already cover filtering, reset behavior, detail loading, and read-only boundaries |
+| Backend test/lint/typecheck suite | skipped | Backend files and behavior were intentionally untouched; local migration, seed, and browser-backed API smoke covered the required admin QA path |
+| Browser plugin | unavailable | Browser plugin tooling was not exposed in this implementation context |
+| Project Playwright | unavailable | `pnpm --dir apps/web exec playwright --version` failed because `playwright` is not installed; no dependency was added |
+| Dependency install | skipped | Existing dependencies were present; no dependency change was needed or introduced |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no CI files were added or run |
+| Real external API smoke | skipped | Explicitly forbidden; project remained local-only and mock-safe |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Browser QA covered Chrome/CDP at the requested desktop and mobile viewport sizes; Firefox, Safari, Edge, and additional breakpoints were not manually checked.
+- The admin table intentionally relies on horizontal scrolling on narrow screens; extremely long real-world values still rely on the existing truncation/title behavior.
+- Temporary QA script and screenshots were kept outside the repository in the OS temp directory; no source artifact was added.
+- Local PostgreSQL remains running for the user's environment; stop it manually only if desired.
+
+### Suggested commit message
+
+```text
+Record admin UI final responsive QA
+```
 
 ## Latest Update - 2026-06-04 Admin UI Final QA And Reset Filter Layout
 
