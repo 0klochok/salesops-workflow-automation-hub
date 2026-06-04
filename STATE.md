@@ -4,27 +4,96 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-03 |
+| Last updated | 2026-06-04 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final local verification release gate |
+| Current phase | Admin run history table polish |
 | Overall status | on-track |
-| Quality gate status | Backend, frontend, local PostgreSQL seed, proxy smoke, browser smoke, Git/artifact, and forbidden-pattern checks passed |
-| Completion | Final local verification release gate complete |
+| Quality gate status | Frontend lint, tests, typecheck, build, local browser smoke, and Git checks passed |
+| Completion | Admin run history table polish complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Admin Run History Table Polish
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Replaced `break-all` table rendering for run IDs, lead IDs, emails, names, and domains with titled single-line truncation; added fixed table layout and tighter column sizing so detail buttons stay aligned and visible at the default desktop viewport |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added a focused long-value regression test that verifies full `title` text, truncation classes, monospace ID styling, and the existing detail button accessible label |
+| `STATE.md` | Recorded this phase's changes, validation, manual browser verification, skipped checks, and remaining risks |
+
+Public APIs, backend behavior, database schema, dependencies, GitHub Actions, commits, and pushes were not changed.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Final post-documentation status showed `M STATE.md`, `M apps/web/src/components/admin-run-history.test.tsx`, and `M apps/web/src/components/admin-run-history.tsx` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | `Test Files 4 passed (4)`; `Tests 27 passed (27)`; duration `12.88s` |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `4.4s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `git diff --check` | pass | Exit 0; no whitespace errors; Git warned the three touched files use LF and will be replaced by CRLF when Git touches them |
+| `git diff --stat` | pass | Final post-documentation stat showed 3 changed files: `STATE.md`, `apps/web/src/components/admin-run-history.test.tsx`, and `apps/web/src/components/admin-run-history.tsx` |
+
+Focused preflight after the test addition also passed: `pnpm --dir apps/web test -- --run admin-run-history` returned `1 passed` file and `18 passed` tests.
+
+### Manual browser verification
+
+Local setup used documented local-only commands:
+
+- `docker compose up -d postgres`: `Container salesops-postgres Running`
+- `uv run alembic upgrade head`: PostgreSQL Alembic context initialized; already at head
+- `uv run python -m backend.app.leads.demo_seed`: `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued`
+- Temporary backend: `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8765`
+- Temporary frontend: `pnpm --dir apps/web dev --hostname 127.0.0.1 --port 5499`
+
+Browser tooling:
+
+- Browser plugin was not available in this session.
+- `pnpm --dir apps/web exec playwright --version` failed because `playwright` is not installed in the project.
+- Used installed Chrome `148.0.7778.217` in headless mode through Chrome DevTools Protocol without adding dependencies.
+
+Results:
+
+- `/admin/runs` loaded at desktop `1366x768`; page title was `SalesOps Workflow Automation Hub`; seeded success, failed, queued, and retried rows rendered.
+- Default desktop table used `table-fixed`; table scroller `clientWidth=1182`, `scrollWidth=1182`; detail buttons were aligned and visible in the default viewport.
+- Run IDs, lead IDs, emails, and domains had `white-space: nowrap`, `overflow: hidden`, `text-overflow: ellipsis`, and full `title` values; IDs used monospace font.
+- Header order remained `Created|Run|Lead|Status|Source|Owner|Error type|Attempts|Latest attempt|Failure detail|Detail`.
+- Status filter `failed` updated the URL to `/admin/runs?status=failed` and showed only the failed seeded run.
+- `Reset filters` returned the URL to `/admin/runs` and restored all four seeded runs.
+- `View details` for `run_demo_failed` updated the URL to `/admin/runs?runId=run_demo_failed` and loaded the read-only run detail with seeded failure data.
+- Mobile `390x844` rendered the admin page, kept body horizontal overflow off (`pageScrollWidth=390`), and kept table overflow inside the table scroller (`tableClientWidth=324`, `tableScrollWidth=1075`).
+- Browser console error/warning count was `0`; no hydration or framework overlay text was detected.
+- Admin API browser requests were local `GET` calls only: `/api/leads/runs`, `/api/leads/runs/run_demo_failed`, `/api/leads/runs`; no non-GET admin proxy requests were observed.
+- Temporary backend, frontend, and Chrome processes were stopped after verification; the existing PostgreSQL container was left running.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Playwright browser automation | skipped/fallback used | Browser plugin and project Playwright binary were unavailable; Chrome DevTools Protocol was used instead without adding dependencies |
+| Dependency install | skipped | Existing dependencies were already present; no new dependency was needed or introduced |
+| Backend test/lint/typecheck suite | skipped | This phase changed only frontend table presentation and a frontend component test; backend behavior was intentionally untouched |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no CI files were added or run |
+| Real external API smoke | skipped | Explicitly forbidden; project remained local-only and mock-safe |
+| Commit and push | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Chrome DevTools verification covered Chrome headless at desktop and mobile viewport sizes; other browsers were not manually checked.
+- Seeded demo values now render cleanly with truncation and titles, but extremely long real-world values would still depend on the same truncation/title behavior rather than expanding the table.
 
 ## 1. Current Objective
 
-- Perform the final local verification/release gate for the local-first portfolio demo.
-- Confirm the current working tree starts clean and remains focused.
-- Verify `STATE.md` readiness/audit wording does not overclaim beyond actual validation evidence.
-- Run the strongest supported local quality gate across backend and frontend.
-- Verify local PostgreSQL seed behavior and backend/frontend proxy success states.
-- Reproduce frontend smoke checks for `/` and `/admin/runs`.
-- Perform browser-level verification for page load, hydration, admin run-history usability, read-only state, and console-breaking errors.
-- Confirm no paid API usage, real external API calls, GitHub Actions changes, commit, or push.
+- Keep the `/admin/runs` table visually clean at the default desktop viewport.
+- Prevent long run IDs, lead IDs, emails, and domains from creating awkward multi-line wrapping.
+- Preserve responsive behavior for narrow/mobile widths through the existing table scroll container.
+- Preserve filters, reset filters, detail buttons, read-only admin state, local proxy behavior, and backend behavior.
+- Record validation and browser verification evidence for this polish phase.
 
 ## 2. What Was Inspected
 
@@ -131,7 +200,7 @@ Smoke notes:
 - This update is documentation-only and should leave `STATE.md` as the only tracked diff.
 - Ignored generated artifacts may continue to exist locally after `pnpm` test/build/dev commands, but tracked build-info was not present.
 - Broad forbidden-pattern scans that include `STATE.md` can self-match the documented regex commands; refined scans excluding `STATE.md` are the cleaner release-gate signal.
-- The admin run-history table is usable at the default browser viewport, but long run IDs and email/domain strings wrap in narrow table cells.
+- The admin run-history table long-value wrapping issue was resolved in the 2026-06-04 polish pass with titled single-line truncation and fixed column sizing.
 
 ## 9. Manual Verification Commands
 
@@ -178,10 +247,10 @@ Then open:
 
 ## 11. Next Suggested Phase
 
-After user review, manually commit the final `STATE.md` release-gate update if the diff is acceptable.
+After user review, manually commit the admin run-history table polish if the diff is acceptable.
 
 ## 12. Suggested Commit Message
 
 ```text
-Record final local verification gate
+Polish admin run history table truncation
 ```

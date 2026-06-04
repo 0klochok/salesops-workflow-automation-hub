@@ -238,6 +238,66 @@ describe("AdminRunHistory", () => {
     });
   });
 
+  it("truncates long run identifiers and lead identity while preserving full titles", async () => {
+    const longRunId =
+      "run_demo_20260601_pipeline_labs_enterprise_reactivation_form_submission_0000000000001";
+    const longLeadId =
+      "lead_demo_20260601_pipeline_labs_enterprise_reactivation_contact_0000000000001";
+    const longEmail =
+      "alexandria.very-long-local-part.pipeline-operations@example-growth-agency-demo.test";
+    const longCompanyName =
+      "Pipeline Operations And Enterprise Revenue Automation Research Group";
+    const longCompanyDomain =
+      "enterprise-revenue-automation-research-group.example";
+    mockFetch(
+      {
+        runs: [
+          {
+            run_id: longRunId,
+            lead_id: longLeadId,
+            email: longEmail,
+            lead_name: "Alexandria Rivera-Williams",
+            company_name: longCompanyName,
+            company_domain: longCompanyDomain,
+            owner: "Maya Patel",
+            source: "demo_form",
+            run_status: "failed",
+            error_type: "adapter",
+            created_at: "2026-06-01T10:00:00Z",
+            updated_at: "2026-06-01T10:01:00Z",
+            attempt_count: 1,
+            latest_attempt: null,
+            failure_detail_available: true,
+          },
+        ],
+      },
+      200
+    );
+
+    render(<AdminRunHistory />);
+
+    const table = within(await screen.findByTestId("run-history-table"));
+    const runId = await table.findByTitle(longRunId);
+    const leadId = table.getByTitle(longLeadId);
+    const email = table.getByTitle(longEmail);
+    const companyName = table.getByTitle(longCompanyName);
+    const companyDomain = table.getByTitle(longCompanyDomain);
+
+    expect(runId).toHaveTextContent(longRunId);
+    expect(runId).toHaveClass("truncate", "font-mono", "text-xs");
+    expect(leadId).toHaveTextContent(longLeadId);
+    expect(leadId).toHaveClass("truncate", "font-mono", "text-xs");
+    expect(email).toHaveTextContent(longEmail);
+    expect(email).toHaveClass("truncate", "font-medium");
+    expect(companyName).toHaveClass("truncate");
+    expect(companyDomain).toHaveClass("truncate", "text-muted-foreground");
+    expect(
+      screen.getByRole("button", {
+        name: `View details for ${longRunId}`,
+      })
+    ).toBeInTheDocument();
+  });
+
   it("renders an empty state when no persisted runs exist", async () => {
     mockFetch({ runs: [] }, 200);
 

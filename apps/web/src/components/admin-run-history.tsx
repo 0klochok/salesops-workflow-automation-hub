@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { formatApiError } from "@/lib/format";
 import { fetchRunDetail, fetchRunHistory } from "@/lib/run-history-api";
+import { cn } from "@/lib/utils";
 import type {
   ApiErrorResponse,
   ErrorType,
@@ -470,7 +471,20 @@ function RunHistoryTable({
       </div>
 
       <div className="max-w-full overflow-x-auto" data-testid="run-history-table">
-        <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1075px] table-fixed border-collapse text-left text-sm">
+          <colgroup>
+            <col className="w-[100px]" />
+            <col className="w-[115px]" />
+            <col className="w-[160px]" />
+            <col className="w-[70px]" />
+            <col className="w-[70px]" />
+            <col className="w-[80px]" />
+            <col className="w-[70px]" />
+            <col className="w-[85px]" />
+            <col className="w-[135px]" />
+            <col className="w-[80px]" />
+            <col className="w-[100px]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border">
               <th className="px-3 py-2 font-semibold text-muted-foreground">
@@ -499,7 +513,7 @@ function RunHistoryTable({
               <th className="px-3 py-2 font-semibold text-muted-foreground">
                 Failure detail
               </th>
-              <th className="w-32 px-3 py-2 text-center font-semibold text-muted-foreground">
+              <th className="px-2 py-2 text-center font-semibold text-muted-foreground">
                 Detail
               </th>
             </tr>
@@ -514,19 +528,31 @@ function RunHistoryTable({
                   </p>
                 </td>
                 <td className="px-3 py-3">
-                  <p className="break-all font-medium">{run.run_id}</p>
-                  <p className="break-all text-muted-foreground">{run.lead_id}</p>
+                  <TruncatedTableText
+                    className="font-mono text-xs font-medium text-foreground"
+                    value={run.run_id}
+                  />
+                  <TruncatedTableText
+                    className="font-mono text-xs text-muted-foreground"
+                    value={run.lead_id}
+                  />
                 </td>
                 <td className="px-3 py-3">
-                  <p className="break-all font-medium">
-                    {run.email ?? run.lead_id}
-                  </p>
-                  {run.lead_name ? <p>{run.lead_name}</p> : null}
-                  {run.company_name ? <p>{run.company_name}</p> : null}
+                  <TruncatedTableText
+                    className="font-medium"
+                    value={run.email ?? run.lead_id}
+                  />
+                  {run.lead_name ? (
+                    <TruncatedTableText value={run.lead_name} />
+                  ) : null}
+                  {run.company_name ? (
+                    <TruncatedTableText value={run.company_name} />
+                  ) : null}
                   {run.company_domain ? (
-                    <p className="break-all text-muted-foreground">
-                      {run.company_domain}
-                    </p>
+                    <TruncatedTableText
+                      className="text-muted-foreground"
+                      value={run.company_domain}
+                    />
                   ) : null}
                 </td>
                 <td className="px-3 py-3">
@@ -577,10 +603,10 @@ function RunHistoryTable({
                     {run.failure_detail_available ? "Available" : "None"}
                   </Badge>
                 </td>
-                <td className="w-32 px-3 py-3 text-center">
+                <td className="px-2 py-3 text-center">
                   <Button
                     aria-label={`View details for ${run.run_id}`}
-                    className="h-9 min-w-[7.25rem] whitespace-nowrap px-4"
+                    className="h-9 w-full whitespace-nowrap px-2"
                     onClick={() => onSelectRun(run.run_id)}
                     variant="secondary"
                   >
@@ -593,6 +619,23 @@ function RunHistoryTable({
         </table>
       </div>
     </section>
+  );
+}
+
+function TruncatedTableText({
+  className,
+  value,
+}: {
+  className?: string;
+  value: string;
+}) {
+  return (
+    <span
+      className={cn("block min-w-0 max-w-full truncate", className)}
+      title={value}
+    >
+      {value}
+    </span>
   );
 }
 
