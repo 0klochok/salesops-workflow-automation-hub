@@ -9,11 +9,86 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Phase 4 Slice 17 - portfolio handoff and public README readiness |
+| Current phase | Phase 4 Slice 18 - final local release-candidate QA and portfolio evidence pass |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, tests, typecheck, build, backend tests, backend lint, backend typecheck, Docker Compose config, and Git checks passed; live browser/API smoke skipped because this was documentation-only |
-| Completion | Slice 17 documentation readiness pass complete |
+| Quality gate status | Full local frontend/backend gate, Docker Compose config, README claim review, and local browser/API smoke passed; only documented out-of-scope checks skipped |
+| Completion | Slice 18 final local release-candidate QA complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Final Local Release-Candidate QA
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded Slice 18 final local release-candidate QA evidence, manual smoke results, skipped checks, known risks, and suggested commit message |
+
+No backend code, frontend code, README text, public API, schema, route, UI behavior, dependency manifest, database migration, generated file, GitHub Actions workflow, deployment config, real integration, secret, staging action, commit, or push was introduced.
+
+`README.md` did not need changes. It remains PowerShell-friendly, documents Docker Desktop for Compose, and explicitly states the local/mock-only boundaries: no auth, no deployment, no GitHub Actions, no real integrations, and no paid API requirement.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Starting status had no output; final pre-edit status also had no output |
+| `git diff --check` | pass | No output; exit 0 |
+| `docker compose config` | pass | Compose config rendered successfully for local PostgreSQL service `salesops-postgres` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | `Test Files 4 passed (4)`; `Tests 27 passed (27)`; duration `14.48s` |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `3.5s`; generated `/`, `/admin/runs`, and local API proxy routes |
+| `uv run pytest` | pass | `48 passed`, `1 warning`; duration `2.21s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `Test-Path -LiteralPath .\.github\workflows` | pass | `False`; no GitHub Actions workflow directory exists |
+| README claim scan | pass | Matches were explicit local/mock/no-auth/no-deployment/no-CI/no-real-integration boundaries only |
+
+Validation notes:
+
+- The Windows sandbox could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- `uv run pytest` used the available local Python runtime reported by pytest as Python `3.14.4`; the project target remains Python `3.12+`.
+- No dependency install was needed because `.venv` and `apps/web/node_modules` already existed and all gates ran.
+
+### Manual README and local demo QA
+
+- Read `README.md` as a first-time reviewer and confirmed the quick start is PowerShell-friendly.
+- Confirmed Docker Desktop is documented for local PostgreSQL through Docker Compose.
+- Confirmed the README does not overclaim production deployment, auth, live external integrations, paid API usage, or GitHub Actions.
+- Confirmed local `.env` existed without printing it; read `.env.example` and confirmed it is placeholder-only.
+- Confirmed local PostgreSQL was already healthy, ran `docker compose up -d postgres`, applied `uv run alembic upgrade head`, and ran `uv run python -m backend.app.leads.demo_seed`.
+- Seed command created the expected synthetic runs: `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Started temporary local backend at `http://127.0.0.1:8000` and temporary local frontend at `http://127.0.0.1:3000`; stopped only those temporary processes afterward.
+- Verified `GET /health`, `/`, `/admin/runs`, `/api/leads/runs`, and `/api/leads/runs/run_demo_failed`.
+- Browser smoke used installed headless Chrome because Browser plugin tooling was unavailable in this implementation context and project Playwright is not installed.
+- Chrome screenshots showed the home lead form/CSV page, the seeded admin run table, and `/admin/runs?status=success&runId=run_demo_failed` with the selected-run-hidden notice plus read-only failed-run detail.
+- Frontend logs showed local `GET` requests only for `/`, `/admin/runs`, `/api/leads/runs`, `/api/leads/runs/run_demo_failed`, and local route assets during admin smoke.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service call was made.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Dependency install | skipped | `.venv` and `apps/web/node_modules` already existed; all validation gates ran without dependency changes |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no production hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Browser smoke covered installed Chrome only; Firefox, Safari, Edge, and additional breakpoints were not manually checked in this pass.
+- Local pytest used Python `3.14.4`, while the project target remains Python `3.12+`.
+- The existing Starlette/httpx deprecation warning still appears during backend tests but does not fail the gate.
+- Local PostgreSQL was left running for the user's environment.
+- Temporary screenshots and logs were stored outside the repository in the OS temp directory; no source artifact was added.
+
+### Suggested commit message
+
+```text
+Record Slice 18 release-candidate QA
+```
 
 ## Latest Update - 2026-06-04 Portfolio Handoff And Public README Readiness
 
