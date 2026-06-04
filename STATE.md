@@ -9,11 +9,109 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Phase 4 Slice 18 - final local release-candidate QA and portfolio evidence pass |
+| Current phase | Phase 4 Slice 19 - manual-smoke closure and Python 3.12 verification |
 | Overall status | on-track |
-| Quality gate status | Full local frontend/backend gate, Docker Compose config, README claim review, and local browser/API smoke passed; only documented out-of-scope checks skipped |
-| Completion | Slice 18 final local release-candidate QA complete |
+| Quality gate status | Full local frontend/backend gate, Python 3.12 backend compatibility gate, scope-creep scans, and local browser/API smoke passed; only documented out-of-scope checks skipped |
+| Completion | Slice 19 manual-smoke closure complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Manual-Smoke Closure And Environment Verification
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded the fresh manual-smoke closure evidence, Python 3.12 backend compatibility pass, scope-creep checks, skipped checks, and remaining risks |
+
+No backend code, frontend code, public API, schema, route, UI behavior, dependency manifest, database migration, generated source file, GitHub Actions workflow, deployment config, real integration, secret, staging action, commit, or push was introduced.
+
+`RUNBOOK.md` was reviewed and did not need changes. Its local PostgreSQL, backend, frontend, and admin smoke instructions still match the working local/mock demo path.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Starting status had no output |
+| `git diff --check` | pass | No output; exit 0 |
+| `uv run python --version` | pass | Initially `Python 3.14.4`; after the Python 3.12 compatibility gate the active uv environment reported `Python 3.12.13` |
+| `uv run pytest` | pass | `48 passed`, `1 warning`; duration `2.42s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | `Test Files 4 passed (4)`; `Tests 27 passed (27)`; duration `14.27s` |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `2.7s`; generated `/`, `/admin/runs`, and local API proxy routes |
+| `uv python list 3.12 --only-installed --no-python-downloads` | pass | Found local `cpython-3.12.13-windows-x86_64-none` at `C:\Users\Санька\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\python.exe` |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | `48 passed`, `1 warning`; platform Python `3.12.13`; uv rebuilt the ignored local `.venv` for Python 3.12 and installed locked packages |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- Python 3.12 was already available locally; no Python installation was attempted.
+- The Python 3.12 compatibility gate changed only the ignored local `.venv` environment and did not modify tracked dependency manifests.
+
+### Scope-creep checks
+
+| Check | Status | Result |
+|---|---|---|
+| `Test-Path -LiteralPath .\.github\workflows` | pass | `False`; no GitHub Actions workflow directory exists |
+| `git ls-files -- .github` | pass | No output; no tracked `.github` files |
+| Tracked CI/deploy config file check | pass | No tracked GitHub workflow, GitLab CI, Azure, Bitbucket, CircleCI, Vercel, Netlify, Render, Railway, Fly, Wrangler, Terraform, Pulumi, Dockerfile, or `.dockerignore` config found |
+| Refined tracked CI/deploy term scan | pass | No non-doc source matches |
+| Tracked source secret-pattern scan | pass | No token-like or private-key matches in backend, frontend, tests, Alembic, or manifests |
+| Tracked source live-endpoint scan | pass | No live HubSpot, Slack webhook/API, OpenAI, Anthropic, Google Sheets/Gemini, Supabase, or service-role endpoint matches in backend, frontend, tests, Alembic, or manifests |
+| Network-call surface scan | pass | Matches were expected local frontend/client `fetch` calls through `/api/leads/intake`, `/api/leads/runs`, and `/api/leads/runs/[runId]` |
+
+No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service call was made.
+
+### Local API and browser smoke
+
+- Pre-smoke `docker compose ps` showed `salesops-postgres` already `Up` and `healthy` on port `5432`; it was left running unchanged after the pass.
+- `uv run --env-file .env.example alembic upgrade head` passed against local PostgreSQL.
+- `uv run --env-file .env.example python -m backend.app.leads.demo_seed` seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary backend ran at `http://127.0.0.1:8765`; `GET /health` returned `status=ok`.
+- Backend API smoke passed for `GET /leads/runs`, `GET /leads/runs/run_demo_failed`, and `GET /leads/runs/run_demo_failed/failure`.
+- Run-history summary returned `run_count=4`, run IDs `run_demo_queued,run_demo_retried,run_demo_failed,run_demo_success`, and statuses `queued,retried,failed,success`.
+- Temporary frontend ran at `http://127.0.0.1:5499` after relaunching with a quote-safe encoded PowerShell command so backend env vars were inherited correctly.
+- Frontend proxy smoke passed for `GET /api/leads/runs` and `GET /api/leads/runs/run_demo_failed`.
+- Browser smoke used the in-app Browser against `http://127.0.0.1:5499`.
+- `/` rendered the lead intake form and CSV import surface; filling `Email *` and selecting `Source * = csv_upload` worked without submitting.
+- `/admin/runs` rendered all four seeded rows and the read-only marker with zero browser console warnings/errors.
+- Status filter `failed` updated the URL to `/admin/runs?status=failed`, kept `run_demo_failed` visible, and hid success/queued/retried rows.
+- `View details for run_demo_failed` opened the same-page detail panel, showed the mock CRM failure message and suggested action, and exposed no retry control.
+- `/admin/runs?status=success&runId=run_demo_failed` showed the selected-run-hidden notice, kept the failed-run detail visible, and table DOM inspection showed only the success row in the filtered table.
+- Visible admin controls were `Lead demo`, `Reset filters`, and `View details`; no retry, edit, delete, submit, resubmit, rerun, send, archive, or worker controls were visible.
+- Frontend and backend logs showed local `GET` requests only for the admin browser/proxy path; no admin `POST`, `PUT`, `PATCH`, or `DELETE` request appeared.
+- Temporary backend and frontend processes were stopped after smoke; ports `8765` and `5499` were clear afterward.
+- Smoke screenshot was saved outside the repository at `C:\Users\Санька\AppData\Local\Temp\salesops-admin-smoke-hidden-selected.png`.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Python installation | skipped | Python `3.12.13` was already installed locally; no Python install was needed or attempted |
+| Explicit dependency install command | skipped | Existing dependencies were present; the only environment change was uv rebuilding the ignored `.venv` for the requested Python 3.12 compatibility gate using locked packages |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no production hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Browser smoke covered the in-app Chromium browser only; Firefox, Safari, Edge, and additional breakpoints were not manually checked in this pass.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- The active ignored `.venv` is now Python `3.12.13` after the compatibility gate; this matches the project target but differs from the pre-pass `3.14.4` uv environment.
+- Local PostgreSQL was already running before the pass and was left running for the user's environment.
+- Temporary screenshots and logs were stored outside the repository in the OS temp directory; no source artifact was added.
+
+### Suggested commit message
+
+```text
+Record manual smoke closure
+```
 
 ## Latest Update - 2026-06-04 Final Local Release-Candidate QA
 
