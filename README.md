@@ -85,9 +85,9 @@ The current local demo includes:
 - backend-only failure detail and manual retry endpoints are available for persisted workflow runs;
 - a persisted run-history endpoint returns stored runs with persisted lead email, company name, company domain, a derived demo owner, run-level error type, and latest attempt summaries;
 - a persisted run-detail endpoint returns one selected run with sanitized attempts, intake payload, and allowlisted mock/audit result data;
-- `/admin/runs` provides a read-only frontend view of persisted run history, URL-preserved status/search/date/owner/error-type filters, selected run detail, filtered empty state, and selected-run-hidden notice through local `GET` proxy routes;
+- `/admin/runs` provides a read-only frontend view of persisted run history, URL-preserved status/source/search/date/owner/error-type filters, selected run detail, filtered empty state, and selected-run-hidden notice through local `GET` proxy routes;
 - deterministic local demo seed data can create success, failed, queued, and retried workflow runs;
-- the read-only admin dashboard includes owner and error-type filters using existing persisted/demo data without migrations or mutation controls;
+- the read-only admin dashboard includes source, owner, and error-type filters using existing persisted/demo data without migrations or mutation controls;
 - no auth, real integrations, secrets, deployment config, or GitHub Actions exist.
 
 ## Current Portfolio Demo Path
@@ -128,7 +128,7 @@ $env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
 pnpm --dir apps/web dev
 ```
 
-Open `http://localhost:3000/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/search/date/owner/error-type filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
+Open `http://localhost:3000/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/source/search/date/owner/error-type filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
 
 The admin screen is read-only. Interacting with `/admin/runs` should only issue local `GET` requests for run history and selected run detail through the Next.js API proxy. It must not expose retry, edit, delete, submit, resubmit, rerun, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
 
@@ -138,7 +138,7 @@ The admin screen is read-only. Interacting with `/admin/runs` should only issue 
 - CRM, Slack, Google Sheets, OpenAI, paid APIs, production APIs, and webhooks are not required for the documented demo path and must not be called without explicit approval.
 - CRM upsert and Slack notification behavior is simulated by local mock adapters.
 - The public admin UI is read-only; manual retry exists as a backend-only local endpoint and is intentionally not exposed in `/admin/runs`.
-- Source is displayed in the admin run table and included in text search; there is no dedicated source dropdown yet.
+- Source is displayed in the admin run table, included in text search, and available as a dedicated source dropdown filter.
 - `.env.example` contains placeholders only. Keep any local values in ignored `.env` files and do not commit real secrets.
 - Codex must not stage, commit, or push. The user manually reviews, stages, commits, and pushes.
 
@@ -149,7 +149,7 @@ Final local handoff checklist:
 3. Run `uv run python -m backend.app.leads.demo_seed`.
 4. Start the backend on a free local port with `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port <backend-port>`.
 5. Start the frontend in another PowerShell window with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the backend port.
-6. Open `/admin/runs`, confirm seeded rows render, status/search/date/owner/error-type filters work, selected detail opens, and the selected-run-hidden notice appears for a filtered-out selected run.
+6. Open `/admin/runs`, confirm seeded rows render, status/source/search/date/owner/error-type filters work, selected detail opens, and the selected-run-hidden notice appears for a filtered-out selected run.
 7. Confirm the admin path uses local `GET` requests only and has no retry, edit, delete, submit, resubmit, rerun, worker, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
 8. Before any manual commit, review generated artifacts with `git status --short` and `git diff --stat`. TypeScript build-info, Next.js output, dependency folders, coverage, caches, logs, and local `.env` files are ignored and should not appear as source changes.
 
@@ -223,7 +223,7 @@ pnpm install
 pnpm --dir apps/web dev
 ```
 
-Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs` and shows persisted lead email/company identity, derived owner/error-type fields, URL-backed filters, and a same-page selected run detail panel. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
+Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs` and shows persisted lead email/company identity, derived owner/error-type fields, URL-backed filters including source, and a same-page selected run detail panel. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
 
 ## Local Validation
 

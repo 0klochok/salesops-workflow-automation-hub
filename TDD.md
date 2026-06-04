@@ -78,10 +78,10 @@ Current frontend tests still cover:
 - FastAPI-style `422` validation details;
 - CSV parsing for valid and invalid rows;
 - same-session duplicate hint behavior;
-- dashboard filtering by source.
+- session dashboard filtering by source;
 - read-only persisted run-history rows;
 - persisted lead email/company identity, derived owner, and run-level error type in run-history rows;
-- owner and error-type filters preserve URL state and filter the read-only table;
+- source, owner, and error-type filters preserve URL state and filter the read-only table;
 - older run-history rows remain readable if enriched identity fields are absent from a mocked response;
 - empty and error states for `/admin/runs`;
 - absence of retry/edit/delete/send/archive/mutation controls or non-GET run-history fetches.

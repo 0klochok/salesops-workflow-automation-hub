@@ -14,7 +14,7 @@
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system remains safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-The current local demo includes persisted intake, deterministic demo seed data, failure detail, backend-only retry, and a read-only `/admin/runs` page with URL-backed status, search, date, owner, and error-type filters. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries unchanged. Real integrations, auth, retry UI, deployment, and GitHub Actions remain out of scope unless explicitly approved later.
+The current local demo includes persisted intake, deterministic demo seed data, failure detail, backend-only retry, and a read-only `/admin/runs` page with URL-backed status, source, search, date, owner, and error-type filters. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries unchanged. Real integrations, auth, retry UI, deployment, and GitHub Actions remain out of scope unless explicitly approved later.
 
 ## 3. Stack
 
@@ -144,12 +144,12 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - Manual retry records update only local persistence; they do not call CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
 - Run-history responses are built from persisted runs, leads, and attempts and expose only a safe summary contract with stored email and company identity.
 - Run-detail responses are built from existing persisted run, lead, attempt, and audit records with allowlisted/sanitized payload fields only.
-- The read-only frontend admin run-history UI consumes the persisted run list and selected run detail through local Next.js GET proxies, displays stored lead/run/audit summaries, supports URL-backed status/search/date/owner/error-type filters client-side, and exposes no retry or mutation action.
+- The read-only frontend admin run-history UI consumes the persisted run list and selected run detail through local Next.js GET proxies, displays stored lead/run/audit summaries, supports URL-backed status/source/search/date/owner/error-type filters client-side, and exposes no retry or mutation action.
 - The current admin owner is a deterministic portfolio-demo assignment derived from existing `lead_id` values. It is not a persisted sales-rep routing model.
 - The current run-level error type is derived from the latest non-null persisted attempt error type. It supports the read-only filter without adding a migration or a broader failure taxonomy.
 - Demo seed data writes fixed synthetic success, failed, queued, and retried runs through local SQLAlchemy records only.
 - Repository tests validate persistence behavior with SQLite as a unit-test fallback; PostgreSQL remains the local integration target.
-- Persisted owner assignment, broader failure taxonomies, a dedicated source filter, and admin filters beyond the current contract require future API/UI work.
+- Persisted owner assignment, broader failure taxonomies, and admin filters beyond the current contract require future API/UI work.
 
 ## 8. Adapter Boundaries And Mock Mode
 

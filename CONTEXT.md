@@ -21,7 +21,7 @@ The fake client is a growth agency with 5 sales reps. Leads arrive from multiple
 
 The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, a persistence-backed local lead intake path, backend-only failure detail/retry endpoints, enriched persisted run history with lead email/company summary fields, derived demo owner and run-level error type, read-only selected run detail, and deterministic demo seed data. The frontend includes a read-only `/admin/runs` page that displays persisted run history, lead identity, owner/error-type fields, URL-backed filters, and a same-page selected run detail panel through local Next.js GET proxies. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
 
-The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, a current-session dashboard stored in browser `sessionStorage`, and read-only admin filtering for status, search, date range, derived owner, and run-level error type.
+The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, a current-session dashboard stored in browser `sessionStorage`, and read-only admin filtering for status, source, search, date range, derived owner, and run-level error type.
 
 The current portfolio-readiness pass keeps the project local-only, mock-safe, GET-only for the public admin view, and free of retry/edit/delete/send/archive/mutation controls. Manual retry remains available as a backend-only local endpoint.
 
@@ -105,7 +105,7 @@ The current portfolio-readiness pass keeps the project local-only, mock-safe, GE
 - Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake/retry records, run history, selected run detail, seed data, and read-only admin UI implemented.
 - Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; public admin UI intentionally remains read-only.
 - Error detail with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel are implemented.
-- Admin table with filters by date, status, lead owner, and error type. Source is displayed and included in text search; a dedicated source dropdown remains a known limitation.
+- Admin table with filters by date, source, status, lead owner, and error type. Source is also displayed and included in text search.
 - Backup/audit records. Persisted for local intake and manual retry events.
 
 ## 8. Assumptions

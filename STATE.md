@@ -9,11 +9,100 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final portfolio-readiness documentation pass |
+| Current phase | Admin source filter dropdown |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates and final scope/safety scans passed for this docs-only pass; long-running browser smoke was not rerun because setup/smoke behavior did not change |
-| Completion | Final portfolio-readiness documentation pass complete |
+| Quality gate status | Required backend/frontend gates and scope/safety scans passed for the admin source filter dropdown phase; manual browser smoke was not run because the requested validation was automated/local and the runbook contains the manual browser path |
+| Completion | Admin source filter dropdown phase complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Admin Source Filter Dropdown
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Added a URL-backed Source filter dropdown derived from loaded row sources and the existing typed `LeadSource` contract; preserved search/status/date/owner/error-type filters and read-only detail behavior |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added admin source-filter tests for all-sources default, one-source filtering, URL preservation, source plus search interaction, and reset behavior |
+| `README.md` | Updated current admin-filter and known-limitation wording to include the dedicated source dropdown |
+| `REQ.md` | Updated FR-010 status and acceptance wording for source filtering |
+| `CONTEXT.md` | Updated current frontend/admin filter context to include source |
+| `DESIGN.md` | Updated current admin filter architecture and removed the source-filter future-limitation wording |
+| `RUNBOOK.md` | Updated manual admin smoke instructions and local validation text to include source filtering |
+| `TDD.md` | Updated current frontend test coverage notes for admin source filtering |
+| `STATE.md` | Recorded this source-filter phase, validation, skipped checks, risks, and suggested commit message |
+
+No backend code, public API, schema, database migration, dependency manifest, generated source file, GitHub Actions workflow, deployment config, real integration, secret, staging action, commit, or push was introduced.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Final output listed intended files only: `M CONTEXT.md`, `M DESIGN.md`, `M README.md`, `M REQ.md`, `M RUNBOOK.md`, `M STATE.md`, `M TDD.md`, `M apps/web/src/components/admin-run-history.test.tsx`, `M apps/web/src/components/admin-run-history.tsx` |
+| `git diff --check` | pass | Exit 0; no whitespace errors. Git printed LF-to-CRLF working-copy warnings for touched Markdown/TSX files |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `2.70s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 30 passed (30)`; duration `12.69s` |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `5.1s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `git ls-files -- .github` | pass | No output; no tracked `.github` files |
+| Tracked secret-pattern scan | pass | No output; command exited 1 because there were no matches |
+| Tracked live-endpoint scan | pass | No output; command exited 1 because there were no matches |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+Focused preflight:
+
+- `pnpm --dir apps/web test -- --run admin-run-history` initially failed after adding the dropdown because existing source-cell assertions also matched dropdown option text. Assertions were tightened to the table scope, and the focused rerun passed with `1 passed` file and `21 passed` tests.
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- Frontend build was run before typecheck to avoid the previously documented `.next/types` race.
+- No dependency install, package upgrade, migration command, real external API call, or backend route change was needed.
+
+### Manual verification and skipped checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Manual browser smoke | skipped | Not part of the requested required gate list; frontend behavior is covered by component tests, lint, typecheck, and build, and `RUNBOOK.md` now documents the exact browser path to verify source filtering locally |
+| Dependency install | skipped | Existing locked environments were sufficient; all required gates ran without dependency changes |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+Manual browser verification recommendation:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
+
+In another PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Open `http://127.0.0.1:3042/admin/runs` and confirm `All sources` shows all seeded rows, `csv_upload` shows CSV-sourced rows only, source plus search intersects correctly, reset clears source, selected detail remains read-only, and admin interactions remain local GET-only.
+
+### Remaining risks
+
+- Browser smoke was not run in this phase; rely on automated frontend tests/build plus the manual verification path above for final visual confirmation.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- TypeScript and Next.js validation may rewrite ignored local `.next` or build-info artifacts without producing tracked source changes.
+
+### Suggested commit message
+
+```text
+Add admin source filter dropdown
+```
 
 ## Latest Update - 2026-06-04 Final Portfolio-Readiness Documentation Pass
 

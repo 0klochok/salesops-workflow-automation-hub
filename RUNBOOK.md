@@ -253,7 +253,7 @@ pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
 
-The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, read-only persisted run history through `GET /api/leads/runs`, and selected run detail through `GET /api/leads/runs/[runId]` to the FastAPI backend. The `/admin/runs` screen stays read-only, supports URL-backed status/search/date/owner/error-type filters client-side, and does not trigger retry, edit, delete, submit, resubmit, rerun, send, archive, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` actions.
+The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, read-only persisted run history through `GET /api/leads/runs`, and selected run detail through `GET /api/leads/runs/[runId]` to the FastAPI backend. The `/admin/runs` screen stays read-only, supports URL-backed status/source/search/date/owner/error-type filters client-side, and does not trigger retry, edit, delete, submit, resubmit, rerun, send, archive, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` actions.
 
 ## 9. Manual Frontend Verification
 
@@ -300,17 +300,18 @@ Test read-only persisted admin run history:
 3. Confirm the page shows persisted seeded runs such as `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
 4. Confirm the page shows persisted lead email/name/company identity, derived demo owner, run status, source, run-level error type, timestamps, attempt count, latest attempt summary, and failure-detail availability.
 5. Apply the status filter `failed` and confirm only `run_demo_failed` remains visible while the URL includes `status=failed`.
-6. Clear the status filter, search for `atlas`, and confirm only `run_demo_retried` remains visible while the URL includes `q=atlas`.
-7. Use the Owner filter and confirm only rows for that derived owner remain visible while the URL includes `owner=<owner-name>`.
-8. Use the Error type filter with `adapter` and confirm failed/retried adapter-error rows remain visible while rows without a run-level error type are hidden.
-9. Confirm `Reset filters` stays visually secondary, is aligned with the filter group, wraps cleanly on narrow layouts, and clears active filters.
-10. Search for a value with no matches and confirm the filtered empty state says no runs match the filters.
-11. Apply date filters such as `from=2026-06-01` and `to=2026-06-01` and confirm the date values persist in the URL.
-12. Select `View details` for a run such as `run_demo_failed`.
-13. Confirm the same-page detail panel shows the selected run, derived owner/error type, persisted attempts, sanitized intake payload, and allowlisted mock/audit result data.
-14. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the read-only detail visible.
-15. Confirm the browser Network tab shows only local GET requests such as `/api/leads/runs` and `/api/leads/runs/run_demo_failed`.
-16. Confirm no retry button, mutation action, edit action, delete action, send action, archive action, POST, PUT, PATCH, DELETE, real external API call, or webhook is visible or triggered.
+6. Clear the status filter, apply the source filter `csv_upload`, and confirm only CSV-sourced runs remain visible while the URL includes `source=csv_upload`.
+7. Search for `atlas` and confirm only `run_demo_retried` remains visible while the URL includes `q=atlas`; combine source and search to confirm the filters intersect.
+8. Use the Owner filter and confirm only rows for that derived owner remain visible while the URL includes `owner=<owner-name>`.
+9. Use the Error type filter with `adapter` and confirm failed/retried adapter-error rows remain visible while rows without a run-level error type are hidden.
+10. Confirm `Reset filters` stays visually secondary, is aligned with the filter group, wraps cleanly on narrow layouts, and clears active filters.
+11. Search for a value with no matches and confirm the filtered empty state says no runs match the filters.
+12. Apply date filters such as `from=2026-06-01` and `to=2026-06-01` and confirm the date values persist in the URL.
+13. Select `View details` for a run such as `run_demo_failed`.
+14. Confirm the same-page detail panel shows the selected run, derived owner/error type, persisted attempts, sanitized intake payload, and allowlisted mock/audit result data.
+15. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the read-only detail visible.
+16. Confirm the browser Network tab shows only local GET requests such as `/api/leads/runs` and `/api/leads/runs/run_demo_failed`.
+17. Confirm no retry button, mutation action, edit action, delete action, send action, archive action, POST, PUT, PATCH, DELETE, real external API call, or webhook is visible or triggered.
 
 ## 10. Current Local Validation
 
@@ -372,7 +373,7 @@ $env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
 pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
 
-Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/search/date/owner/error-type filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
+Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/source/search/date/owner/error-type filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
 
 ## 10.2 Final Local Portfolio Handoff Checklist
 
@@ -410,7 +411,7 @@ pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port <frontend-port>
 5. Open `http://127.0.0.1:<frontend-port>/admin/runs` and verify:
 
 - seeded success, failed, queued, and retried rows render;
-- status, search, date, owner, and error-type filters work and update the URL;
+- status, source, search, date, owner, and error-type filters work and update the URL;
 - `Reset filters` is visually secondary, aligns with the filter group, wraps cleanly on narrow layouts, and clears active filters;
 - selected detail opens on the same page;
 - `?status=success&runId=run_demo_failed` shows the selected-run-hidden notice while keeping detail visible;

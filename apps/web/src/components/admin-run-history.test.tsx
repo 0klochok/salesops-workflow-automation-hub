@@ -212,7 +212,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByText("Pipeline Labs")).toBeInTheDocument();
     expect(screen.getByText("pipelinelabs.example")).toBeInTheDocument();
     expect(table.getByText("Maya Patel")).toBeInTheDocument();
-    expect(screen.getByText("demo_form")).toBeInTheDocument();
+    expect(table.getByText("demo_form")).toBeInTheDocument();
     expect(screen.getByText("Attempt 2: failed")).toBeInTheDocument();
     expect(screen.getByText("Error type: adapter")).toBeInTheDocument();
     expect(
@@ -223,7 +223,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByText("Sofia Chen")).toBeInTheDocument();
     expect(screen.getByText("Northstar Growth")).toBeInTheDocument();
     expect(table.getByText("Avery Brooks")).toBeInTheDocument();
-    expect(screen.getByText("csv_upload")).toBeInTheDocument();
+    expect(table.getByText("csv_upload")).toBeInTheDocument();
     expect(screen.getByText("run_demo_queued")).toBeInTheDocument();
     expect(screen.getByText("Noah Kim")).toBeInTheDocument();
     expect(
@@ -236,6 +236,20 @@ describe("AdminRunHistory", () => {
       },
       cache: "no-store",
     });
+  });
+
+  it("defaults to all sources without adding a source query", async () => {
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    expect(screen.getByLabelText("Source")).toHaveValue("all");
+    expect(navigationMock.getSearchParams().toString()).toBe("");
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("run_demo_failed")).toBeInTheDocument();
+    expect(table.getByText("run_demo_success")).toBeInTheDocument();
+    expect(table.getByText("run_demo_queued")).toBeInTheDocument();
   });
 
   it("truncates long run identifiers and lead identity while preserving full titles", async () => {
@@ -328,6 +342,27 @@ describe("AdminRunHistory", () => {
     expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
   });
 
+  it("filters persisted runs by source and preserves the source in the URL", async () => {
+    const user = userEvent.setup();
+    mockFetch(runHistoryResponse, 200);
+    const { rerender } = render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Source"), "csv_upload");
+
+    expect(navigationMock.replace).toHaveBeenLastCalledWith(
+      "/admin/runs?source=csv_upload",
+      { scroll: false }
+    );
+    rerender(<AdminRunHistory />);
+
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("run_demo_success")).toBeInTheDocument();
+    expect(table.getByText("csv_upload")).toBeInTheDocument();
+    expect(table.queryByText("run_demo_failed")).not.toBeInTheDocument();
+    expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
   it("filters persisted runs by owner and preserves the owner in the URL", async () => {
     const user = userEvent.setup();
     mockFetch(runHistoryResponse, 200);
@@ -366,6 +401,21 @@ describe("AdminRunHistory", () => {
     const table = within(screen.getByTestId("run-history-table"));
     expect(table.getByText("run_demo_failed")).toBeInTheDocument();
     expect(table.getByText("adapter")).toBeInTheDocument();
+    expect(table.queryByText("run_demo_success")).not.toBeInTheDocument();
+    expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
+  it("combines the source filter with existing search text", async () => {
+    navigationMock.setSearchParams("source=demo_form&q=demo");
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    expect(screen.getByLabelText("Source")).toHaveValue("demo_form");
+    expect(screen.getByLabelText("Search")).toHaveValue("demo");
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("demo_form")).toBeInTheDocument();
     expect(table.queryByText("run_demo_success")).not.toBeInTheDocument();
     expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
   });
@@ -411,7 +461,7 @@ describe("AdminRunHistory", () => {
 
   it("clears filters from the filter panel reset while preserving the selected run", async () => {
     navigationMock.setSearchParams(
-      "status=success&owner=Maya+Patel&errorType=adapter&q=no-local-match&from=2026-06-01&to=2026-06-01&runId=run_demo_failed"
+      "status=success&source=demo_form&owner=Maya+Patel&errorType=adapter&q=no-local-match&from=2026-06-01&to=2026-06-01&runId=run_demo_failed"
     );
     const user = userEvent.setup();
     const fetchMock = mockFetchByUrl({
@@ -482,8 +532,9 @@ describe("AdminRunHistory", () => {
     render(<AdminRunHistory />);
 
     expect(await screen.findByText("run_legacy")).toBeInTheDocument();
+    const table = within(screen.getByTestId("run-history-table"));
     expect(screen.getAllByText("lead_legacy")).toHaveLength(2);
-    expect(screen.getByText("manual")).toBeInTheDocument();
+    expect(table.getByText("manual")).toBeInTheDocument();
   });
 
   it("loads and renders selected run details from the read-only detail endpoint", async () => {

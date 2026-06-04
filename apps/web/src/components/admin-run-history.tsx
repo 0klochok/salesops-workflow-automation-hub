@@ -18,10 +18,12 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { formatApiError } from "@/lib/format";
 import { fetchRunDetail, fetchRunHistory } from "@/lib/run-history-api";
+import { leadSources } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type {
   ApiErrorResponse,
   ErrorType,
+  LeadSource,
   RunDetailResponse,
   RunHistoryItem,
   RunStatus,
@@ -39,10 +41,12 @@ type DetailState =
   | { status: "error"; runId: string; error: ApiErrorResponse };
 
 type FilterStatus = RunStatus | "all";
+type FilterSource = LeadSource | "all";
 type FilterErrorType = ErrorType | "all";
 
 type RunHistoryFilters = {
   status: FilterStatus;
+  source: FilterSource;
   owner: string;
   errorType: FilterErrorType;
   query: string;
@@ -63,6 +67,7 @@ const RUN_STATUS_OPTIONS = [
 ] as const satisfies readonly RunStatus[];
 
 const RUN_STATUS_SET = new Set<string>(RUN_STATUS_OPTIONS);
+const LEAD_SOURCE_SET = new Set<string>(leadSources);
 const RUN_ERROR_TYPE_OPTIONS = [
   "validation",
   "adapter",
@@ -90,6 +95,10 @@ export function AdminRunHistory() {
   const hasActiveFilters = hasRunHistoryFilters(filters);
   const ownerOptions = useMemo(
     () => (state.status === "loaded" ? getRunOwnerOptions(state.runs) : []),
+    [state]
+  );
+  const sourceOptions = useMemo(
+    () => (state.status === "loaded" ? getRunSourceOptions(state.runs) : []),
     [state]
   );
 
@@ -236,6 +245,7 @@ export function AdminRunHistory() {
               filters={filters}
               hasActiveFilters={hasActiveFilters}
               ownerOptions={ownerOptions}
+              sourceOptions={sourceOptions}
               onChange={handleFilterChange}
               onReset={handleResetFilters}
             />
@@ -284,12 +294,14 @@ function RunHistoryFiltersForm({
   filters,
   hasActiveFilters,
   ownerOptions,
+  sourceOptions,
   onChange,
   onReset,
 }: {
   filters: RunHistoryFilters;
   hasActiveFilters: boolean;
   ownerOptions: string[];
+  sourceOptions: LeadSource[];
   onChange: (filters: RunHistoryFilters) => void;
   onReset: () => void;
 }) {
@@ -297,13 +309,17 @@ function RunHistoryFiltersForm({
     filters.owner && !ownerOptions.includes(filters.owner)
       ? [filters.owner, ...ownerOptions]
       : ownerOptions;
+  const sourceFilterOptions =
+    filters.source !== "all" && !sourceOptions.includes(filters.source)
+      ? [filters.source, ...sourceOptions]
+      : sourceOptions;
 
   return (
     <section
       aria-label="Run history filters"
       className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel"
     >
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(9rem,0.8fr)_minmax(10rem,1fr)_minmax(9rem,0.8fr)_minmax(14rem,1.4fr)_repeat(2,minmax(9rem,0.7fr))]">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(8rem,0.7fr)_minmax(9rem,0.8fr)_minmax(10rem,1fr)_minmax(9rem,0.8fr)_minmax(14rem,1.4fr)_repeat(2,minmax(9rem,0.7fr))]">
         <div className="min-w-0 space-y-2">
           <Label htmlFor="run-status-filter">Status</Label>
           <Select
@@ -320,6 +336,28 @@ function RunHistoryFiltersForm({
             {RUN_STATUS_OPTIONS.map((status) => (
               <option key={status} value={status}>
                 {status}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor="run-source-filter">Source</Label>
+          <Select
+            disabled={sourceFilterOptions.length === 0}
+            id="run-source-filter"
+            value={filters.source}
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                source: normalizeSourceFilter(event.target.value),
+              })
+            }
+          >
+            <option value="all">All sources</option>
+            {sourceFilterOptions.map((source) => (
+              <option key={source} value={source}>
+                {source}
               </option>
             ))}
           </Select>
@@ -882,6 +920,7 @@ function formatPayloadValue(value: unknown): string {
 function emptyRunHistoryFilters(): RunHistoryFilters {
   return {
     status: "all",
+    source: "all",
     owner: "",
     errorType: "all",
     query: "",
@@ -893,6 +932,7 @@ function emptyRunHistoryFilters(): RunHistoryFilters {
 function parseRunHistoryFilters(searchParams: SearchParamReader): RunHistoryFilters {
   return {
     status: normalizeStatusFilter(searchParams.get("status") ?? "all"),
+    source: normalizeSourceFilter(searchParams.get("source") ?? "all"),
     owner: (searchParams.get("owner") ?? "").trim(),
     errorType: normalizeErrorTypeFilter(searchParams.get("errorType") ?? "all"),
     query: (searchParams.get("q") ?? "").trim(),
@@ -908,6 +948,10 @@ function parseSelectedRunId(searchParams: SearchParamReader): string | null {
 
 function normalizeStatusFilter(value: string): FilterStatus {
   return RUN_STATUS_SET.has(value) ? (value as RunStatus) : "all";
+}
+
+function normalizeSourceFilter(value: string): FilterSource {
+  return LEAD_SOURCE_SET.has(value) ? (value as LeadSource) : "all";
 }
 
 function normalizeErrorTypeFilter(value: string): FilterErrorType {
@@ -935,6 +979,7 @@ function isDateOnlyValue(value: string): boolean {
 function hasRunHistoryFilters(filters: RunHistoryFilters): boolean {
   return (
     filters.status !== "all" ||
+    filters.source !== "all" ||
     filters.owner !== "" ||
     filters.errorType !== "all" ||
     filters.query !== "" ||
@@ -950,6 +995,9 @@ function buildRunHistoryQueryString(
   const params = new URLSearchParams();
   if (filters.status !== "all") {
     params.set("status", filters.status);
+  }
+  if (filters.source !== "all") {
+    params.set("source", filters.source);
   }
   const query = filters.query.trim();
   if (query) {
@@ -982,6 +1030,9 @@ function filterRunHistory(
 
   return runs.filter((run) => {
     if (filters.status !== "all" && run.run_status !== filters.status) {
+      return false;
+    }
+    if (filters.source !== "all" && run.source !== filters.source) {
       return false;
     }
     if (filters.owner && (run.owner ?? "") !== filters.owner) {
@@ -1032,6 +1083,11 @@ function getRunOwnerOptions(runs: RunHistoryItem[]): string[] {
         .filter((owner): owner is string => Boolean(owner))
     )
   ).sort((left, right) => left.localeCompare(right));
+}
+
+function getRunSourceOptions(runs: RunHistoryItem[]): LeadSource[] {
+  const availableSources = new Set(runs.map((run) => run.source));
+  return leadSources.filter((source) => availableSources.has(source));
 }
 
 function getRunErrorType(run: RunHistoryItem): ErrorType | null {
