@@ -508,7 +508,7 @@ function RunHistoryTable({
       </div>
 
       <div className="max-w-full overflow-x-auto" data-testid="run-history-table">
-        <table className="w-full min-w-[1075px] table-fixed border-collapse text-left text-sm">
+        <table className="w-full min-w-[1100px] table-fixed border-collapse text-left text-sm">
           <colgroup>
             <col className="w-[100px]" />
             <col className="w-[115px]" />
@@ -520,7 +520,7 @@ function RunHistoryTable({
             <col className="w-[85px]" />
             <col className="w-[135px]" />
             <col className="w-[80px]" />
-            <col className="w-[100px]" />
+            <col className="w-[128px]" />
           </colgroup>
           <thead>
             <tr className="border-b border-border">
@@ -640,10 +640,10 @@ function RunHistoryTable({
                     {run.failure_detail_available ? "Available" : "None"}
                   </Badge>
                 </td>
-                <td className="px-2 py-3 text-center">
+                <td className="px-2 py-3 text-center align-middle">
                   <Button
                     aria-label={`View details for ${run.run_id}`}
-                    className="h-9 w-full whitespace-nowrap px-2"
+                    className="h-10 min-w-[7rem] whitespace-nowrap px-4"
                     onClick={() => onSelectRun(run.run_id)}
                     variant="secondary"
                   >

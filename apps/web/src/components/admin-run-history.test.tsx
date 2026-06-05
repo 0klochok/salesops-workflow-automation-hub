@@ -327,11 +327,16 @@ describe("AdminRunHistory", () => {
     expect(email).toHaveClass("truncate", "font-medium");
     expect(companyName).toHaveClass("truncate");
     expect(companyDomain).toHaveClass("truncate", "text-muted-foreground");
-    expect(
-      screen.getByRole("button", {
-        name: `View details for ${longRunId}`,
-      })
-    ).toBeInTheDocument();
+    const detailButton = screen.getByRole("button", {
+      name: `View details for ${longRunId}`,
+    });
+    expect(detailButton).toBeInTheDocument();
+    expect(detailButton).toHaveClass(
+      "h-10",
+      "min-w-[7rem]",
+      "whitespace-nowrap",
+      "px-4"
+    );
   });
 
   it("renders an empty state when no persisted runs exist", async () => {

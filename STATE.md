@@ -4,16 +4,96 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-04 |
+| Last updated | 2026-06-05 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Admin source filter hardening |
+| Current phase | Admin run history table alignment and responsive UI polish |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates, scope/safety scans, and local browser smoke passed for the admin source filter hardening phase |
-| Completion | Admin source filter hardening phase complete |
+| Quality gate status | Required backend/frontend gates and local browser smoke passed for the admin detail-button polish phase |
+| Completion | Admin run history table alignment and responsive UI polish complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Admin Run History Table Alignment And Responsive UI Polish
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Widened only the final Detail column, kept the existing table scroller, centered the inline detail action, and gave the `View details` button its standard height and breathing room |
+| `apps/web/src/components/admin-run-history.test.tsx` | Extended the existing long-value admin table test to assert the detail button keeps its accessible label and non-cramped sizing classes |
+| `STATE.md` | Recorded this UI polish phase, validation, browser smoke, skipped checks, risks, and suggested commit message |
+
+No backend code, public API, schema, database migration, authentication, routing, dependency manifest, generated source file, GitHub Actions workflow, deployment config, real integration, secret, staging action, commit, push, mutation control, filter behavior, search behavior, or detail-navigation contract was changed.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `pnpm --dir apps/web test -- --run admin-run-history` | pass | Vitest `v3.2.4`; `1 passed` test file; `24 passed` tests; duration `10.03s` after the corrected final-column patch |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 33 passed (33)`; duration `21.77s` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `5.4s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `2.40s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `git diff --check` | pass | Exit 0; no whitespace errors. Git printed LF-to-CRLF working-copy warnings for the touched TSX files |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- An initial local patch widened the first `100px` column instead of the final `Detail` column; browser geometry caught it before final validation. The patch was corrected, and the full requested validation sequence was rerun after the correction.
+- No dependency install, package upgrade, backend route change, migration creation, real external API call, staging action, commit, or push was needed.
+
+### Local browser smoke
+
+- `docker compose up -d postgres` confirmed `salesops-postgres` was running.
+- `uv run alembic upgrade head` passed against local PostgreSQL.
+- `uv run python -m backend.app.leads.demo_seed` seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary backend ran at `http://127.0.0.1:8134`; temporary frontend ran at `http://127.0.0.1:3134`.
+- In-app Browser desktop smoke loaded `/admin/runs`, rendered all four seeded rows, and showed the `Read-only` marker.
+- Desktop table geometry after correction: table min width `1100px`, final column class `w-[128px]`, detail button width `113.5px`, rendered detail cell width about `138.5px`, and button/header center delta `0px`.
+- The `View details` button text had breathing room through `h-10`, `min-w-[7rem]`, `px-4`, and `whitespace-nowrap`; it no longer stretched to the full cell width.
+- Source filter `csv_upload` updated the URL to `?source=csv_upload` and returned only CSV-sourced rows.
+- Search `q=pipeline` with Source reset to `All sources` updated the URL to `?q=pipeline` and returned the expected Pipeline Labs row.
+- Clicking `View details for run_demo_failed` updated the URL to `?q=pipeline&runId=run_demo_failed` and loaded the same-page read-only detail panel with the seeded failed-run data.
+- Mobile viewport `390x844` rendered four seeded rows, kept body-level horizontal overflow off (`pageScrollWidth=375`, `bodyScrollWidth=375`), and kept table overflow inside the scroller (`tableClientWidth=310`, `tableScrollWidth=1100`).
+- Mobile detail-column geometry remained acceptable: detail button width `113.5px`, rendered detail cell width about `128.9px`, and button/header center delta about `0.3px`.
+- Frontend smoke logs showed local `GET` requests only for admin interactions: `/admin/runs`, `/api/leads/runs`, and `/api/leads/runs/run_demo_failed`.
+- Backend smoke logs showed local `GET /leads/runs` and `GET /leads/runs/run_demo_failed` requests only for admin browser interactions.
+- Temporary backend/frontend processes on ports `8134` and `3134` were stopped after smoke; a follow-up port check found no listening processes on those ports.
+
+Browser smoke note:
+
+- Running `pnpm --dir apps/web build` while the first temporary `next dev` process was still alive produced a transient Next.js dev overlay and a retained browser console error for stale `.next` runtime chunks. The temporary frontend was restarted after the build; the final rendered desktop and mobile pages had no visible framework overlay, and no new server-side smoke errors appeared. The Browser console log API still retained the earlier stale entry, so final console health is recorded as visually clean with retained-log caveat.
+
+### Skipped checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Dependency install | skipped | Existing locked environments were sufficient; all required gates ran without dependency changes |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Remaining risks
+
+- Browser QA covered the in-app Chromium browser at desktop `1366x768` and mobile `390x844`; Firefox, Safari, Edge, and additional breakpoints were not manually checked.
+- The Browser console log view retained a stale dev-overlay error from before the frontend restart; final DOM, route, server logs, and visible overlay checks passed after restart.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- Local PostgreSQL was left running because it was already running before this phase; temporary backend/frontend smoke processes were stopped.
+
+### Suggested commit message
+
+```text
+Polish admin run detail button alignment
+```
 
 ## Latest Update - 2026-06-04 Admin Source Filter Hardening
 
