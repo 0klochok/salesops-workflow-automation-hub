@@ -9,11 +9,105 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Portfolio handoff materials slice |
+| Current phase | Local-first portfolio readiness polish pass |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates passed; local handoff HTTP smoke passed; browser console/CDP check was attempted but limited by local Chrome/CDP tooling behavior |
-| Completion | Portfolio handoff materials implemented and validated |
+| Quality gate status | Required backend/frontend gates passed; local HTTP smoke passed; browser console capture skipped because no browser-control tool was available in this session |
+| Completion | Local-first portfolio readiness polish implemented and validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Local-First Portfolio Readiness Polish Pass
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `REQ.md` | Updated the current phase label and corrected FR-009 to describe the implemented backend failure endpoint plus same-page read-only selected run detail panel instead of a planned public failure page/action |
+| `EXEC_PLAN.md` | Updated the current phase to the local-first readiness polish pass and added the current pass as documentation-only follow-up after the handoff slice |
+| `CONTEXT.md` | Updated the current phase label |
+| `DESIGN.md` | Updated the current phase label and last-updated date |
+| `RUNBOOK.md` | Updated the current phase label and last-updated date |
+| `TDD.md` | Updated the current phase label and last-updated date |
+| `STATE.md` | Recorded this pass's changed files, validation, manual smoke, skipped checks, risks, and Git safety status |
+
+No backend code, frontend code, public API, schema, route, UI behavior, dependency manifest, database migration, generated source file, GitHub Actions workflow, deployment config, real integration, provider SDK, OAuth/webhook/credential flow, real secret, staging action, commit, push, retry UI, or public admin mutation behavior was changed.
+
+`README.md` and `HANDOFF.md` were reviewed and left unchanged. Their current wording already keeps CRM/Slack behavior mock-only, marks future live-provider work as approval-gated, and does not imply production integrations already exist.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `git diff --cached --name-only` | pass | Starting staged-file check had no output |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 33 passed (33)`; duration `13.89s` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `2.9s`; generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `2.28s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed existing LF-to-CRLF working-copy warnings for touched docs |
+| `git diff --cached --name-only` | pass | Final staged-file check had no output; no files were staged |
+| `git status --short --branch` | pass | Final status showed `## main` plus modified docs only: `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `REQ.md`, `RUNBOOK.md`, `STATE.md`, and `TDD.md` |
+| Targeted stale wording scan | pass | No remaining matches for outdated phase labels or obsolete public failure-page wording |
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- No dependency install, package upgrade, backend route change, frontend route change, migration creation, code generation into tracked files, real external API call, staging action, commit, or push was needed.
+- No tests were added because this pass changed documentation only and did not alter backend/frontend behavior, APIs, schemas, routes, or components.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+
+### Local smoke and manual verification
+
+- `docker compose up -d postgres` confirmed `salesops-postgres` was running.
+- `docker compose ps` showed `salesops-postgres` as `Up` and `healthy` on port `5432`.
+- `uv run --env-file .env.example alembic upgrade head` passed against local PostgreSQL without creating or printing a local `.env`.
+- `uv run --env-file .env.example python -m backend.app.leads.demo_seed` seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary backend ran at `http://127.0.0.1:8194`; `GET /health` returned `status=ok` and service `salesops-workflow-automation-hub`.
+- Temporary frontend ran at `http://127.0.0.1:3194`.
+- `GET http://127.0.0.1:3194/` returned HTTP 200 and contained the lead intake and CSV UI.
+- `GET http://127.0.0.1:3194/admin/runs` returned HTTP 200 and contained `Admin run history` and `Read-only`.
+- `GET http://127.0.0.1:3194/api/leads/runs` returned 4 seeded runs: `run_demo_queued`, `run_demo_retried`, `run_demo_failed`, and `run_demo_success`, with statuses `queued`, `retried`, `failed`, and `success`.
+- `GET http://127.0.0.1:3194/api/leads/runs/run_demo_failed` returned the seeded failed-run detail with safe run metadata, persisted attempts, sanitized intake payload fields, and allowlisted mock/audit result data.
+- The selected run-detail payload excluded lead `phone`, lead freeform `message`, and secret-like values; the response's `error_message` field is expected failure metadata, not the hidden lead message payload.
+- `GET http://127.0.0.1:8194/leads/runs/run_demo_failed/failure` returned `error_type=adapter`, suggested action `Review the synthetic CRM payload and retry locally.`, and the same sanitized payload field allowlist.
+- Frontend dev logs showed local `GET` requests only for `/`, `/admin/runs`, `/api/leads/runs`, and `/api/leads/runs/run_demo_failed`.
+- Backend access logs showed local `GET` requests only for `/health`, `/leads/runs`, `/leads/runs/run_demo_failed`, and `/leads/runs/run_demo_failed/failure`.
+- Temporary backend and frontend processes on ports `8194` and `3194` were stopped after smoke; follow-up port checks found no listeners on those ports.
+- Local PostgreSQL was left running because it is part of the documented local database path and was already managed by Docker Compose.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Browser console capture | skipped/limited | No browser-control tool was exposed in this session; the project does not list Playwright as a dependency, and dependency changes were out of scope. HTTP smoke and server logs were used instead. |
+| Screenshots | skipped | No tracked docs require screenshots for this phase; browser screenshot tooling was unavailable and the pass is documentation-only |
+| Behavior test additions | skipped | Documentation-only pass; no backend/frontend behavior changed |
+| Dependency install or upgrade | skipped | Existing locked environments were sufficient; no dependency change was needed or introduced |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Remaining risks
+
+- Browser-rendered console/runtime capture was unavailable in this session; HTTP route/proxy smoke and server logs passed for the documented local demo path.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- Temporary smoke logs were written under `%TEMP%`, outside the repository.
+- Local PostgreSQL remains running for the user's environment; stop it manually only if desired.
+- This pass is documentation-only; no live CRM/Slack provider code, provider SDK, credential validation, or live smoke was added.
+
+### Suggested commit message
+
+```text
+Polish local-first portfolio readiness docs
+```
+
+### Next recommended phase
+
+After user review, manually commit the local-first portfolio readiness polish pass if the diff is acceptable. Later work should stay local-first and avoid real integrations, dependency changes, deployment config, GitHub Actions, staging, commits, pushes, and real credentials unless explicitly requested.
 
 ## Latest Update - 2026-06-05 Portfolio Handoff Materials Slice
 

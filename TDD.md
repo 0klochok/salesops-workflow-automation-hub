@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-04 |
+| Last updated | 2026-06-05 |
 | Status | active draft |
 | Applies to | salesops workflow automation hub |
-| Current phase | Final portfolio-readiness documentation pass |
+| Current phase | Local-first portfolio readiness polish pass |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy

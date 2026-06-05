@@ -7,7 +7,7 @@
 | Last updated | 2026-06-05 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Portfolio handoff materials slice |
+| Current phase | Local-first portfolio readiness polish pass |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |

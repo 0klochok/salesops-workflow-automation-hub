@@ -7,7 +7,7 @@
 | Last updated | 2026-06-05 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Portfolio handoff materials slice |
+| Current phase | Local-first portfolio readiness polish pass |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief
@@ -67,7 +67,7 @@ The current portfolio-readiness state keeps the demo local-first, deterministic,
 | FR-006 | The Slack adapter simulates notification for qualified leads. | P0 | Qualified lead produces a mock notification record; unqualified lead does not. | mock foundation implemented |
 | FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | persisted backend run history and read-only frontend view with persisted lead identity implemented |
 | FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | backend endpoint implemented; public admin UI intentionally read-only |
-| FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | backend failure endpoint and read-only selected run detail UI implemented; dedicated failure page/action planned |
+| FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | backend failure endpoint and same-page read-only selected run detail UI implemented; public admin mutation actions remain intentionally absent |
 | FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type; source is visible and searchable. | read-only persisted run-history UI implemented with status, source, search, date, derived owner, and run-level error-type filters |
 | FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | deterministic local seed command implemented |
 | FR-012 | Portfolio handoff materials explain how real CRM/Slack credentials would be added safely. | P1 | Handoff doc documents credential boundaries without real secrets. | documentation-only handoff implemented in `HANDOFF.md` |

@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-04 |
+| Last updated | 2026-06-05 |
 | Status | active draft |
 | Scope | Architecture for greenfield portfolio demo |
-| Current phase | Final portfolio-readiness documentation pass |
+| Current phase | Local-first portfolio readiness polish pass |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
