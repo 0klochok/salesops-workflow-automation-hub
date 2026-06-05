@@ -9,11 +9,121 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Portfolio demo recording documentation pass |
+| Current phase | Mock-safe portfolio recording dry run |
 | Overall status | on-track |
-| Quality gate status | Docs-only recording checklist validation passed; backend/frontend gates skipped with written reasons |
-| Completion | Recording checklist documentation tightened and ready for manual portfolio recording |
+| Quality gate status | Mock-safe recording dry run passed; final staged/status checks passed; final `git diff --check` and `git diff --name-only` reruns were blocked by approval-review timeout after earlier pass |
+| Completion | Recording checklist dry run completed and ready for portfolio evidence capture with noted final-command limitation |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Mock-Safe Portfolio Recording Dry Run
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `RUNBOOK.md` | Added a recording-hygiene note that the Next.js dev tools badge can appear under `next dev` and may be kept closed or cropped from final footage |
+| `STATE.md` | Recorded the local/mock-safe checklist dry run, commands, browser verification, skipped checks, Git safety status, and readiness verdict |
+
+No source code, tests, package manifests, lockfiles, dependency versions, backend configuration, frontend configuration, CI, GitHub Actions, database schema, migrations, generated source, public API, UI behavior, route contract, real integration, paid API usage, production credential, staging action, commit, or push was changed.
+
+### What was checked
+
+- Read `RUNBOOK.md` section `10.2` and `STATE.md`, then followed the final portfolio recording checklist in local/mock-safe mode.
+- Confirmed preflight state: clean `main` branch, no staged files, existing ignored `.env` present without printing contents, and documented ports `8028` and `3042` available.
+- Started local PostgreSQL, applied Alembic migrations, seeded the deterministic synthetic demo runs, and started local backend/frontend servers on `127.0.0.1:8028` and `127.0.0.1:3042`.
+- Verified backend health, persisted run history, and `run_demo_failed` detail through local HTTP only.
+- Verified the public lead demo page, admin dashboard, seeded run rows, status/source/search/date/owner/error-type filtered URLs, filtered empty state, selected-run-hidden detail path, reset filter interaction, and failed-run detail button interaction in the in-app browser.
+- Checked browser console warnings/errors, framework overlay text, visible admin controls, and local frontend request logs.
+
+### Commands run
+
+| Command or action | Status | Result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting output was `## main` |
+| `git diff --cached --name-only` | pass | No output; no staged files |
+| `Test-Path -LiteralPath ".env"` | pass | `True`; `.env` existed and contents were not printed |
+| `Get-NetTCPConnection -LocalPort 8028,8029,3042,3043 -ErrorAction SilentlyContinue` | pass | No listeners before the dry run; documented ports were available |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL migration context initialized; transactional DDL assumed |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| local backend start on `127.0.0.1:8028` | pass | Uvicorn process `15548`; listener confirmed on port `8028` |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health" -Method Get` | pass | Returned `status=ok` and service `salesops-workflow-automation-hub` |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs" -Method Get` | pass | Returned seeded persisted run history |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs/run_demo_failed" -Method Get` | pass | Returned failed run detail with `run_status=failed`, `error_type=adapter`, sanitized intake payload, attempts, and audit events |
+| local frontend start on `127.0.0.1:3042` | pass | Next.js `15.5.18`; ready at `http://127.0.0.1:3042`; listener process `21852` |
+| `Invoke-WebRequest -Uri "http://127.0.0.1:3042/" -UseBasicParsing` | pass | HTTP 200 for the public lead demo route |
+| `Invoke-WebRequest -Uri "http://127.0.0.1:3042/admin/runs" -UseBasicParsing` | pass | HTTP 200 for the admin route |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:3042/api/leads/runs" -Method Get` | pass | Frontend proxy returned seeded run history |
+| Browser route checks | pass | `/`, `/admin/runs`, all checklist filter URLs, empty state, selected-run-hidden path, reset filters, and failed-run detail click matched expected visible state |
+| Browser console check | pass | No relevant `error` or `warn` logs |
+| Frontend request-log scan | pass | Admin dry-run traffic showed local `GET` requests for app routes and `/api/leads/runs` endpoints only |
+| External provider/mutation log scans | pass | No `POST`, `PUT`, `PATCH`, `DELETE`, HubSpot, Slack, OpenAI, Google Sheets, paid API, webhook, or external-provider strings found in backend/frontend dry-run logs |
+| dry-run backend/frontend cleanup | pass | Closed the dry-run browser tab, stopped only local listener processes `15548` and `21852`, and confirmed ports `8028` and `3042` no longer had listeners |
+
+### Final validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git diff --check` | limited/pass before final evidence edits | Passed after the docs patch with exit 0 and no whitespace errors; Git printed LF-to-CRLF working-copy warnings for `RUNBOOK.md` and `STATE.md`. The final rerun after the final `STATE.md` evidence edits was attempted twice with escalation but blocked by approval-review timeout; sandboxed retry failed with `CreateProcessAsUserW failed: 5`. |
+| `git diff --name-only` | limited/pass before final evidence edits | Returned `RUNBOOK.md` and `STATE.md` after the docs patch; Git printed LF-to-CRLF working-copy warnings for those files. The final rerun after the final `STATE.md` evidence edits was attempted twice with escalation but blocked by approval-review timeout; sandboxed retry failed with `CreateProcessAsUserW failed: 5`. |
+| `git diff --cached --name-only` | pass | Final rerun after the `STATE.md` evidence edit had no output; no staged files |
+| `git status --short --branch` | pass | Final rerun after the `STATE.md` evidence edit showed `## main` plus modified docs only: `M RUNBOOK.md` and `M STATE.md` |
+
+### Browser verification
+
+- `/` rendered the portfolio lead demo with `Lead intake`, CSV import UI, `Submit lead`, and `Import rows`.
+- `/admin/runs` rendered `Admin run history`, `Read-only`, `4 automation runs shown.`, and the four seeded runs: `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
+- Filter URL expectations matched the checklist:
+  - `status=failed` and `source=csv_upload` showed only `run_demo_failed`;
+  - `q=atlas` showed only `run_demo_retried`;
+  - `owner=Maya Patel` showed `run_demo_failed` and `run_demo_queued`;
+  - `errorType=adapter` showed `run_demo_failed` and `run_demo_retried`;
+  - `from=2026-06-01&to=2026-06-01` showed all four seeded runs;
+  - `q=no-such-run` showed `No runs match these filters.`;
+  - `status=success&runId=run_demo_failed` showed the success row plus the selected-run-hidden notice and read-only failed-run detail.
+- `Reset filters` cleared `status=failed` back to `/admin/runs` and restored all four seeded rows.
+- `View details for run_demo_failed` updated the URL to `?runId=run_demo_failed` and showed the read-only detail panel, mock adapter failure, and suggested action `Review the synthetic CRM payload and retry locally.`
+- Visible app controls stayed limited to `Reset filters`, `View details for ...`, and local navigation. The Next.js dev tools badge appeared because the checklist uses `next dev`; `RUNBOOK.md` now clarifies that it is a local development indicator, not app behavior or an integration.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend tests | skipped | Docs-only/manual recording dry run; no backend source, schema, config, runtime behavior, or command contract changed |
+| Backend lint | skipped | Docs-only/manual recording dry run; no backend source, schema, config, runtime behavior, or command contract changed |
+| Backend typecheck | skipped | Docs-only/manual recording dry run; no backend source, schema, config, runtime behavior, or command contract changed |
+| Frontend tests | skipped | Docs-only/manual recording dry run; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend lint | skipped | Docs-only/manual recording dry run; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend typecheck | skipped | Docs-only/manual recording dry run; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend build | skipped | Docs-only/manual recording dry run; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service smoke | skipped | Explicitly forbidden; the dry run stayed local-only and mock-safe |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope |
+| Dependency install, upgrade, removal, or replacement | skipped | Existing dependencies and lockfiles were used; no dependency change was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Checklist readiness
+
+The `RUNBOOK.md` section `10.2` checklist is ready for actual portfolio evidence capture in local/mock-safe mode. The only gap found was the unmentioned Next.js dev tools badge visible during `next dev`; the runbook now calls that out for cleaner recording hygiene.
+
+### Git safety status
+
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- Temporary backend/frontend dry-run servers were started for validation and stopped before completion; local PostgreSQL was left running because it is part of the documented local database path and was already managed by Docker Compose.
+
+### Remaining risks
+
+- Browser verification covered the in-app Chromium browser at the default viewport; other browsers and a separate mobile recording viewport were not exercised in this dry run.
+- Manual recording should still avoid showing `.env`, private browser tabs, personal account data, real customer data, terminal output that prints secrets, provider dashboards, production services, or unrelated local files.
+
+### Suggested commit message
+
+```text
+Record mock-safe portfolio dry run
+```
 
 ## Latest Update - 2026-06-05 Portfolio Recording Checklist Verification Tightening
 

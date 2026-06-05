@@ -450,7 +450,8 @@ On `/admin/runs`, verify:
 - selected detail opens on the same page;
 - `?status=success&runId=run_demo_failed` shows the selected-run-hidden notice while keeping detail visible;
 - admin interactions issue local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>` only;
-- no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered.
+- no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered;
+- if the Next.js dev tools badge appears because the frontend is running under `next dev`, keep it closed or crop it out of final footage when desired. It is a local development indicator, not app behavior or an integration.
 
 ### Suggested 3-5 Minute Sequence
 
