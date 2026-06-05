@@ -9,11 +9,202 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Local-first final readiness audit after documentation polish |
+| Current phase | Final local demo rehearsal and portfolio recording prep |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates passed; manual smoke skipped because recent same-day local smoke is already recorded and no runtime files changed |
-| Completion | Local-first final readiness audit implemented and validated |
+| Quality gate status | Required backend/frontend gates passed; local smoke/demo rehearsal passed in mock/local mode |
+| Completion | Final local demo rehearsal completed and ready for manual portfolio recording |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Final Local Demo Rehearsal And Portfolio Recording Prep
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded the final local validation gate, local smoke/demo rehearsal, browser-facing checks, warnings, skipped checks, and Git safety status |
+
+No runtime code, tests, lockfiles, package manifests, migrations, generated source, `RUNBOOK.md`, GitHub Actions, deployment config, real credentials, real integrations, paid API usage, staging action, commit, push, or public admin mutation behavior was changed.
+
+`RUNBOOK.md` sections `10.1` and `10.2` were accurate for the local demo rehearsal. No runbook correction was needed.
+
+### Preflight
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `git diff --cached --name-only` | pass | No output; no staged files |
+| `Test-Path -LiteralPath ".env"` | pass | `True`; no ignored `.env` copy was needed |
+| local `DATABASE_URL` pattern check without printing the value | pass | `DATABASE_URL is present and points at local development PostgreSQL; value not printed.` |
+| `git ls-files -- apps/web/tsconfig.tsbuildinfo` | pass | No output; TypeScript build-info is not tracked |
+
+### Required validation gate
+
+| Command | Status | Exact result |
+|---|---|---|
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 33 passed (33)`; duration `14.42s` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `2.8s`; generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `2.19s` |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `git diff --check` | pass | Exit 0 with no whitespace errors |
+
+Backend test warning:
+
+- Existing FastAPI/Starlette testclient warning: using `httpx` with `starlette.testclient` is deprecated; this did not fail the gate.
+
+### Local smoke and demo rehearsal
+
+| Command or action | Status | Exact result |
+|---|---|---|
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `docker compose ps` | pass | `salesops-postgres` was `Up 2 days (healthy)` on port `5432` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized; transactional DDL assumed; already at head |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| temporary backend | pass | Started at `http://127.0.0.1:8028`; process ID `7028`; `/health` returned `status=ok` and service `salesops-workflow-automation-hub` |
+| backend run history | pass | `GET http://127.0.0.1:8028/leads/runs` returned 4 seeded runs: `run_demo_queued`, `run_demo_retried`, `run_demo_failed`, `run_demo_success` |
+| backend run detail | pass | `GET http://127.0.0.1:8028/leads/runs/run_demo_failed` returned `run_status=failed` with 2 attempts |
+| backend failure detail | pass | `GET http://127.0.0.1:8028/leads/runs/run_demo_failed/failure` returned `error_type=adapter` and suggested action `Review the synthetic CRM payload and retry locally.` |
+| temporary frontend | pass | Started at `http://127.0.0.1:3042`; process ID `17332`; `/` and `/admin/runs` returned HTTP 200 |
+| frontend page/proxy smoke | pass | `/` contained lead intake and CSV UI; `/admin/runs` contained `Admin run history` and `Read-only`; `/api/leads/runs` returned 4 seeded runs; `/api/leads/runs/run_demo_failed` returned failed detail with 2 attempts |
+| temporary process cleanup | pass | Stopped only process IDs `7028` and `17332`; follow-up port checks showed no listeners on `8028` or `3042` |
+
+Local PostgreSQL was left running because it is part of the documented local database path and was already managed by Docker Compose.
+
+### Browser-facing verification
+
+Browser plugin verification passed after switching from unsupported `networkidle` waiting to `load` plus targeted visible-text waits.
+
+| Route | Status | Visible result |
+|---|---|---|
+| `http://127.0.0.1:3042/` | pass | Page title `SalesOps Workflow Automation Hub`; `Lead intake` and `CSV` UI present; visible buttons `Submit lead` and `Import rows` |
+| `http://127.0.0.1:3042/admin/runs` | pass | `Admin run history` rendered with `Read-only`; 4 rows visible: queued, retried, failed, and success seeded runs; detail panel idle text visible |
+| `http://127.0.0.1:3042/admin/runs?status=failed` | pass | Status filter value `failed`; only `run_demo_failed` remained visible |
+| `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed` | pass | Success row stayed visible; selected-run-hidden notice appeared for `run_demo_failed`; read-only detail panel showed failed-run payload, attempts, suggested action, and allowlisted mock/audit data |
+| `http://127.0.0.1:3042/admin/runs?source=csv_upload` | pass | Source filter value `csv_upload`; only `run_demo_failed` remained visible |
+| `http://127.0.0.1:3042/admin/runs?q=atlas` | pass | Search value `atlas`; only `run_demo_retried` remained visible |
+| `http://127.0.0.1:3042/admin/runs?owner=Maya%20Patel` | pass | Owner filter value `Maya Patel`; `run_demo_queued` and `run_demo_failed` remained visible |
+| `http://127.0.0.1:3042/admin/runs?errorType=adapter` | pass | Error type filter value `adapter`; `run_demo_retried` and `run_demo_failed` remained visible |
+| `http://127.0.0.1:3042/admin/runs?from=2026-06-01&to=2026-06-01` | pass | Date filter values persisted; all four seeded 2026-06-01 runs remained visible |
+| `http://127.0.0.1:3042/admin/runs?q=no-such-run` | pass | Search value `no-such-run`; filtered empty state `No runs match these filters.` appeared |
+
+Browser console result:
+
+- `tab.dev.logs({ levels: ["error", "warn"], limit: 100 })` returned `[]` after the required routes and after the broader filter pass.
+
+Visible controls on `/admin/runs` were the local read-only navigation/filter/detail controls only: `Lead demo`, status/source/owner/error-type selects, search/date inputs, `Reset filters`, and `View details` buttons. No retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls were visible.
+
+### Local request and backend error observations
+
+Temporary log paths:
+
+- Backend: `%TEMP%\salesops-backend-8028.err.log` and `%TEMP%\salesops-backend-8028.out.log`
+- Frontend: `%TEMP%\salesops-frontend-3042.out.log` and `%TEMP%\salesops-frontend-3042.err.log`
+
+Relevant backend access logs were local `GET` requests only, including:
+
+- `GET /health`
+- `GET /leads/runs`
+- `GET /leads/runs/run_demo_failed`
+- `GET /leads/runs/run_demo_failed/failure`
+
+Relevant frontend dev logs were local `GET` requests only, including:
+
+- `GET /`
+- `GET /admin/runs`
+- `GET /admin/runs?status=failed`
+- `GET /admin/runs?status=success&runId=run_demo_failed`
+- `GET /admin/runs?source=csv_upload`
+- `GET /admin/runs?q=atlas`
+- `GET /admin/runs?owner=Maya%20Patel`
+- `GET /admin/runs?errorType=adapter`
+- `GET /admin/runs?from=2026-06-01&to=2026-06-01`
+- `GET /admin/runs?q=no-such-run`
+- `GET /api/leads/runs`
+- `GET /api/leads/runs/run_demo_failed`
+
+Mutation-line scan across the temporary frontend/backend logs found `0` lines containing `POST`, `PUT`, `PATCH`, or `DELETE`.
+
+No backend error was observed during the local smoke. No browser console error or warning was observed.
+
+### Warnings and command notes
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- `Start-Process -FilePath "pnpm"` failed on Windows because the shim is not a directly runnable Win32 application in this environment; the frontend was then started successfully with `pnpm.cmd`.
+- One local PowerShell HTTP smoke command initially used `$home`, which conflicts with the built-in read-only `$HOME`; the command was rerun with a neutral variable name and passed.
+- Browser `waitForLoadState({ state: "networkidle" })` is unsupported in the Browser plugin runtime; browser verification was rerun using `load` plus targeted visible-text waits and passed.
+- TypeScript/Next.js validation may rewrite ignored generated artifacts such as `.next` or `*.tsbuildinfo`; tracked checks stayed clean before the documentation update.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service smoke | skipped | Explicitly forbidden; the rehearsal stayed local-only and mock-safe |
+| GitHub Actions / CI | skipped | Explicitly out of scope; `Test-Path -LiteralPath ".github\workflows"` returned `False` |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope |
+| Dependency install, upgrade, replacement, or removal | skipped | Existing locked environments were sufficient; no dependency change was needed or introduced |
+| `RUNBOOK.md` correction | skipped | The documented local demo path was accurate; no correction was needed |
+| Commit, push, staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Git and artifact safety
+
+Before the `STATE.md` update:
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | `## main` |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+| `git diff --stat` | pass | No output; no tracked diff |
+| `Test-Path -LiteralPath ".github\workflows"` | pass | `False` |
+| `git ls-files -- apps/web/tsconfig.tsbuildinfo` | pass | No output; build-info is not tracked |
+| `git ls-files -ci --exclude-standard` | pass | No output; ignored files are not tracked |
+
+After the `STATE.md` update:
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed the existing LF-to-CRLF working-copy warning for `STATE.md` |
+| `git status --short --branch` | pass | `## main` plus `M STATE.md` |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+| `git diff --name-only` | pass | `STATE.md` only |
+| `git diff --stat` | pass | `STATE.md | 197 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-`; 1 file changed, 194 insertions, 3 deletions |
+
+No files were staged, committed, or pushed by Codex.
+
+### Manual recording recommendation
+
+For recording, start the documented local demo path again:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Open `http://127.0.0.1:3042/` and `http://127.0.0.1:3042/admin/runs`. The repo is ready for manual portfolio recording from the verified local path.
+
+### Remaining risks
+
+- Browser verification covered the in-app Browser runtime only; other browsers were not manually checked in this pass.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning remains non-blocking.
+- Temporary smoke logs were written under `%TEMP%`, outside the repository.
+- Local PostgreSQL remains running for the user's environment; stop it manually only if desired.
+- This pass is still mock/local-only; no live CRM/Slack provider code, provider SDK, credential validation, or live smoke was added.
+
+### Suggested commit message
+
+```text
+Record final local demo rehearsal
+```
+
+### Next recommended phase
+
+Manual portfolio review and optional 3-5 minute screen recording using the verified local runbook path.
 
 ## Latest Update - 2026-06-05 Local-First Final Readiness Audit After Documentation Polish
 
