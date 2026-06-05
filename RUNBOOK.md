@@ -375,18 +375,28 @@ pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 
 Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/source/search/date/owner/error-type filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
 
-## 10.2 Final Local Portfolio Handoff Checklist
+## 10.2 Final Local Portfolio Recording Checklist
 
-Use this checklist before recording screenshots, handing the project to a reviewer, or manually preparing a commit.
+Use this checklist before recording the manual portfolio demo, capturing screenshots, handing the project to a reviewer, or manually preparing a commit. The demo is local-first and mock-safe: it does not require paid APIs, production credentials, real provider dashboards, webhooks, GitHub Actions, staging, commits, or pushes.
 
-1. Confirm the worktree before validation:
+### Pre-Recording Commands
+
+Run these commands from the repository root in PowerShell.
+
+1. Confirm the worktree and staging area before validation:
 
 ```powershell
-git status --short
+git status --short --branch
 git diff --cached --name-only
 ```
 
-2. Start local PostgreSQL, apply migrations, and seed synthetic demo data:
+2. Create the local ignored `.env` from placeholders only if it is missing. Do not print the file contents during recording:
+
+```powershell
+if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
+```
+
+3. Start local PostgreSQL, apply migrations, and seed synthetic demo data:
 
 ```powershell
 docker compose up -d postgres
@@ -394,13 +404,13 @@ uv run alembic upgrade head
 uv run python -m backend.app.leads.demo_seed
 ```
 
-3. Start the backend on a free local-only port:
+4. Start the backend on a free local-only port:
 
 ```powershell
 uv run uvicorn backend.app.main:app --host 127.0.0.1 --port <backend-port>
 ```
 
-4. Start the frontend in a second PowerShell window, pointed at that backend:
+5. Start the frontend in a second PowerShell window, pointed at that backend:
 
 ```powershell
 $env:BACKEND_API_BASE_URL = "http://127.0.0.1:<backend-port>"
@@ -408,7 +418,21 @@ $env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:<backend-port>"
 pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port <frontend-port>
 ```
 
-5. Open `http://127.0.0.1:<frontend-port>/admin/runs` and verify:
+### Browser Pages To Show
+
+Open these local pages in the recording browser:
+
+- `http://127.0.0.1:<frontend-port>/` for the public lead form and CSV import;
+- `http://127.0.0.1:<frontend-port>/admin/runs` for the read-only persisted admin dashboard;
+- `http://127.0.0.1:<frontend-port>/admin/runs?status=failed` for status filtering;
+- `http://127.0.0.1:<frontend-port>/admin/runs?source=csv_upload` for source filtering;
+- `http://127.0.0.1:<frontend-port>/admin/runs?q=atlas` for search filtering;
+- `http://127.0.0.1:<frontend-port>/admin/runs?owner=Maya%20Patel` for owner filtering;
+- `http://127.0.0.1:<frontend-port>/admin/runs?errorType=adapter` for error-type filtering;
+- `http://127.0.0.1:<frontend-port>/admin/runs?q=no-such-run` for the filtered empty state;
+- `http://127.0.0.1:<frontend-port>/admin/runs?status=success&runId=run_demo_failed` for the selected-run-hidden detail path.
+
+On `/admin/runs`, verify:
 
 - seeded success, failed, queued, and retried rows render;
 - status, source, search, date, owner, and error-type filters work and update the URL;
@@ -418,7 +442,31 @@ pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port <frontend-port>
 - admin interactions issue local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>` only;
 - no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered.
 
-6. Review generated artifacts before any manual commit:
+### Suggested 3-5 Minute Sequence
+
+1. Problem setup, 20 to 30 seconds: explain the growth agency, five sales reps, form/CSV lead intake, duplicate risk, slow handoffs, and poor auditability.
+2. Public intake, 45 to 60 seconds: show the public form and CSV import with synthetic data only.
+3. Automation behavior, 45 to 60 seconds: explain local validation, persisted dedupe evidence, mock CRM upsert, mock Slack notification, and audit/run records.
+4. Admin inspection, 60 to 90 seconds: show `/admin/runs`, apply status/source/search/date/owner/error-type filters, open `run_demo_failed`, show the filtered empty state, and show the selected-run-hidden detail path.
+5. Safety and handoff, 30 to 45 seconds: explain local-only defaults, mocked integrations, placeholder-only `.env.example`, no paid APIs, no production credentials, and approval-gated future live providers.
+
+### What Not To Show
+
+- Do not show `.env` contents, local secrets, tokens, private keys, webhook URLs, account IDs, client secrets, refresh tokens, or terminal output that prints any secret value.
+- Do not show real HubSpot, Slack, Google Sheets, OpenAI, paid-provider, production, hosting, or private account dashboards.
+- Do not show private browser tabs, personal account data, real customer data, or unrelated local files.
+- Do not claim that GitHub Actions, staging, deployment, production smoke, real provider smoke, commits, or pushes are part of the portfolio recording path.
+
+### Post-Recording Cleanup
+
+1. Stop the backend and frontend dev servers with `Ctrl+C` in their PowerShell windows.
+2. Stop local PostgreSQL only if you do not want it running after recording:
+
+```powershell
+docker compose stop postgres
+```
+
+3. Close the recording browser/session and review generated artifacts before any manual commit:
 
 ```powershell
 git status --short

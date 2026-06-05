@@ -9,11 +9,91 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final local demo rehearsal and portfolio recording prep |
+| Current phase | Portfolio demo recording documentation pass |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates passed; local smoke/demo rehearsal passed in mock/local mode |
-| Completion | Final local demo rehearsal completed and ready for manual portfolio recording |
+| Quality gate status | Docs-only recording checklist validation passed; backend/frontend gates skipped with written reasons |
+| Completion | Recording checklist documentation updated and ready for manual portfolio recording |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Portfolio Demo Recording Documentation Pass
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `RUNBOOK.md` | Updated the final local checklist into an explicit portfolio recording checklist with pre-recording commands, browser pages, suggested sequence, safe screen hygiene, and cleanup |
+| `STATE.md` | Recorded the documentation-only pass, inspected docs, validation commands, skipped heavier gates, final Git status, and Git safety posture |
+
+No source code, tests, package manifests, lockfiles, dependency versions, backend configuration, frontend configuration, CI, GitHub Actions, database schema, migrations, generated files, public API, UI behavior, route contract, environment variable contract, real integration, paid API usage, production credential, staging action, commit, or push was changed.
+
+No `docs/demo-recording-checklist.md` file was created because the existing `RUNBOOK.md` checklist and `HANDOFF.md` demo script/reviewer checklist already cover that surface. `HANDOFF.md` was inspected only and left unchanged because it is outside this task's allowed-change list.
+
+### Docs inspected
+
+- `README.md`: confirmed the reviewer quick start, local PostgreSQL/Alembic/seed/backend/frontend route path, mock/no-paid-API boundaries, placeholder-only `.env.example`, and Codex no-stage/no-commit/no-push rule are already documented.
+- `RUNBOOK.md`: confirmed the local setup, validation, smoke workflow, and admin verification path; section `10.2` was updated to be recording-focused.
+- `STATE.md`: confirmed same-day local demo rehearsal, full gate, browser-facing route/filter checks, and skipped external/CI/deployment checks were already recorded.
+- `HANDOFF.md`: confirmed the before/after workflow, 3-5 minute demo script, reviewer checklist, and future credential boundaries already exist; left unchanged.
+
+### Demo path confirmed
+
+The recording checklist now explicitly covers:
+
+- local PostgreSQL startup with `docker compose up -d postgres`;
+- Alembic migration to head with `uv run alembic upgrade head`;
+- deterministic synthetic seed data with `uv run python -m backend.app.leads.demo_seed`;
+- backend startup with `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port <backend-port>`;
+- frontend startup with local `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL`;
+- public app route `/`;
+- admin route `/admin/runs`;
+- admin filters for status, source, search, owner, error type, and date;
+- filtered empty state via `q=no-such-run`;
+- selected-run-hidden detail path via `?status=success&runId=run_demo_failed`.
+
+The checklist also states that the demo is local-first, integrations remain mocked/demo-safe unless explicitly configured later, no paid APIs are required, no production credentials are included, and Codex did not stage, commit, or push.
+
+### Validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `git diff --check` | pass | Exit 0 with no whitespace errors after the documentation update; Git printed LF-to-CRLF working-copy warnings for `RUNBOOK.md` and `STATE.md` |
+| `git diff --name-only` | pass | `RUNBOOK.md` and `STATE.md` only; Git printed LF-to-CRLF working-copy warnings for those files |
+| `git diff --cached --name-only` | pass | No output; no staged files |
+| `git status --short --branch` | pass | Final status showed `## main` plus modified docs only: `M RUNBOOK.md` and `M STATE.md` |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend tests | skipped | Docs-only recording checklist update; no source/config/runtime command contract changed |
+| Backend lint | skipped | Docs-only recording checklist update; no source/config/runtime command contract changed |
+| Backend typecheck | skipped | Docs-only recording checklist update; no source/config/runtime command contract changed |
+| Frontend tests | skipped | Docs-only recording checklist update; no source/config/runtime command contract changed |
+| Frontend lint | skipped | Docs-only recording checklist update; no source/config/runtime command contract changed |
+| Frontend typecheck | skipped | Docs-only recording checklist update; no source/config/runtime command contract changed |
+| Frontend build | skipped | Docs-only recording checklist update; no source/config/runtime command contract changed |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service smoke | skipped | Explicitly forbidden; the project remains local-only and mock-safe |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope |
+| Dependency install, upgrade, removal, or replacement | skipped | Explicitly out of scope; no dependency change was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Manual recording recommendation
+
+Use `RUNBOOK.md` section `10.2` as the canonical manual recording checklist. Record only local demo pages and synthetic data. Do not show `.env` contents, real tokens, private dashboards, private account data, or terminals that print secret values.
+
+### Remaining risks
+
+- This pass did not rerun browser smoke because it changed documentation only and did not alter source, config, runtime behavior, routes, or command contracts.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning remains non-blocking from the same-day full gate.
+- The local demo remains mock/local-only; no live provider implementation, credential validation, or production smoke was added.
+
+### Suggested commit message
+
+```text
+Document portfolio recording checklist
+```
 
 ## Latest Update - 2026-06-05 Final Local Demo Rehearsal And Portfolio Recording Prep
 
