@@ -9,11 +9,86 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final portfolio recording documentation reconciliation |
+| Current phase | Final portfolio recording dry-run validation |
 | Overall status | on-track |
-| Quality gate status | Required git status, diff name-only, and whitespace checks pass; `STATE.md` is the only docs-only reconciliation change |
-| Completion | Portfolio recording checklist/docs are present; no final git-check blocker remains; ready for local portfolio recording/manual review |
+| Quality gate status | Required git checks pass; local/mock recording smoke passed; `STATE.md` is the only docs-only validation evidence update |
+| Completion | RUNBOOK 10.2 recording path validated locally; README/RUNBOOK unchanged; ready for portfolio recording/manual review |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Final Portfolio Recording Dry-Run Validation
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded the final local/mock-safe portfolio recording dry-run evidence and updated the top metadata |
+
+`README.md` and `RUNBOOK.md` were inspected and left unchanged because their documented local demo and `RUNBOOK.md` section `10.2` recording commands matched the validated dry-run path. No source code, tests, package manifests, lockfiles, dependency versions, backend configuration, frontend configuration, CI, GitHub Actions, database schema, migrations, generated source, public API, UI behavior, route contract, real integration, paid API usage, production credential, staging action, commit, or push was changed.
+
+### Commands validated
+
+| Command or check | Status | Result |
+|---|---|---|
+| `git status --short --branch` | pass | Baseline output was `## main`; final post-edit status showed only modified `STATE.md` |
+| `git diff --name-only` | pass | Baseline had no output; final post-edit output was `STATE.md` only |
+| `git diff --cached --name-only` | pass | No output; no staged files |
+| `git diff --check` | pass | Exit 0 with no whitespace errors |
+| `.env` presence check | pass | `.env` already existed and contents were not printed |
+| `.venv` and `apps/web/node_modules` presence checks | pass | Existing dependencies were present; no install command was needed |
+| local-only `DATABASE_URL` check | pass | Value was not printed; it points at the local Docker PostgreSQL database |
+| `docker compose config` and `docker compose ps` | pass | Compose config rendered and `salesops-postgres` was healthy |
+| `docker compose up -d postgres` | pass | Local PostgreSQL service was running |
+| `uv run alembic upgrade head` | pass | PostgreSQL migration context initialized; transactional DDL assumed |
+| `uv run python -m backend.app.leads.demo_seed` | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| backend on `127.0.0.1:8028` | pass | `GET /health`, `GET /leads/runs`, and `GET /leads/runs/run_demo_failed` returned expected local data |
+| frontend on `127.0.0.1:3042` | pass | `/`, `/admin/runs`, `/api/leads/runs`, `/api/leads/runs/run_demo_failed`, and all `RUNBOOK.md` 10.2 filter URLs returned HTTP 200 |
+| temporary server cleanup | pass | Backend and frontend dry-run ports `8028` and `3042` were clear after cleanup |
+
+### Dry-run details
+
+- The seeded run-history response returned four synthetic demo runs: `run_demo_queued`, `run_demo_retried`, `run_demo_failed`, and `run_demo_success`.
+- The seeded failed-run detail returned `run_id=run_demo_failed`, `run_status=failed`, and `error_type=adapter`.
+- The frontend proxy returned the same four seeded run IDs and the failed-run detail through local API routes.
+- The documented recording filter URLs were checked in local HTTP smoke: status, source, search, owner, error type, date range, filtered empty state, and selected-run-hidden detail path.
+- No paid API, real credential, provider dashboard, webhook, GitHub Actions, staging, commit, push, or real external integration was used.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend tests | skipped | Docs-only evidence update; no backend source, schema, config, runtime behavior, or command contract changed |
+| Backend lint | skipped | Docs-only evidence update; no backend source, schema, config, runtime behavior, or command contract changed |
+| Backend typecheck | skipped | Docs-only evidence update; no backend source, schema, config, runtime behavior, or command contract changed |
+| Frontend tests | skipped | Docs-only evidence update; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend lint | skipped | Docs-only evidence update; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend typecheck | skipped | Docs-only evidence update; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend build | skipped | Docs-only evidence update; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Browser visual interaction automation | skipped | No repo-provided PowerShell-only browser automation path was available without dependency/tool churn; local HTTP/API smoke covered the documented startup path |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service smoke | skipped | Explicitly forbidden and not required for the local/mock-safe recording path |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope |
+
+### Git safety status
+
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+
+### Readiness verdict
+
+Ready for final local portfolio recording and manual review. The documented `RUNBOOK.md` section `10.2` path is accurate and safe to follow in local/mock mode; `README.md` and `RUNBOOK.md` required no corrections.
+
+### Remaining risks
+
+- Browser visual interaction automation was not run in this implementation pass; the dry run validated startup, backend API, frontend proxy, and documented route availability through local HTTP/API checks.
+- Manual recording should still avoid showing `.env`, private browser tabs, personal account data, real customer data, terminal output that prints secrets, provider dashboards, production services, or unrelated local files.
+
+### Suggested commit message
+
+```text
+Record final portfolio recording dry-run validation
+```
 
 ## Latest Update - 2026-06-05 Final Portfolio Recording Documentation Reconciliation
 
