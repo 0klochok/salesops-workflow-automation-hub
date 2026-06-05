@@ -1070,6 +1070,7 @@ function searchableRunFields(run: RunHistoryItem): string[] {
     run.lead_name,
     run.company_name,
     run.company_domain,
+    run.source,
     run.owner,
     getRunErrorType(run),
   ].filter((value): value is string => Boolean(value));

@@ -252,6 +252,28 @@ describe("AdminRunHistory", () => {
     expect(table.getByText("run_demo_queued")).toBeInTheDocument();
   });
 
+  it("normalizes unknown source URL params while preserving valid search text", async () => {
+    navigationMock.setSearchParams("source=partner_event&q=demo");
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    expect(screen.getByLabelText("Source")).toHaveValue("all");
+    expect(screen.getByLabelText("Search")).toHaveValue("demo");
+    await waitFor(() =>
+      expect(navigationMock.replace).toHaveBeenLastCalledWith(
+        "/admin/runs?q=demo",
+        { scroll: false }
+      )
+    );
+    expect(navigationMock.getSearchParams().toString()).toBe("q=demo");
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("run_demo_failed")).toBeInTheDocument();
+    expect(table.getByText("run_demo_success")).toBeInTheDocument();
+    expect(table.getByText("run_demo_queued")).toBeInTheDocument();
+  });
+
   it("truncates long run identifiers and lead identity while preserving full titles", async () => {
     const longRunId =
       "run_demo_20260601_pipeline_labs_enterprise_reactivation_form_submission_0000000000001";
@@ -418,6 +440,35 @@ describe("AdminRunHistory", () => {
     expect(table.getByText("demo_form")).toBeInTheDocument();
     expect(table.queryByText("run_demo_success")).not.toBeInTheDocument();
     expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
+  it("includes source values in the existing search filter", async () => {
+    navigationMock.setSearchParams("q=csv_upload");
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    expect(await screen.findByText("run_demo_success")).toBeInTheDocument();
+    expect(screen.getByLabelText("Source")).toHaveValue("all");
+    expect(screen.getByLabelText("Search")).toHaveValue("csv_upload");
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("csv_upload")).toBeInTheDocument();
+    expect(table.queryByText("run_demo_failed")).not.toBeInTheDocument();
+    expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
+  });
+
+  it("shows the filtered empty state when source and search do not intersect", async () => {
+    navigationMock.setSearchParams("source=csv_upload&q=pipeline");
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    expect(
+      await screen.findByText("No runs match these filters.")
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Source")).toHaveValue("csv_upload");
+    expect(screen.getByLabelText("Search")).toHaveValue("pipeline");
+    expect(screen.queryByTestId("run-history-table")).not.toBeInTheDocument();
   });
 
   it("filters persisted runs by run, lead, and company search text", async () => {

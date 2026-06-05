@@ -9,11 +9,90 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Admin source filter dropdown |
+| Current phase | Admin source filter hardening |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates and scope/safety scans passed for the admin source filter dropdown phase; manual browser smoke was not run because the requested validation was automated/local and the runbook contains the manual browser path |
-| Completion | Admin source filter dropdown phase complete |
+| Quality gate status | Required backend/frontend gates, scope/safety scans, and local browser smoke passed for the admin source filter hardening phase |
+| Completion | Admin source filter hardening phase complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-04 Admin Source Filter Hardening
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Added `source` to the existing admin run-history text search fields so source values are searchable as documented |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added regression coverage for unknown source URL normalization, source text search, and source plus search no-match behavior |
+| `STATE.md` | Recorded this hardening pass, validation, browser smoke, skipped checks, risks, and suggested commit message |
+
+No backend code, public API, schema, database migration, dependency manifest, generated source file, GitHub Actions workflow, deployment config, real integration, secret, staging action, commit, push, mutation control, or new filter was introduced.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Starting status had no output. After implementation and before `STATE.md`, output listed only `M apps/web/src/components/admin-run-history.test.tsx` and `M apps/web/src/components/admin-run-history.tsx` |
+| `git diff --check` | pass | Exit 0; no whitespace errors. Git printed LF-to-CRLF working-copy warnings for the touched TSX files |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `5.99s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 33 passed (33)`; duration `18.32s` |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `5.2s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `git ls-files -- .github` | pass | No output; no tracked `.github` files |
+| Tracked secret-pattern scan | pass | No output; command exited 1 because there were no matches |
+| Tracked live-endpoint scan | pass | No output; command exited 1 because there were no matches |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+Focused preflight:
+
+- `pnpm --dir apps/web test -- --run admin-run-history` passed with `1 passed` test file and `24 passed` tests; duration `7.06s`.
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- Frontend build was run before typecheck to avoid the previously documented `.next/types` race.
+- No dependency install, package upgrade, backend route change, migration creation, or real external API call was needed.
+
+### Local browser smoke
+
+- Existing local PostgreSQL container `salesops-postgres` was already `Up` and `healthy` on port `5432`.
+- `uv run --env-file .env.example alembic upgrade head` passed against local PostgreSQL.
+- `uv run --env-file .env.example python -m backend.app.leads.demo_seed` seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary backend ran at `http://127.0.0.1:8127`; `GET /health` returned `status=ok`.
+- Temporary frontend ran at `http://127.0.0.1:3127`; `GET /admin/runs` returned HTTP 200.
+- In-app Browser smoke confirmed `/admin/runs` rendered all four seeded runs and the `Read-only` marker.
+- Source dropdown `csv_upload` updated the URL to `?source=csv_upload`; the table contained `csv_upload` rows and no `manual` or `demo_form` rows.
+- Search `q=csv_upload` with Source set to `All sources` returned only `csv_upload` table rows, proving source values participate in text search.
+- Unknown URL source `?source=partner_event&q=demo` normalized to `?q=demo`, set Source to `All sources`, and preserved Search as `demo`.
+- Combined `?source=manual&q=no-local-match` showed the filtered empty state with no run-history table.
+- Frontend/backend smoke logs showed local `GET` requests only for admin interactions: `GET /admin/runs`, `GET /api/leads/runs`, and `GET /leads/runs`.
+- Temporary backend/frontend processes on ports `8127` and `3127` were stopped after smoke; a follow-up port check found no listening processes on those ports.
+
+### Skipped checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Dependency install | skipped | Existing locked environments were sufficient; all required gates ran without dependency changes |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Remaining risks
+
+- Browser smoke covered the in-app Chromium browser only; Firefox, Safari, Edge, and additional breakpoints were not manually checked in this pass.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- TypeScript and Next.js validation may rewrite ignored local `.next` or build-info artifacts without producing tracked source changes.
+- Ignored smoke logs were written under `logs/`; they are not source changes.
+
+### Suggested commit message
+
+```text
+Harden admin source filtering
+```
 
 ## Latest Update - 2026-06-04 Admin Source Filter Dropdown
 
