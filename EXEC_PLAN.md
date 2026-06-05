@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Local-first portfolio readiness polish pass after the docs-only handoff slice. This phase audits reviewer-facing documentation, demo steps, mock/live integration boundaries, and current-state evidence while keeping the project local-only and mock-safe. It does not add auth, retry UI, mutation actions, real integrations, dependency changes, deployment config, GitHub Actions, commits, pushes, staging, or real secrets.
+Local-first final readiness audit after the documentation polish pass. This phase verifies source-of-truth documentation consistency, current validation command evidence, implemented same-page read-only admin run detail wording, local runbook routes, and mock/live integration boundaries while keeping the project local-only and mock-safe. It does not add auth, retry UI, mutation actions, real integrations, dependency changes, deployment config, GitHub Actions, commits, pushes, staging, production checks, browser screenshots, or real secrets.
 
 ## 3. Phase Plan
 
@@ -106,11 +106,17 @@ Local-first portfolio readiness polish pass after the docs-only handoff slice. T
 - Added a before/after workflow explanation, 3-5 minute demo script, and reviewer checklist that links the existing architecture diagrams, seed command, and local smoke flow.
 - Updated source-of-truth docs to mark FR-012 as documentation-only implemented without adding live integrations, dependencies, provider SDKs, deployment config, GitHub Actions, staging, commits, pushes, or real secrets.
 
-## 4.11 Current Local-First Portfolio Readiness Polish Pass
+## 4.11 Completed Local-First Portfolio Readiness Polish Pass
 
 - Re-check source-of-truth docs after the docs-only handoff slice for stale phase labels, misleading live-provider wording, demo-step drift, and overclaimed browser/screenshot proof.
 - Keep FR-012 documentation-only and keep public admin retry/mutation controls out of scope.
 - Record full local gate and smoke evidence in `STATE.md` without changing backend/frontend behavior, dependencies, generated files, GitHub Actions, staging, commits, pushes, real credentials, or live integrations.
+
+## 4.12 Current Local-First Final Readiness Audit
+
+- Re-check `REQ.md`, `DESIGN.md`, `TDD.md`, `RUNBOOK.md`, `EXEC_PLAN.md`, `CONTEXT.md`, and `STATE.md` for current-state consistency after documentation polish.
+- Confirm the implemented `/admin/runs` experience is documented as a same-page read-only run detail panel backed by local GET proxy routes.
+- Record current local validation results and skipped manual/browser/external checks in `STATE.md` without changing backend/frontend behavior, dependencies, generated files, GitHub Actions, deployment config, staging, commits, pushes, real credentials, or live integrations.
 
 ## 5. Quality Gate Expectations By Phase
 
@@ -129,7 +135,7 @@ Local-first portfolio readiness polish pass after the docs-only handoff slice. T
 ## 6. Recovery And Safety
 
 - Phase 3 changes are limited to frontend scaffold, workspace package files, environment placeholders, and docs.
-- Final portfolio-readiness documentation changes are limited to source-of-truth docs and current-state corrections.
+- Final readiness audit documentation changes are limited to source-of-truth docs and current-state corrections.
 - Do not run destructive Git commands.
 - Do not delete unrelated user files.
 - Do not add real credentials.
@@ -137,4 +143,4 @@ Local-first portfolio readiness polish pass after the docs-only handoff slice. T
 
 ## 7. Recommended Next Phase
 
-After user review, manually prepare a commit for the local-first portfolio readiness polish pass if the diff is acceptable. Later implementation work should stay local-first and continue to avoid real integrations, dependency changes, deployment config, and GitHub Actions unless explicitly requested.
+After user review, manually prepare a commit for the local-first final readiness audit if the diff is acceptable. Then proceed to manual portfolio review and optional demo recording using the existing runbook. Later implementation work should stay local-first and continue to avoid real integrations, dependency changes, deployment config, and GitHub Actions unless explicitly requested.

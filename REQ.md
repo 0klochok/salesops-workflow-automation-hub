@@ -7,7 +7,7 @@
 | Last updated | 2026-06-05 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Local-first portfolio readiness polish pass |
+| Current phase | Local-first final readiness audit after documentation polish |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief

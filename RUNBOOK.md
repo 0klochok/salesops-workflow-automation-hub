@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Local-first portfolio readiness polish pass |
+| Current phase | Local-first final readiness audit after documentation polish |
 
 ## 2. Operating Rules
 

@@ -9,11 +9,104 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Local-first portfolio readiness polish pass |
+| Current phase | Local-first final readiness audit after documentation polish |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates passed; local HTTP smoke passed; browser console capture skipped because no browser-control tool was available in this session |
-| Completion | Local-first portfolio readiness polish implemented and validated |
+| Quality gate status | Required backend/frontend gates passed; manual smoke skipped because recent same-day local smoke is already recorded and no runtime files changed |
+| Completion | Local-first final readiness audit implemented and validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Local-First Final Readiness Audit After Documentation Polish
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `REQ.md` | Updated the current phase metadata to the local-first final readiness audit |
+| `CONTEXT.md` | Updated the current phase metadata to the local-first final readiness audit |
+| `DESIGN.md` | Updated the current phase metadata to the local-first final readiness audit |
+| `TDD.md` | Updated the current phase metadata to the local-first final readiness audit |
+| `RUNBOOK.md` | Updated the current phase metadata to the local-first final readiness audit |
+| `EXEC_PLAN.md` | Updated the current-phase and next-phase wording to describe the final readiness audit and manual portfolio review/demo-recording path |
+| `STATE.md` | Recorded this audit's documentation-only corrections, validation results, skipped checks, risks, and Git safety status |
+
+No application code, tests, lockfiles, package manifests, CI files, env files, database migrations, generated artifacts, public API, schema, route, UI behavior, runtime behavior, real integration, provider SDK, OAuth/webhook/credential flow, real secret, deployment config, staging action, commit, push, retry UI, or public admin mutation behavior was changed.
+
+`README.md` and `HANDOFF.md` were reviewed and left unchanged. Their current wording already keeps CRM/Slack behavior mock-only, marks future live-provider work as approval-gated, documents the local ports/routes correctly, and does not imply CI, deployment, staging, production, browser screenshots, browser-console capture, paid APIs, or real external integrations were performed.
+
+The source-of-truth docs accurately describe the implemented `/admin/runs` experience as a same-page read-only selected run detail panel backed by local `GET` proxy routes. Manual retry remains documented as backend-only and is intentionally not exposed in the public admin UI.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 33 passed (33)`; duration `14.62s` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `2.6s`; generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `2.40s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed LF-to-CRLF working-copy warnings for touched Markdown files |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+| `git status --short --branch` | pass | Final status showed `## main` plus modified docs only: `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `REQ.md`, `RUNBOOK.md`, `STATE.md`, and `TDD.md` |
+| Targeted stale current-phase wording scan | pass | No matches for obsolete current-phase rows or prior next-phase instruction; `rg` exited 1 because no matches were found |
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- No dependency install, package upgrade, backend route change, frontend route change, migration creation, code generation into tracked files, real external API call, staging action, commit, or push was needed.
+- No tests were added because this pass changed documentation only and did not alter backend/frontend behavior, APIs, schemas, routes, or components.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+
+### Manual verification
+
+Full backend/frontend smoke verification was skipped for this final readiness audit because the current same-day `STATE.md` history already records local PostgreSQL/backend/frontend smoke for `/`, `/admin/runs`, `/api/leads/runs`, `/api/leads/runs/run_demo_failed`, backend `/health`, backend `/leads/runs`, backend `/leads/runs/run_demo_failed`, and backend `/leads/runs/run_demo_failed/failure`, and this audit changed only documentation metadata/current-state wording. No runtime files changed.
+
+Manual verification recommendation:
+
+```powershell
+uv run --env-file .env.example alembic upgrade head
+uv run --env-file .env.example python -m backend.app.leads.demo_seed
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
+pnpm --dir apps/web dev
+```
+
+Then open `http://localhost:3000/` and `http://localhost:3000/admin/runs`. Confirm seeded success, failed, queued, and retried rows render; status/source/search/date/owner/error-type filters work; selecting a run opens the same-page read-only detail panel; `/admin/runs?status=success&runId=run_demo_failed` shows the selected-run-hidden notice while keeping the failed-run detail visible; and admin interactions stay local GET-only.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Full backend/frontend smoke rerun | skipped | Recent same-day local PostgreSQL/backend/frontend smoke is already recorded in this file, and this audit changed documentation only |
+| Browser console capture | skipped | Not required for this documentation-only audit; no browser tooling dependency was added |
+| Screenshots | skipped | Not required for this documentation-only audit; no tracked docs require new screenshots |
+| Behavior test additions | skipped | Documentation-only pass; no backend/frontend behavior changed |
+| Dependency install or upgrade | skipped | Existing locked environments were sufficient; no dependency change was needed or introduced |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Remaining risks
+
+- Browser-rendered console/runtime capture was not repeated for this documentation-only audit.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- TypeScript/Next.js validation may rewrite ignored local build artifacts without producing tracked source changes.
+- This pass is documentation-only; no live CRM/Slack provider code, provider SDK, credential validation, or live smoke was added.
+
+### Suggested commit message
+
+```text
+Record final local readiness audit
+```
+
+### Next recommended phase
+
+After user review, manually commit the local-first final readiness audit if the diff is acceptable. Then proceed to manual portfolio review and optional demo recording using the existing runbook.
 
 ## Latest Update - 2026-06-05 Local-First Portfolio Readiness Polish Pass
 
@@ -107,7 +200,7 @@ Polish local-first portfolio readiness docs
 
 ### Next recommended phase
 
-After user review, manually commit the local-first portfolio readiness polish pass if the diff is acceptable. Later work should stay local-first and avoid real integrations, dependency changes, deployment config, GitHub Actions, staging, commits, pushes, and real credentials unless explicitly requested.
+Superseded by the later local-first final readiness audit entry above. Use the latest audit entry for the current suggested commit message and next phase.
 
 ## Latest Update - 2026-06-05 Portfolio Handoff Materials Slice
 
