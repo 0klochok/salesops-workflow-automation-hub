@@ -9,11 +9,106 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final local release/readiness verification |
+| Current phase | Final browser visual QA documentation closure |
 | Overall status | on-track |
-| Quality gate status | Fresh backend, frontend, local smoke, git, and safety gates passed in local/mock/no-paid mode |
-| Completion | Final local release/readiness verification complete; `README.md` and `RUNBOOK.md` unchanged; ready for manual review/recording |
+| Quality gate status | Frontend gates and local/mock HTTP smoke passed; manual browser visual QA procedure documented |
+| Completion | Final browser visual QA documentation closure complete; `RUNBOOK.md` manual QA path added and local validation recorded |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Final Browser Visual QA Documentation Closure
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `RUNBOOK.md` | Added a concise manual browser visual QA subsection to the existing final portfolio recording checklist, with preconditions, localhost startup expectations, visual pass criteria, blocking console/network findings, acceptable dev-server findings, cleanup, and an explicit note that this is not Playwright coverage |
+| `STATE.md` | Updated current metadata and recorded this phase's validation, skipped checks, risks, and safety status |
+
+No product code, public API, schema, migration, dependency, lockfile, package script, Playwright setup, browser automation, GitHub Actions, CI, deployment config, real integration, secret handling, staged file, commit, or push was changed.
+
+### Commands run and results
+
+| Command or check | Status | Result |
+|---|---|---|
+| Initial `git status --short --branch` | pass | `## main`; clean baseline |
+| Initial `git diff --name-only` | pass | No output; clean baseline |
+| `git diff --name-only` after `RUNBOOK.md` edit | pass | `RUNBOOK.md`; Git printed the existing LF-to-CRLF working-copy warning |
+| `git diff --check` after `RUNBOOK.md` edit | pass | Exit 0 with no whitespace errors; Git printed the existing LF-to-CRLF working-copy warning |
+| `git diff --cached --name-only` | pass | No output; no staged files |
+| `Test-Path -LiteralPath ".github\workflows"` | pass | `False`; no GitHub Actions workflow directory exists |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `4 passed` test files and `33 passed` tests |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully and generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| `Get-NetTCPConnection -LocalPort 8028` before smoke | pass | No listener; command exited 1 with no output because the documented backend smoke port was free |
+| `Get-NetTCPConnection -LocalPort 3042` before smoke | pass | No listener; command exited 1 with no output because the documented frontend smoke port was free |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized; transactional DDL assumed |
+| `uv run python -m backend.app.leads.demo_seed` | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Backend smoke server on `127.0.0.1:8028` | pass | Uvicorn listener confirmed; owning process ID was `16196` |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health" -Method Get` | pass | Returned `status=ok` and service `salesops-workflow-automation-hub` |
+| First frontend `Start-Process -FilePath "pnpm"` smoke attempt | recovered | Failed with Windows launcher error `%1 не является приложением Win32`; this was a PowerShell process-launch invocation issue, not app behavior |
+| Frontend smoke server on `127.0.0.1:3042` via `pnpm.cmd` | pass | Next.js `15.5.18` reported ready at `http://127.0.0.1:3042`; stderr log was empty; owning process ID was `10340` |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs" -Method Get` | pass | Corrected response-shape summary returned 4 seeded runs: `run_demo_queued`, `run_demo_retried`, `run_demo_failed`, and `run_demo_success` |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs/run_demo_failed" -Method Get` | pass | Returned `run_id=run_demo_failed`, `run_status=failed`, and `error_type=adapter` |
+| `Invoke-WebRequest -Uri "http://127.0.0.1:3042/" -UseBasicParsing` | pass | HTTP 200; content included lead-intake and CSV text |
+| `Invoke-WebRequest -Uri "http://127.0.0.1:3042/admin/runs" -UseBasicParsing` | pass | HTTP 200; content included `Admin run history` and `Read-only` |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:3042/api/leads/runs" -Method Get` | pass | Corrected response-shape summary returned the same 4 seeded run IDs through the local frontend proxy |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:3042/api/leads/runs/run_demo_failed" -Method Get` | pass | Returned `proxy_run_id=run_demo_failed`, `proxy_run_status=failed`, and `proxy_error_type=adapter` |
+| Documented admin filter/detail URL HTTP smoke | pass | `/admin/runs?status=failed`, `source=csv_upload`, `q=atlas`, `owner=Maya%20Patel`, `errorType=adapter`, date range, filtered empty state, and selected-run-hidden URLs all returned HTTP 200 |
+| Temporary backend/frontend cleanup | pass | Stopped only the smoke listener PIDs `16196` and `10340`; follow-up port checks reported `backend_8028_listener=False` and `frontend_3042_listener=False` |
+| Pre-STATE final `git status --short --branch` | pass | `## main` plus modified `RUNBOOK.md` only |
+| Pre-STATE final `git diff --name-only` | pass | `RUNBOOK.md` only; Git printed the existing LF-to-CRLF warning |
+| Pre-STATE final `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed the existing LF-to-CRLF warning |
+| Pre-STATE final `git diff --cached --name-only` | pass | No output; no staged files |
+| Post-STATE `git diff --cached --name-only` | pass | No output; no staged files after the `STATE.md` update |
+| Post-STATE `git status --short --branch`, `git diff --name-only`, and `git diff --check` | blocked | Approval review timed out twice for these read-only escalated commands, and the sandbox fallback failed with `CreateProcessAsUserW failed: 5` |
+
+### Local smoke details
+
+- The documented local PostgreSQL, Alembic, seed, backend, frontend, backend API, frontend page, frontend proxy, and admin filter URL smoke paths ran in local/mock mode only.
+- All HTTP smoke requests targeted `127.0.0.1`; no real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, provider dashboard, or external service was called.
+- The initial run-history summary command treated the response wrapper as one object; a corrected wrapper-aware summary confirmed all four seeded demo runs through both backend and frontend proxy.
+- Temporary backend and frontend servers were stopped after smoke. Local PostgreSQL was left running because `RUNBOOK.md` marks stopping it as optional.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Automated browser visual QA / Playwright | skipped | Explicitly out of scope for this phase; the repository has no documented PowerShell-only browser automation script and no project Playwright dependency/script |
+| Manual human browser review | documented, not performed | This phase closes the documentation gap by providing the manual checklist; automated HTTP smoke verified documented local route availability, but a human still performs visual browser QA from the checklist |
+| Backend test/lint/typecheck suite | skipped | This was a docs-only closure; backend code, schemas, runtime behavior, migrations, and command contracts were not changed |
+| Dependency install or update | skipped | Existing frontend dependencies were present; no dependency install, upgrade, replacement, or removal was needed |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service smoke | skipped | Explicitly forbidden and not required for the local/mock-safe release path |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files were added or run |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope |
+| Commit, push, staging, branch, stash, reset, rebase, or history rewrite | skipped | Explicitly forbidden; user manually handles git publishing |
+| Post-STATE final read-only git status/name/check | blocked | Approval review timed out twice and sandbox fallback failed with `CreateProcessAsUserW failed: 5`; pre-STATE checks passed and post-STATE staging check still showed no staged files |
+
+### Git safety status
+
+- No `git add`, `git commit`, `git push`, `git branch`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No GitHub Actions, CI, dependency, Playwright, or product-code files were added.
+
+### Readiness verdict
+
+The final browser visual QA documentation gap is closed. `RUNBOOK.md` now contains a clear PowerShell-only manual browser visual QA path, and local frontend gates plus documented localhost HTTP smoke passed in local/mock/no-paid mode.
+
+### Remaining risks
+
+- Manual browser visual QA is intentionally human-run and was not automated; reviewers should still follow the new checklist before recording or handoff.
+- HTTP smoke proves route availability and local proxy wiring, but it does not verify actual browser layout, responsive visual wrapping, DevTools console contents, or Network-tab request classification.
+- The PowerShell sandbox could not start commands in this workspace (`CreateProcessAsUserW failed: 5`), so validation commands were run through approved escalated PowerShell.
+- Docker PostgreSQL may remain running locally; stop it manually with `docker compose stop postgres` only if desired.
+
+### Suggested commit message
+
+```text
+Document manual browser visual QA path
+```
 
 ## Latest Update - 2026-06-05 Final Local Release/Readiness Verification
 

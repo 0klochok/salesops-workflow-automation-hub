@@ -453,6 +453,49 @@ On `/admin/runs`, verify:
 - no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered;
 - if the Next.js dev tools badge appears because the frontend is running under `next dev`, keep it closed or crop it out of final footage when desired. It is a local development indicator, not app behavior or an integration.
 
+### Manual Browser Visual QA
+
+This is a manual browser visual QA procedure, not automated Playwright coverage. The repository does not provide a documented PowerShell-only browser automation script, and no Playwright dependency is required for this check.
+
+Preconditions:
+
+- Use PowerShell from the repository root on Windows 11.
+- Docker Desktop must be running for the local PostgreSQL service in `compose.yml`.
+- Create ignored local `.env` from `.env.example` if it is missing; do not print real local values.
+- Keep CRM, Slack, Google Sheets, OpenAI, paid APIs, provider dashboards, and webhooks absent or mocked.
+- Use the existing pre-recording commands above to start local PostgreSQL, apply migrations, seed synthetic demo data, start the backend on `127.0.0.1:8028`, and start the frontend on `127.0.0.1:3042` with both frontend backend-base environment variables pointed at `http://127.0.0.1:8028`.
+
+Open the local pages listed in "Browser Pages To Show", including `/`, `/admin/runs`, the filter URLs, the filtered empty state, and the selected-run-hidden URL.
+
+Visually pass the check only when:
+
+- the public lead form and CSV import render without layout overlap or unreadable controls;
+- seeded success, failed, queued, and retried admin rows render with readable status, source, owner, error type, attempts, and failure-detail values;
+- status, source, search, date, owner, and error-type filters update the URL and visible rows correctly;
+- the filtered empty state, same-page detail panel, and selected-run-hidden notice are visible in the documented scenarios;
+- controls wrap cleanly at narrow widths, with table overflow contained in the table scroller rather than the whole page;
+- the admin UI remains read-only and exposes no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
+
+Treat these browser findings as blocking:
+
+- application console errors, hydration errors, runtime overlays, or persistent framework error overlays;
+- failed local API requests for documented pages or admin interactions;
+- non-local network requests, real provider requests, webhooks, or paid/external API calls;
+- admin mutation requests or visible mutation controls;
+- any visible secret, `.env` content, provider dashboard, private account data, real customer data, or unrelated local files.
+
+These findings are acceptable during manual QA:
+
+- the Next.js dev tools badge when using `next dev`;
+- local static asset requests from the Next.js dev server;
+- local `GET` requests to `/api/leads/runs`, `/api/leads/runs/<run-id>`, `/leads/runs`, and `/leads/runs/<run-id>`.
+
+Stop local services with `Ctrl+C` in the backend and frontend PowerShell windows. Stop PostgreSQL only if you do not want it running after QA:
+
+```powershell
+docker compose stop postgres
+```
+
 ### Suggested 3-5 Minute Sequence
 
 1. Problem setup, 20 to 30 seconds: explain the growth agency, five sales reps, form/CSV lead intake, duplicate risk, slow handoffs, and poor auditability.
