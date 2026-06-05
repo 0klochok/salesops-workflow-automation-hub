@@ -229,6 +229,19 @@ describe("AdminRunHistory", () => {
     expect(
       screen.getByText("Select a run to inspect read-only details.")
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /lead demo/i })).toHaveClass(
+      "focus-visible:ring-2"
+    );
+    const tableScroller = screen.getByRole("region", {
+      name: /scrollable run history table/i,
+    });
+    expect(tableScroller).toBe(screen.getByTestId("run-history-table"));
+    expect(tableScroller).toHaveAttribute("tabindex", "0");
+    expect(tableScroller).toHaveClass("overflow-x-auto", "focus-visible:ring-2");
+    expect(screen.getByTestId("run-detail-panel")).toHaveAttribute(
+      "aria-label",
+      "Run detail panel"
+    );
     expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs", {
       method: "GET",
       headers: {
@@ -334,6 +347,7 @@ describe("AdminRunHistory", () => {
     expect(detailButton).toHaveClass(
       "h-10",
       "min-w-[7rem]",
+      "focus-visible:ring-2",
       "whitespace-nowrap",
       "px-4"
     );
@@ -734,6 +748,10 @@ describe("AdminRunHistory", () => {
     expect(
       screen.getByText("Loading run details for run_demo_failed...")
     ).toBeInTheDocument();
+    expect(screen.getByTestId("run-detail-panel")).toHaveAttribute(
+      "aria-label",
+      "Run detail loading state"
+    );
     resolveDetail(mockJsonResponse(runDetailResponse, 200));
     expect(await screen.findByText("Run detail")).toBeInTheDocument();
   });
@@ -756,6 +774,7 @@ describe("AdminRunHistory", () => {
     );
 
     const alert = await screen.findByRole("alert");
+    expect(alert).toHaveAttribute("aria-label", "Run detail error state");
     expect(alert).toHaveTextContent("run_demo_failed");
     expect(alert).toHaveTextContent("Automation run not found");
   });

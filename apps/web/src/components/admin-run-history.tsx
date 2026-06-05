@@ -226,7 +226,7 @@ export function AdminRunHistory() {
               <Badge>Read-only</Badge>
             </div>
             <Link
-              className="inline-flex min-h-9 shrink-0 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel hover:bg-muted"
+              className="inline-flex min-h-9 shrink-0 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               href="/"
             >
               Lead demo
@@ -507,7 +507,13 @@ function RunHistoryTable({
         </p>
       </div>
 
-      <div className="max-w-full overflow-x-auto" data-testid="run-history-table">
+      <div
+        aria-label="Scrollable run history table"
+        className="max-w-full overflow-x-auto rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        data-testid="run-history-table"
+        role="region"
+        tabIndex={0}
+      >
         <table className="w-full min-w-[1100px] table-fixed border-collapse text-left text-sm">
           <colgroup>
             <col className="w-[100px]" />
@@ -693,6 +699,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
   if (state.status === "idle") {
     return (
       <section
+        aria-label="Run detail panel"
         className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm leading-6 text-muted-foreground sm:p-5"
         data-testid="run-detail-panel"
       >
@@ -704,6 +711,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
   if (state.status === "loading") {
     return (
       <section
+        aria-label="Run detail loading state"
         className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm leading-6 text-muted-foreground sm:p-5"
         data-testid="run-detail-panel"
         role="status"
@@ -716,6 +724,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
   if (state.status === "error") {
     return (
       <section
+        aria-label="Run detail error state"
         className="min-w-0 rounded-lg border border-red-200 bg-red-50 p-4 text-sm leading-6 text-danger sm:p-5"
         data-testid="run-detail-panel"
         role="alert"
@@ -732,12 +741,15 @@ function RunDetailPanel({ state }: { state: DetailState }) {
 
   return (
     <section
+      aria-labelledby="run-detail-heading"
       className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel sm:p-5"
       data-testid="run-detail-panel"
     >
       <div className="mb-5 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold">Run detail</h2>
+          <h2 className="text-base font-semibold" id="run-detail-heading">
+            Run detail
+          </h2>
           <p className="break-words text-sm leading-6 text-muted-foreground">
             {detail.run_id}
           </p>

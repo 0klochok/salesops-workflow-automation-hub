@@ -9,11 +9,97 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Admin run history table alignment and responsive UI polish |
+| Current phase | Admin run detail UI hardening |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates and local browser smoke passed for the admin detail-button polish phase |
-| Completion | Admin run history table alignment and responsive UI polish complete |
+| Quality gate status | Required backend/frontend gates and local Chrome/CDP browser smoke passed for the admin run detail UI hardening phase |
+| Completion | Admin run detail UI hardening complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Admin Run Detail UI Hardening
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/ui/button.tsx` | Added visible `focus-visible` ring styling to the shared button primitive without changing props or behavior |
+| `apps/web/src/components/admin-run-history.tsx` | Added matching focus styling to the `Lead demo` admin link, made the table scroller keyboard-focusable/labeled, and labeled read-only detail-panel states |
+| `apps/web/src/app/admin/runs/page.tsx` | Replaced the blank Suspense fallback with a small non-interactive admin loading shell |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added focused assertions for the labeled/focusable scroller, admin action focus styling, and detail-panel state labels |
+| `STATE.md` | Recorded this phase's changed files, validation, smoke results, skipped checks, risks, and suggested commit message |
+
+No backend code, public API, schema, database migration, authentication, routing contract, dependency manifest, generated source file, GitHub Actions workflow, deployment config, real integration, secret, staging action, commit, push, mutation control, filter behavior, search behavior, or detail-loading contract was changed.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `git diff --cached --name-only` | pass | Starting staged-file check had no output |
+| `pnpm --dir apps/web test -- --run admin-run-history` | pass | Vitest `v3.2.4`; `1 passed` test file; `24 passed` tests; duration `6.49s` after the UI hardening patch |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 33 passed (33)`; duration `15.01s` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `7.5s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `4.88s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `git diff --check` | pass | Exit 0; no whitespace errors. Git printed LF-to-CRLF working-copy warnings for touched files |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- The auto-review for one parallel lint/type command group timed out; the same scoped commands were rerun individually and passed.
+- Frontend build was run before frontend typecheck to stay consistent with the repo's documented Next/TypeScript generated-file validation note.
+- No dependency install, package upgrade, backend route change, migration creation, real external API call, staging action, commit, or push was needed.
+
+### Local browser smoke
+
+- Browser plugin was not available in this session.
+- `pnpm --dir apps/web exec playwright --version` failed because Playwright is not installed in the project: `Command "playwright" not found`.
+- Used installed Google Chrome headless through Chrome DevTools Protocol without adding dependencies.
+- `docker compose up -d postgres` confirmed `salesops-postgres` was running.
+- `uv run --env-file .env.example alembic upgrade head` passed against local PostgreSQL.
+- `uv run --env-file .env.example python -m backend.app.leads.demo_seed` seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary backend ran at `http://127.0.0.1:8146`; temporary frontend ran at `http://127.0.0.1:3146`.
+- Desktop Chrome/CDP smoke loaded `/admin/runs`, page title was `SalesOps Workflow Automation Hub`, seeded rows rendered, and no framework overlay was detected.
+- Source filter `csv_upload` updated the UI/URL and the table showed CSV-sourced rows only.
+- Search `q=pipeline` after resetting Source to `All sources` updated the UI/URL and returned the Pipeline Labs row while excluding Northstar Growth.
+- Clicking `View details for run_demo_failed` loaded the same-page read-only detail panel with seeded failed-run data and the `Read-only` marker.
+- Desktop layout stayed contained: `pageScrollWidth=1351`, `bodyScrollWidth=1351`, `tableClientWidth=1182`, `tableScrollWidth=1182`, `detailClientWidth=1214`, `detailScrollWidth=1214`.
+- Mobile viewport `390x844` had no body horizontal overflow: `pageScrollWidth=390`, `bodyScrollWidth=390`; table overflow stayed inside the scroller: `tableClientWidth=324`, `tableScrollWidth=1100`; detail stayed contained: `detailClientWidth=356`, `detailScrollWidth=356`.
+- Browser console, runtime exceptions, and Chrome log entries were empty.
+- Browser network capture showed admin API calls were local `GET` requests only: `/api/leads/runs` and `/api/leads/runs/run_demo_failed`; no non-GET admin API requests and no external HTTP requests were observed.
+- Frontend smoke logs showed local `GET` requests only for admin route/API interactions.
+- Backend smoke logs showed local `GET /health`, `GET /leads/runs`, and `GET /leads/runs/run_demo_failed` requests only.
+- Temporary backend/frontend processes on ports `8146` and `3146` were stopped after smoke; a follow-up port check found no listening processes on those ports.
+- Screenshots were saved outside the repo under `%TEMP%\salesops-admin-ui-hardening-smoke\admin-runs-desktop.png` and `%TEMP%\salesops-admin-ui-hardening-smoke\admin-runs-mobile.png`.
+
+### Skipped checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Dependency install | skipped | Existing locked environments were sufficient; all required gates ran without dependency changes |
+| Browser plugin QA path | skipped | Browser plugin is not installed/available in this session |
+| Playwright QA path | skipped | Project Playwright binary is not installed and dependency changes were out of scope |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Remaining risks
+
+- Browser QA covered headless Chrome at desktop `1366x768` and mobile `390x844`; Firefox, Safari, Edge, and additional breakpoints were not manually checked.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- Local PostgreSQL was left running because the smoke path uses the documented local database service; temporary backend/frontend smoke processes were stopped.
+- Temporary smoke script, logs, and screenshots were written under `%TEMP%`, outside the repo.
+
+### Suggested commit message
+
+```text
+Harden admin run detail accessibility
+```
 
 ## Latest Update - 2026-06-05 Admin Run History Table Alignment And Responsive UI Polish
 
