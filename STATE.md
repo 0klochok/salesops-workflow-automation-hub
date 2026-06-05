@@ -12,8 +12,84 @@
 | Current phase | Portfolio demo recording documentation pass |
 | Overall status | on-track |
 | Quality gate status | Docs-only recording checklist validation passed; backend/frontend gates skipped with written reasons |
-| Completion | Recording checklist documentation updated and ready for manual portfolio recording |
+| Completion | Recording checklist documentation tightened and ready for manual portfolio recording |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Portfolio Recording Checklist Verification Tightening
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `RUNBOOK.md` | Tightened section `10.2` for a clean local recording environment with dependency prerequisites, Docker Desktop/PostgreSQL requirement, known-good local ports, the missing date-filter URL, and seeded filter-result expectations |
+| `STATE.md` | Recorded the verification evidence, checklist corrections, required git checks, skipped gates, and Git safety status |
+
+No source code, tests, package manifests, lockfiles, dependency versions, backend configuration, frontend configuration, CI, GitHub Actions, database schema, migrations, generated files, public API, UI behavior, route contract, environment files, real integration, paid API usage, production credential, staging action, commit, or push was changed.
+
+### What was verified
+
+- `RUNBOOK.md` section `10.2` was checked against current repo commands and files: `pyproject.toml`, root `package.json`, `apps/web/package.json`, `uv.lock`, `pnpm-lock.yaml`, `compose.yml`, `.env.example`, `.gitignore`, `backend/app/main.py`, `backend/app/config.py`, `backend/app/leads/demo_seed.py`, `backend/app/leads/routes.py`, `backend/app/leads/persistence.py`, `apps/web/src/app/admin/runs/page.tsx`, `apps/web/src/components/admin-run-history.tsx`, and the local Next.js run-history proxy routes.
+- The recording path is executable by a human from a clean local environment after installing locked dependencies with `uv sync --frozen` and `pnpm install --frozen-lockfile`, starting Docker Desktop, creating placeholder-only local `.env` if needed, starting local PostgreSQL, applying Alembic migrations, seeding synthetic data, and running local backend/frontend dev servers.
+- The checklist remains local/mock-safe. It does not require paid APIs, production deployment, GitHub Actions, real customer data, real credentials, provider dashboards, external webhooks, commits, pushes, or staging.
+- The admin recording URLs match the seeded demo data and frontend filters: `run_demo_failed` for failed and CSV source, `run_demo_retried` for `atlas` search, `run_demo_failed` plus `run_demo_queued` for `Maya Patel`, `run_demo_failed` plus `run_demo_retried` for `adapter`, and all four demo runs for fixed seed date `2026-06-01`.
+- The frontend admin screen uses local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>` and has no visible retry/edit/delete/mutation controls in the recording checklist path.
+
+### Checklist corrections
+
+- Added fresh-clone dependency prerequisites: `uv sync --frozen` and `pnpm install --frozen-lockfile`.
+- Added Docker Desktop/PostgreSQL as a required local service for the recording path.
+- Replaced abstract port placeholders with known-good local examples: backend `8028` and frontend `3042`, while keeping guidance to choose another free port if busy.
+- Added the missing date-filter recording URL: `/admin/runs?from=2026-06-01&to=2026-06-01`.
+- Clarified expected seeded results for status, source, search, owner, error-type, date, empty-state, and selected-run-hidden recording URLs.
+
+### Validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `git diff --check` | pass | Exit 0 with no whitespace errors after the documentation updates; Git printed LF-to-CRLF working-copy warnings for `RUNBOOK.md` and `STATE.md` |
+| `git diff --name-only` | pass | `RUNBOOK.md` and `STATE.md` only; Git printed LF-to-CRLF working-copy warnings for those files |
+| `git diff --cached --name-only` | pass | No output; no staged files |
+| `git status --short --branch` | pass | Final status showed `## main` plus modified docs only: `M RUNBOOK.md` and `M STATE.md` |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend tests | skipped | Docs-only checklist verification; no backend source, schema, config, runtime behavior, or command contract changed |
+| Backend lint | skipped | Docs-only checklist verification; no backend source, schema, config, runtime behavior, or command contract changed |
+| Backend typecheck | skipped | Docs-only checklist verification; no backend source, schema, config, runtime behavior, or command contract changed |
+| Frontend tests | skipped | Docs-only checklist verification; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend lint | skipped | Docs-only checklist verification; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend typecheck | skipped | Docs-only checklist verification; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Frontend build | skipped | Docs-only checklist verification; no frontend source, route behavior, UI behavior, proxy contract, or command contract changed |
+| Browser smoke/manual recording rehearsal | skipped | This phase verified the checklist against current repo evidence and changed docs only; no runtime behavior changed |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service smoke | skipped | Explicitly forbidden; the checklist remains local-only and mock-safe |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope |
+| Commit, push, and staging | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Git safety status
+
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+
+### Manual recording recommendation
+
+Use `RUNBOOK.md` section `10.2` as the canonical manual recording checklist. It is ready for manual portfolio recording from a clean local environment with Docker Desktop, local PostgreSQL, locked dependencies, placeholder-only `.env`, synthetic seed data, and local backend/frontend ports.
+
+### Remaining risks
+
+- This phase did not start Docker, backend, frontend, or a browser because the requested change was docs-only and no source/config/runtime behavior changed.
+- A real manual recording should still avoid showing `.env`, private browser tabs, personal account data, real customer data, terminal output that prints secrets, provider dashboards, production services, or unrelated local files.
+
+### Suggested commit message
+
+```text
+Tighten portfolio recording checklist
+```
 
 ## Latest Update - 2026-06-05 Portfolio Demo Recording Documentation Pass
 

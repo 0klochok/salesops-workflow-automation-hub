@@ -381,7 +381,7 @@ Use this checklist before recording the manual portfolio demo, capturing screens
 
 ### Pre-Recording Commands
 
-Run these commands from the repository root in PowerShell.
+Run these commands from the repository root in PowerShell. Docker Desktop must be running because the recording path uses the local PostgreSQL service from `compose.yml`.
 
 1. Confirm the worktree and staging area before validation:
 
@@ -390,13 +390,20 @@ git status --short --branch
 git diff --cached --name-only
 ```
 
-2. Create the local ignored `.env` from placeholders only if it is missing. Do not print the file contents during recording:
+2. For a fresh clone or clean machine, install locked dependencies if they are not already present:
+
+```powershell
+uv sync --frozen
+pnpm install --frozen-lockfile
+```
+
+3. Create the local ignored `.env` from placeholders only if it is missing. Do not print the file contents during recording:
 
 ```powershell
 if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
 ```
 
-3. Start local PostgreSQL, apply migrations, and seed synthetic demo data:
+4. Start local PostgreSQL, apply migrations, and seed synthetic demo data:
 
 ```powershell
 docker compose up -d postgres
@@ -404,33 +411,36 @@ uv run alembic upgrade head
 uv run python -m backend.app.leads.demo_seed
 ```
 
-4. Start the backend on a free local-only port:
+5. Start the backend on a free local-only port. Port `8028` is the known-good recording example; choose another free local port if it is busy:
 
 ```powershell
-uv run uvicorn backend.app.main:app --host 127.0.0.1 --port <backend-port>
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
 ```
 
-5. Start the frontend in a second PowerShell window, pointed at that backend:
+6. Start the frontend in a second PowerShell window, pointed at that backend. Port `3042` is the known-good recording example; choose another free local port if it is busy:
 
 ```powershell
-$env:BACKEND_API_BASE_URL = "http://127.0.0.1:<backend-port>"
-$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:<backend-port>"
-pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port <frontend-port>
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
+
+If you chose different ports, replace `8028` and `3042` in the commands and browser URLs below.
 
 ### Browser Pages To Show
 
 Open these local pages in the recording browser:
 
-- `http://127.0.0.1:<frontend-port>/` for the public lead form and CSV import;
-- `http://127.0.0.1:<frontend-port>/admin/runs` for the read-only persisted admin dashboard;
-- `http://127.0.0.1:<frontend-port>/admin/runs?status=failed` for status filtering;
-- `http://127.0.0.1:<frontend-port>/admin/runs?source=csv_upload` for source filtering;
-- `http://127.0.0.1:<frontend-port>/admin/runs?q=atlas` for search filtering;
-- `http://127.0.0.1:<frontend-port>/admin/runs?owner=Maya%20Patel` for owner filtering;
-- `http://127.0.0.1:<frontend-port>/admin/runs?errorType=adapter` for error-type filtering;
-- `http://127.0.0.1:<frontend-port>/admin/runs?q=no-such-run` for the filtered empty state;
-- `http://127.0.0.1:<frontend-port>/admin/runs?status=success&runId=run_demo_failed` for the selected-run-hidden detail path.
+- `http://127.0.0.1:3042/` for the public lead form and CSV import;
+- `http://127.0.0.1:3042/admin/runs` for the read-only persisted admin dashboard;
+- `http://127.0.0.1:3042/admin/runs?status=failed` for status filtering; expect seeded `run_demo_failed`;
+- `http://127.0.0.1:3042/admin/runs?source=csv_upload` for source filtering; expect seeded `run_demo_failed`;
+- `http://127.0.0.1:3042/admin/runs?q=atlas` for search filtering; expect seeded `run_demo_retried`;
+- `http://127.0.0.1:3042/admin/runs?owner=Maya%20Patel` for owner filtering; expect seeded `run_demo_failed` and `run_demo_queued`;
+- `http://127.0.0.1:3042/admin/runs?errorType=adapter` for error-type filtering; expect seeded `run_demo_failed` and `run_demo_retried`;
+- `http://127.0.0.1:3042/admin/runs?from=2026-06-01&to=2026-06-01` for date filtering; expect the four seeded demo runs because the demo seed uses fixed `2026-06-01` timestamps;
+- `http://127.0.0.1:3042/admin/runs?q=no-such-run` for the filtered empty state;
+- `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed` for the selected-run-hidden detail path; expect the success row in the table plus the detail panel for `run_demo_failed`.
 
 On `/admin/runs`, verify:
 
