@@ -9,11 +9,97 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Admin run detail UI hardening |
+| Current phase | Admin run history visual polish and responsive alignment QA |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates and local Chrome/CDP browser smoke passed for the admin run detail UI hardening phase |
-| Completion | Admin run detail UI hardening complete |
+| Quality gate status | Required backend/frontend gates and local Chrome/CDP browser smoke passed for the admin run history visual polish QA phase |
+| Completion | Admin run history visual polish QA complete |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Admin Run History Visual Polish And Responsive Alignment QA
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded this verification-only visual polish QA phase, validation, manual smoke, skipped checks, process cleanup, and residual risks |
+
+No component or test code changed. Browser geometry confirmed the existing `Detail` column and `View details` button layout is already aligned, readable, keyboard-accessible, and contained on desktop and mobile.
+
+No backend code, public API, schema, database migration, authentication, routing, dependency manifest, generated source file, GitHub Actions workflow, deployment config, real integration, secret, staging action, commit, push, mutation control, filter behavior, search behavior, or detail-loading contract was changed.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `pnpm --dir apps/web test -- --run admin-run-history` | pass | Vitest `v3.2.4`; `1 passed` test file; `24 passed` tests; duration `7.29s` |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 33 passed (33)`; duration `13.45s` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `2.2s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `2.14s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `git diff --check` | pass | Final post-documentation check exited 0 with no whitespace errors. Git printed the existing LF-to-CRLF working-copy warning for `STATE.md` |
+| `git diff --cached --name-only` | pass | Final post-documentation check had no output; no files were staged |
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- No dependency install, package upgrade, backend route change, migration creation, real external API call, staging action, commit, or push was needed.
+- Because rendered QA found no Detail-column alignment defect, `apps/web/src/components/admin-run-history.tsx` and `apps/web/src/components/admin-run-history.test.tsx` were left unchanged.
+
+### Local browser smoke
+
+- Browser plugin was not available in this session.
+- `pnpm --dir apps/web exec playwright --version` failed because Playwright is not installed in the project: `Command "playwright" not found`.
+- Used installed Google Chrome `148.0.7778.217` headless through Chrome DevTools Protocol without adding dependencies.
+- Existing local PostgreSQL container `salesops-postgres` was already `Up` and `healthy` on port `5432`.
+- `uv run --env-file .env.example alembic upgrade head` passed against local PostgreSQL.
+- `uv run --env-file .env.example python -m backend.app.leads.demo_seed` seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary backend ran at `http://127.0.0.1:8162`; `GET /health` returned `status=ok`.
+- Temporary frontend ran at `http://127.0.0.1:3162`; `GET /api/leads/runs` returned seeded persisted run data.
+- Desktop Chrome/CDP smoke loaded `/admin/runs`, page title was `SalesOps Workflow Automation Hub`, all four seeded rows rendered, the `Read-only` marker was visible, and no framework overlay was detected.
+- Source filter `csv_upload` updated the URL to `?source=csv_upload` and showed only the CSV-sourced `run_demo_failed` row while hiding demo-form/manual rows.
+- Search `q=pipeline` after resetting Source to `All sources` updated the URL to `?q=pipeline`, returned the Pipeline Labs row, and excluded Northstar Growth.
+- Opening details with `View details for run_demo_failed` updated the URL to `?q=pipeline&runId=run_demo_failed` and loaded the same-page read-only detail panel with the seeded failed-run suggested action.
+- Keyboard tab focus reached the `Lead demo` link, filter controls, labeled table scroller, and multiple `View details` buttons.
+- Desktop layout stayed contained: viewport `1366x768`, `documentScrollWidth=1351`, `bodyScrollWidth=1351`, `bodyHorizontalOverflow=false`, `tableClientWidth=1182`, `tableScrollWidth=1182`.
+- Desktop Detail geometry was aligned: final column class `w-[128px]`, button width `113.9px`, button height `40px`, and button/header center delta `0px`.
+- Mobile viewport `390x844` had no body horizontal overflow: `documentScrollWidth=390`, `bodyScrollWidth=390`, `bodyHorizontalOverflow=false`; table overflow stayed inside the scroller with `tableClientWidth=324` and `tableScrollWidth=1100`.
+- Mobile Detail geometry remained aligned: final column class `w-[128px]`, button width `113.9px`, button height `40px`, and button/header center delta `0.5px`.
+- Browser console messages and runtime exceptions were empty.
+- Browser network capture showed local admin `GET` requests only for `/api/leads/runs` and `/api/leads/runs/run_demo_failed`; no external HTTP requests were observed.
+- Temporary backend, frontend, and Chrome processes on ports `8162`, `3162`, and `9224` were stopped after smoke; follow-up port checks found no listeners on those ports.
+- Local PostgreSQL was left running because it was already running and healthy before this phase.
+- Screenshots were saved outside the repo under `%TEMP%\salesops-admin-visual-polish-smoke\admin-runs-desktop.png`, `%TEMP%\salesops-admin-visual-polish-smoke\admin-runs-mobile-390x844.png`, and `%TEMP%\salesops-admin-visual-polish-smoke\admin-runs-mobile-table-detail.png`.
+
+### Skipped checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Component/test patch | skipped | Rendered desktop/mobile geometry confirmed the existing Detail-column and button layout already satisfies the phase goal |
+| Dependency install | skipped | Existing locked environments were sufficient; all required gates ran without dependency changes |
+| Browser plugin QA path | skipped | Browser plugin is not installed/available in this session |
+| Playwright QA path | skipped | Project Playwright binary is not installed and dependency changes were out of scope |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Remaining risks
+
+- Browser QA covered Chrome headless at desktop `1366x768` and mobile `390x844`; Firefox, Safari, Edge, and additional breakpoints were not manually checked.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+- Temporary smoke logs and screenshots were written under `%TEMP%`, outside the repo.
+- Local PostgreSQL remains running for the user's environment; stop it manually only if desired.
+
+### Suggested commit message
+
+```text
+Document admin run history visual QA
+```
 
 ## Latest Update - 2026-06-05 Admin Run Detail UI Hardening
 
