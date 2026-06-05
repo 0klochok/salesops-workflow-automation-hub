@@ -9,11 +9,111 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final portfolio recording dry-run validation |
+| Current phase | Final local release/readiness verification |
 | Overall status | on-track |
-| Quality gate status | Required git checks pass; local/mock recording smoke passed; `STATE.md` is the only docs-only validation evidence update |
-| Completion | RUNBOOK 10.2 recording path validated locally; README/RUNBOOK unchanged; ready for portfolio recording/manual review |
+| Quality gate status | Fresh backend, frontend, local smoke, git, and safety gates passed in local/mock/no-paid mode |
+| Completion | Final local release/readiness verification complete; `README.md` and `RUNBOOK.md` unchanged; ready for manual review/recording |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Final Local Release/Readiness Verification
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded the final local release/readiness validation evidence and updated the top metadata |
+
+`README.md` and `RUNBOOK.md` were inspected and left unchanged because they match the validated local/mock/no-paid workflow. No app behavior, public API, types, schemas, dependencies, lockfiles, backend configuration, frontend configuration, CI, GitHub Actions, database schema, migration, generated source, real integration, paid API usage, secret handling, staging action, commit, push, branch, stash, reset, or git history was changed.
+
+### Required gates and exact results
+
+| Command or check | Status | Result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting output: `## main` |
+| `git diff --name-only` | pass | Starting output: no files |
+| `git diff --cached --name-only` | pass | Starting output: no files |
+| `.venv` presence check | pass | Existing backend dependencies present; install not needed |
+| `apps/web/node_modules` presence check | pass | Existing frontend dependencies present; install not needed |
+| `.env` presence check | pass | `.env` existed; contents were not printed |
+| local-only `DATABASE_URL` check | pass | Value was not printed; it points at the local Docker PostgreSQL database |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | `48 passed`, `1 warning` on Python `3.12.13`; warning was Starlette/FastAPI testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `4 passed` files and `33 passed` tests |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully; generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| `docker compose config` | pass | Compose config rendered successfully for local `salesops-postgres` |
+| `docker compose ps` | pass | `salesops-postgres` was `Up` and `healthy` on local port `5432` |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head` | pass | PostgreSQL migration context initialized; transactional DDL assumed |
+| `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_seed` | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| backend local smoke on `127.0.0.1:8028` | pass | `GET /health`, `GET /leads/runs`, and `GET /leads/runs/run_demo_failed` returned expected local seeded data |
+| frontend local smoke on `127.0.0.1:3042` | pass | `/`, `/admin/runs`, `/api/leads/runs`, `/api/leads/runs/run_demo_failed`, and all documented filter URLs returned HTTP 200 |
+| temporary server cleanup | pass | Temporary ports `8028` and `3042` were clear after cleanup |
+| `git ls-files -- .github` | pass | No tracked `.github` files |
+| `Test-Path -LiteralPath ".github\workflows"` | pass | `False`; workflow directory absent |
+| `git ls-files -ci --exclude-standard` | pass | No tracked ignored files |
+| `git ls-files -- apps/web/tsconfig.tsbuildinfo` | pass | No output; generated TypeScript build-info is not tracked |
+| tracked secret-pattern scan outside `STATE.md` | pass | No tracked secret-pattern file matches; secret values were not printed |
+| tracked live-endpoint scan outside `STATE.md` | pass | No tracked live-provider endpoint file matches |
+| `git check-ignore -v ...` | pass | `.env`, logs, caches, build output, dependency folders, coverage, and TypeScript build-info are ignored |
+| `git status --short --branch` | pass | Ending pre-edit output: `## main` |
+| `git diff --name-only` | pass | Ending pre-edit output: no files |
+| `git diff --cached --name-only` | pass | Ending pre-edit output: no files |
+| `git diff --check` | pass | Ending pre-edit output: no whitespace errors |
+| `git diff --stat` | pass | Ending pre-edit output: no diff stat |
+
+### Local smoke details
+
+- The backend health check returned `status=ok` and service `salesops-workflow-automation-hub`.
+- Backend run history returned the four synthetic seeded run IDs: `run_demo_failed`, `run_demo_queued`, `run_demo_retried`, and `run_demo_success`.
+- Backend failed-run detail returned `run_id=run_demo_failed`, `run_status=failed`, and `error_type=adapter`.
+- The frontend proxy returned the same four seeded run IDs and the failed-run detail through local API routes.
+- The documented admin filter URLs returned HTTP 200 for status, source, search, owner, error type, date range, filtered empty state, and selected-run-hidden paths.
+- No paid API, real provider credential, provider dashboard, webhook, GitHub Actions, staging, deployment, commit, push, real CRM, real Slack, Google Sheets, OpenAI, or other real external integration was used.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Dependency install | skipped | `.venv` and `apps/web/node_modules` already existed and locked validation commands passed; no install was needed |
+| Browser visual interaction automation | skipped | No repo-documented PowerShell-only browser automation path or Playwright dependency/script exists; local HTTP/API route smoke covered startup and documented local proxy behavior |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service smoke | skipped | Explicitly forbidden and not required for the local/mock-safe release path |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope |
+| Commit, push, branch, stash, reset, rebase, or history rewrite | skipped | Explicitly forbidden; user manually handles git publishing |
+
+### Git safety status
+
+- No `git add`, `git commit`, `git push`, `git branch`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- Pre-edit git checks were clean; after this docs-only update, the expected tracked diff is `STATE.md` only.
+
+### Docs consistency
+
+- `README.md` is consistent with the validated local reviewer handoff, mock adapters, read-only admin UI, local proxy routes, and no-real-API boundaries.
+- `RUNBOOK.md` is consistent with the validated local commands, section `10.2` recording path, local PostgreSQL seed flow, and no-paid/no-CI/no-provider posture.
+- `STATE.md` is now the only file updated to preserve the fresh validation evidence.
+
+### Readiness verdict
+
+Ready for final local portfolio recording and manual review. The release/readiness gate passed in local/mock/no-paid mode with backend, frontend, build, local database, API smoke, frontend route/proxy smoke, git, ignore, and safety checks passing.
+
+### Remaining risks
+
+- Browser visual interaction automation was not run because the repository does not provide a documented PowerShell-only browser automation path or Playwright script/dependency.
+- HTTP/API route smoke validates documented local startup and proxy behavior, but a final human recording pass should still visually confirm the admin UI states.
+- Docker PostgreSQL was already healthy and may remain running locally; stop it manually only if desired.
+- Manual recording should avoid showing `.env`, private browser tabs, personal data, real customer data, terminal output that prints secrets, provider dashboards, production services, or unrelated local files.
+
+### Suggested commit message
+
+```text
+Record final local release readiness validation
+```
 
 ## Latest Update - 2026-06-05 Final Portfolio Recording Dry-Run Validation
 
