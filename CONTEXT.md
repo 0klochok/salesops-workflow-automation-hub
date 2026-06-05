@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-04 |
+| Last updated | 2026-06-05 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Final local portfolio-readiness review |
+| Current phase | Portfolio handoff materials slice |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Primary runtime | Local Windows 11 / PowerShell |
@@ -23,7 +23,7 @@ The backend includes a `uv`-managed FastAPI app, local-safe settings, a determin
 
 The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, a current-session dashboard stored in browser `sessionStorage`, and read-only admin filtering for status, source, search, date range, derived owner, and run-level error type.
 
-The current portfolio-readiness pass keeps the project local-only, mock-safe, GET-only for the public admin view, and free of retry/edit/delete/send/archive/mutation controls. Manual retry remains available as a backend-only local endpoint.
+The current portfolio-readiness state keeps the project local-only, mock-safe, GET-only for the public admin view, and free of retry/edit/delete/send/archive/mutation controls. Manual retry remains available as a backend-only local endpoint. `HANDOFF.md` now documents safe future CRM/Slack credential boundaries, before/after workflow framing, and reviewer demo guidance without adding live integrations.
 
 ## 3. Source-of-Truth Files
 
@@ -38,6 +38,7 @@ The current portfolio-readiness pass keeps the project local-only, mock-safe, GE
 | `RUNBOOK.md` | Local setup, operational commands, troubleshooting |
 | `TDD.md` | Test strategy, matrix, and quality gate expectations |
 | `README.md` | Portfolio-facing overview and roadmap |
+| `HANDOFF.md` | Reviewer handoff, future credential boundaries, before/after workflow, demo script |
 
 ## 4. Constraints And Safety Defaults
 
@@ -107,6 +108,7 @@ The current portfolio-readiness pass keeps the project local-only, mock-safe, GE
 - Error detail with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel are implemented.
 - Admin table with filters by date, source, status, lead owner, and error type. Source is also displayed and included in text search.
 - Backup/audit records. Persisted for local intake and manual retry events.
+- Portfolio handoff materials. Documentation-only handoff guidance, before/after workflow, reviewer checklist, and demo script are implemented in `HANDOFF.md`.
 
 ## 8. Assumptions
 

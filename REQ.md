@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-04 |
+| Last updated | 2026-06-05 |
 | Status | active draft |
 | Project type | portfolio/demo automation |
-| Current phase | Final portfolio-readiness documentation pass |
+| Current phase | Portfolio handoff materials slice |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Product Brief
@@ -70,7 +70,7 @@ The current portfolio-readiness state keeps the demo local-first, deterministic,
 | FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | backend failure endpoint and read-only selected run detail UI implemented; dedicated failure page/action planned |
 | FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type; source is visible and searchable. | read-only persisted run-history UI implemented with status, source, search, date, derived owner, and run-level error-type filters |
 | FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | deterministic local seed command implemented |
-| FR-012 | Portfolio handoff materials explain how real CRM/Slack credentials would be added safely. | P1 | Handoff doc documents credential boundaries without real secrets. | planned |
+| FR-012 | Portfolio handoff materials explain how real CRM/Slack credentials would be added safely. | P1 | Handoff doc documents credential boundaries without real secrets. | documentation-only handoff implemented in `HANDOFF.md` |
 
 ## 7. Non-Functional Requirements
 

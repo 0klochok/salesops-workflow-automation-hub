@@ -2,6 +2,8 @@
 
 SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is ready for local reviewer handoff after the read-only admin dashboard QA closure.
 
+Reviewer-facing handoff material, safe future credential boundaries, and a compact demo script are documented in `HANDOFF.md`.
+
 ## Problem
 
 A growth agency with 5 sales reps receives leads from forms and CSV uploads. The team manually copies lead details into a CRM and Slack, which creates duplicates, slows response time, misses leads, and leaves weak audit trails.
@@ -17,6 +19,7 @@ The local demo demonstrates an automated workflow that:
 - simulates Slack notifications for qualified leads through an adapter;
 - records backup/audit data and automation run history;
 - provides an admin dashboard for run status, failures, filters, and failure details, with backend-only manual retry support kept out of the public read-only admin demo.
+- documents safe future CRM/Slack credential handoff boundaries in `HANDOFF.md` without adding live integrations.
 
 ## Stack
 
@@ -96,6 +99,8 @@ The current demo shows how a growth agency lead can move from intake to an audit
 
 The demo is local-only and mock-safe. CRM and Slack behavior is simulated by local adapters, seeded data is synthetic, and the app should not call real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, webhooks, or external services unless explicitly approved for a later phase.
 
+For a before/after workflow explanation, 3-5 minute demo script, and safe real-provider credential handoff checklist, see `HANDOFF.md`.
+
 Current data flow:
 
 ```text
@@ -139,6 +144,7 @@ The admin screen is read-only. Interacting with `/admin/runs` should only issue 
 - CRM upsert and Slack notification behavior is simulated by local mock adapters.
 - The public admin UI is read-only; manual retry exists as a backend-only local endpoint and is intentionally not exposed in `/admin/runs`.
 - Source is displayed in the admin run table, included in text search, and available as a dedicated source dropdown filter.
+- `HANDOFF.md` documents future CRM/Slack credential boundaries and reviewer demo steps without real secrets or live provider calls.
 - `.env.example` contains placeholders only. Keep any local values in ignored `.env` files and do not commit real secrets.
 - Codex must not stage, commit, or push. The user manually reviews, stages, commits, and pushes.
 

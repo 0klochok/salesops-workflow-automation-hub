@@ -6,7 +6,7 @@ Deliver a local-first portfolio demo for sales operations workflow automation. T
 
 ## 2. Current Phase
 
-Final portfolio-readiness documentation pass. This phase updates source-of-truth docs so local setup, mock/demo mode, seed data, validation gates, manual smoke flow, known limitations, and Git safety match the current repository. It does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
+Portfolio handoff materials slice. This phase adds reviewer-facing handoff guidance for safe future CRM/Slack credential work, before/after workflow framing, and a compact demo script while keeping the project local-only and mock-safe. It does not add auth, retry UI, mutation actions, real integrations, deployment config, GitHub Actions, commits, pushes, or real secrets.
 
 ## 3. Phase Plan
 
@@ -100,6 +100,12 @@ Final portfolio-readiness documentation pass. This phase updates source-of-truth
 - Added read-only `/admin/runs` Owner and Error type filters using the same URL-preserved client-side filter pattern as existing filters.
 - Added backend and frontend tests for the derived contract fields, filter controls, URL preservation, empty states, selected detail preservation, selected-hidden notice behavior, and absence of mutation controls.
 
+## 4.10 Completed Portfolio Handoff Materials Slice
+
+- Added `HANDOFF.md` with current mock CRM/Slack boundaries, safe credential handling rules, and the approved path for future real-provider work.
+- Added a before/after workflow explanation, 3-5 minute demo script, and reviewer checklist that links the existing architecture diagrams, seed command, and local smoke flow.
+- Updated source-of-truth docs to mark FR-012 as documentation-only implemented without adding live integrations, dependencies, provider SDKs, deployment config, GitHub Actions, staging, commits, pushes, or real secrets.
+
 ## 5. Quality Gate Expectations By Phase
 
 | Gate | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
@@ -125,4 +131,4 @@ Final portfolio-readiness documentation pass. This phase updates source-of-truth
 
 ## 7. Recommended Next Phase
 
-After user review, manually prepare a commit for the final portfolio-readiness documentation pass if the diff is acceptable. Later implementation work should stay local-first and continue to avoid real integrations, deployment config, and GitHub Actions unless explicitly requested.
+After user review, manually prepare a commit for the portfolio handoff materials slice if the diff is acceptable. Later implementation work should stay local-first and continue to avoid real integrations, deployment config, and GitHub Actions unless explicitly requested.

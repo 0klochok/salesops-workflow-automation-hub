@@ -9,11 +9,101 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Admin run history visual polish and responsive alignment QA |
+| Current phase | Portfolio handoff materials slice |
 | Overall status | on-track |
-| Quality gate status | Required backend/frontend gates and local Chrome/CDP browser smoke passed for the admin run history visual polish QA phase |
-| Completion | Admin run history visual polish QA complete |
+| Quality gate status | Required backend/frontend gates passed; local handoff HTTP smoke passed; browser console/CDP check was attempted but limited by local Chrome/CDP tooling behavior |
+| Completion | Portfolio handoff materials implemented and validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-05 Portfolio Handoff Materials Slice
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `HANDOFF.md` | Added reviewer-facing handoff guidance, current mock CRM/Slack boundaries, safe future credential rules, before/after workflow framing, a 3-5 minute demo script, and reviewer checklist |
+| `README.md` | Linked `HANDOFF.md` from the portfolio overview, demo path, and local-only boundaries |
+| `REQ.md` | Marked FR-012 as documentation-only handoff implemented |
+| `EXEC_PLAN.md` | Recorded the completed portfolio handoff materials slice and updated next-step guidance |
+| `CONTEXT.md` | Recorded `HANDOFF.md` as a source-of-truth handoff document and added the implemented handoff material status |
+| `STATE.md` | Recorded this phase's changed files, validation, local smoke, skipped checks, risks, and next recommended phase |
+
+No backend code, frontend code, public API, schema, database migration, dependency manifest, generated source file, GitHub Actions workflow, deployment config, live integration, provider SDK, real credential, staging action, commit, push, mutation control, retry UI, or admin route behavior was changed.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short --branch` | pass | Starting status was clean on `main`: output `## main` |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `Test Files 4 passed (4)`; `Tests 33 passed (33)`; duration `14.54s` |
+| `pnpm --dir apps/web lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `3.2s`; generated 8 routes including `/admin/runs` and local API proxy routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | Python `3.12.13`; `48 passed`, `1 warning`; duration `2.40s`; warning is the existing FastAPI/Starlette `httpx` testclient deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
+| Targeted changed-doc secret-like token scan | pass | No output for `HANDOFF.md`, `README.md`, `REQ.md`, `EXEC_PLAN.md`, and `CONTEXT.md` |
+| Targeted changed-doc live-endpoint scan | pass | No output for `HANDOFF.md`, `README.md`, `REQ.md`, `EXEC_PLAN.md`, and `CONTEXT.md` |
+| Refined latest-`STATE.md` secret-like token scan | pass | No output in the new latest update section |
+| Refined latest-`STATE.md` live-endpoint scan | pass | No output in the new latest update section |
+| `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed existing LF-to-CRLF working-copy warnings for touched docs |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+Validation notes:
+
+- The Windows sandbox still could not start PowerShell in this workspace (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell.
+- No dependency install, package upgrade, backend route change, migration creation, real external API call, staging action, commit, or push was needed.
+- No behavior tests were added because this slice is documentation-only and does not change backend/frontend behavior.
+- A broad scan across all of `STATE.md` self-matched older documented regex command text in historical phase notes; the refined scan of the new latest update section had no output.
+
+### Local smoke and manual verification
+
+- `docker compose up -d postgres` confirmed `salesops-postgres` was running.
+- `uv run --env-file .env.example alembic upgrade head` passed against local PostgreSQL without creating or printing a local `.env`.
+- `uv run --env-file .env.example python -m backend.app.leads.demo_seed` seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary backend ran at `http://127.0.0.1:8190`; `GET /health` returned `status=ok` and service `salesops-workflow-automation-hub`.
+- Temporary frontend ran at `http://127.0.0.1:3190`.
+- `GET http://127.0.0.1:3190/` returned HTTP 200 with the public lead form route.
+- `GET http://127.0.0.1:3190/admin/runs` returned HTTP 200 with the read-only admin route.
+- `GET http://127.0.0.1:3190/api/leads/runs` returned seeded persisted run data.
+- `GET http://127.0.0.1:3190/api/leads/runs/run_demo_failed` returned the seeded failed-run detail with sanitized payload and audit/mock result data.
+- Frontend smoke logs showed local `GET` requests only for `/`, `/admin/runs`, `/api/leads/runs`, `/api/leads/runs/run_demo_failed`, route assets, and `/icon.svg`; no non-GET admin requests appeared in the smoke logs.
+- Frontend stderr was empty.
+- Browser plugin was not available in this session.
+- Headless Chrome/CDP console collection was attempted on local-only ports `9226` and `9227`, but it did not complete reliably: the first attempt aborted the WebSocket after a PowerShell variable-name conflict, the retry timed out, and a redirected Chrome dump-DOM fallback hit a Windows access-denied error. This browser-console check is recorded as limited/inconclusive rather than passed.
+- Temporary backend, frontend, and Chrome processes on ports `8190`, `3190`, `9226`, and `9227` were stopped; follow-up port checks found no listeners on those ports.
+- Local PostgreSQL was left running because it was already running for the documented local database path.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Behavior test additions | skipped | This phase changed documentation only and did not alter behavior, APIs, routes, types, or components |
+| Browser plugin QA path | skipped | Browser plugin was not available through the current tool set |
+| Browser console/runtime capture | limited | Local Chrome/CDP and dump-DOM fallbacks did not complete reliably; HTTP route/proxy smoke and server logs were checked instead |
+| Dependency install | skipped | Existing locked environments were sufficient; no dependency change was needed or introduced |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Deployment | skipped | Explicitly out of scope; no hosting or deployment config was added |
+| Real external API smoke | skipped | Explicitly forbidden; project remains local-only and mock-safe |
+| Paid API smoke | skipped | Explicitly forbidden and not required for the local demo path |
+| Staging, commit, and push | skipped | Explicitly forbidden; staged/committed/pushed: no/no/no |
+
+### Remaining risks
+
+- The handoff material is documentation-only; no live CRM/Slack provider code, provider SDK, credential validation, or live smoke was added.
+- Browser-rendered console/runtime capture was attempted but inconclusive due local Chrome/CDP tooling behavior; no server-side runtime errors or frontend stderr appeared during the HTTP smoke.
+- Local PostgreSQL remains running for the user's environment; temporary backend/frontend/Chrome smoke processes were stopped.
+- The existing FastAPI/Starlette `httpx` testclient deprecation warning still appears during backend tests but does not fail the gate.
+
+### Suggested commit message
+
+```text
+Add portfolio handoff materials
+```
+
+### Next recommended phase
+
+After user review, manually commit the portfolio handoff materials slice if the diff is acceptable. Later work should stay local-first and avoid real integrations, deployment config, GitHub Actions, staging, commits, pushes, and real credentials unless explicitly requested.
 
 ## Latest Update - 2026-06-05 Admin Run History Visual Polish And Responsive Alignment QA
 
