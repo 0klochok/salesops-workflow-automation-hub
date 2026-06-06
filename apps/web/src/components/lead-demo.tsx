@@ -179,7 +179,6 @@ export function LeadDemo() {
               <h1 className="text-2xl font-semibold tracking-normal text-foreground">
                 SalesOps Workflow Automation Hub
               </h1>
-              <Badge>Phase 3 local demo</Badge>
             </div>
             <Link
               className="inline-flex min-h-9 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel hover:bg-muted"
@@ -374,10 +373,14 @@ function CsvImport({
   onCsvTextChange: (text: string) => void;
   onImport: () => void;
 }) {
+  const [selectedFileName, setSelectedFileName] = useState("No file selected");
+
   async function handleFileChange(file: File | undefined) {
     if (!file) {
+      setSelectedFileName("No file selected");
       return;
     }
+    setSelectedFileName(file.name);
     onCsvTextChange(await file.text());
   }
 
@@ -388,14 +391,33 @@ function CsvImport({
         <Badge tone="neutral">local parser</Badge>
       </div>
       <div className="space-y-4">
-        <Field label="CSV file">
-          <Input
-            accept=".csv,text/csv"
-            id="csv_file"
-            onChange={(event) => handleFileChange(event.target.files?.[0])}
-            type="file"
-          />
-        </Field>
+        <div className="space-y-1.5">
+          <Label htmlFor="csv_file" id="csv_file_label">
+            CSV file
+          </Label>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative inline-flex h-10 w-full cursor-pointer items-center justify-center rounded-md bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:bg-teal-700 focus-within:outline-none focus-within:ring-2 focus-within:ring-accent/30 focus-within:ring-offset-2 focus-within:ring-offset-background sm:w-auto">
+              <span id="csv_file_button_text">Choose CSV file</span>
+              <input
+                accept=".csv,text/csv"
+                aria-describedby="csv_file_name"
+                aria-labelledby="csv_file_label csv_file_button_text"
+                className="absolute inset-0 cursor-pointer opacity-0"
+                id="csv_file"
+                onChange={(event) => handleFileChange(event.target.files?.[0])}
+                type="file"
+              />
+            </div>
+            <p
+              aria-live="polite"
+              className="min-w-0 truncate text-sm text-muted-foreground"
+              id="csv_file_name"
+              title={selectedFileName}
+            >
+              {selectedFileName}
+            </p>
+          </div>
+        </div>
         <Field label="CSV input">
           <Textarea
             id="csv_input"

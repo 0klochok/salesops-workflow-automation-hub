@@ -102,6 +102,31 @@ describe("LeadDemo", () => {
     );
   });
 
+  it("uses a styled English CSV file picker and shows the selected filename", async () => {
+    render(<LeadDemo />);
+
+    const csvText = [
+      "email,first_name,last_name,company_name,company_domain,lead_score",
+      "grace@example.com,Grace,Hopper,Example Co,example.com,89",
+    ].join("\n");
+    const csvFile = new File([csvText], "agency-leads.csv", {
+      type: "text/csv",
+    });
+    Object.defineProperty(csvFile, "text", {
+      value: async () => csvText,
+    });
+
+    expect(screen.getByText("Choose CSV file")).toBeInTheDocument();
+    expect(screen.getByText("No file selected")).toBeInTheDocument();
+
+    await userEvent.upload(screen.getByLabelText(/CSV file/), csvFile);
+
+    expect(screen.getByText("agency-leads.csv")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByLabelText("CSV input")).toHaveValue(csvText)
+    );
+  });
+
   it("shows same-session duplicate hints without changing backend behavior", async () => {
     mockFetch(successResponse, 201);
 

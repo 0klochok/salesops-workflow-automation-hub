@@ -4,16 +4,249 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-05 |
+| Last updated | 2026-06-06 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final browser visual QA documentation closure |
+| Current phase | CSV picker primary CTA styling repair |
 | Overall status | on-track |
-| Quality gate status | Frontend gates and local/mock HTTP smoke passed; manual browser visual QA procedure documented |
-| Completion | Final browser visual QA documentation closure complete; `RUNBOOK.md` manual QA path added and local validation recorded |
+| Quality gate status | Frontend lint, Vitest, typecheck, build, git diff checks, and local browser visual QA passed |
+| Completion | CSV picker primary CTA styling repair implemented and locally validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-06 CSV Picker Primary CTA Styling Repair
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/lead-demo.tsx` | Updated only the custom CSV file picker wrapper from secondary surface styling to the same primary CTA color convention used by `Submit lead` and `Import rows`: `bg-accent`, `text-accent-foreground`, and `hover:bg-teal-700`; hidden file input, English text, `.csv,text/csv` accept constraint, filename display, CSV textarea loading, and import behavior were preserved |
+| `STATE.md` | Recorded the styling repair, validation evidence, browser QA result, skipped checks, and no-stage/no-commit/no-push status |
+
+`apps/web/src/components/lead-demo.test.tsx` remains modified from the previous CSV picker phase, but it was not edited for this styling-only repair because accessible text, structure, upload behavior, and filename behavior did not change.
+
+Backend behavior, API routes, routing, dependencies, CSV parsing, import submission behavior, `Submit lead`, `Import rows`, real integrations, secrets, GitHub Actions, staging, commits, and pushes were not changed.
+
+### Commands run and results
+
+| Command or check | Status | Result |
+|---|---|---|
+| Pre-edit sandboxed PowerShell checks | blocked | Windows sandbox failed to launch commands with `CreateProcessAsUserW failed: 5`; required commands were rerun through approved escalated PowerShell |
+| Pre-edit `git status --short --branch` | pass | `## main` with modified `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx` |
+| Pre-edit `git diff -- apps/web/src/components/lead-demo.tsx` | pass | Confirmed the existing custom picker wrapper used secondary-looking `border border-border bg-surface text-foreground shadow-panel hover:bg-muted` styling before this repair |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `4 passed` test files and `34 passed` tests |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully, checked types, and generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed existing LF-to-CRLF working-copy warnings for touched files |
+| `git diff --cached --name-only` | pass | No output; no staged files |
+| `git status --short --branch` | pass | `## main` with modified `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx` |
+| `git diff --name-only` | pass | `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx`; Git printed existing LF-to-CRLF working-copy warnings |
+
+### Manual browser QA status
+
+- Manual/local browser visual QA passed at `http://127.0.0.1:3042/`.
+- Local services were started per `RUNBOOK.md`: Docker PostgreSQL, Alembic migrations, synthetic demo seed, backend on `127.0.0.1:8028`, and frontend on `127.0.0.1:3042` with both backend-base environment variables pointed at the local backend.
+- Local Chrome headless DevTools inspection rendered the page at desktop `1365x900` and mobile `390x844`, captured temporary screenshots under `.scratch`, and inspected computed styles.
+- The CSV picker text remained `Choose CSV file`, its hidden file input kept `accept=".csv,text/csv"` and opacity `0`, and the picker computed to the same primary colors as `Submit lead` and `Import rows`: background `rgb(36, 150, 158)` and text `rgb(255, 255, 255)`.
+- Filename display updated to `manual-qa-upload.csv` after selecting a CSV, and the CSV textarea included the uploaded `browser@example.com` row.
+- Desktop and mobile checks showed no horizontal overflow; the focused mobile screenshot showed the picker, filename, CSV textarea, and `Import rows` aligned correctly.
+- DevTools/CDP reported no app console errors, runtime exceptions, or page log errors.
+- Temporary backend, frontend, and Chrome QA listeners on ports `8028`, `3042`, and `9333` were stopped after QA. PostgreSQL was left running because it uses the normal project Docker service and may have already been running.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest suite | skipped | Backend behavior, schemas, migrations, persistence, adapters, API routes, and contracts were intentionally untouched |
+| Backend Ruff lint | skipped | Backend files were untouched |
+| Backend mypy typecheck | skipped | Backend files and contracts were untouched |
+| Test updates | skipped | Existing focused CSV picker test already covered English text, selected filename display, upload behavior, and textarea update; this phase changed styling classes only |
+| Dependency install, upgrade, replacement, or removal | skipped | Existing frontend and local browser tooling were sufficient |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service smoke | skipped | Explicitly forbidden and not required for local/mock frontend visual repair |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Commit, push, staging, branch, stash, reset, rebase, or history rewrite | skipped | Explicitly forbidden; user manually handles git publishing |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No secrets, real provider calls, paid API calls, external webhooks, dependency changes, backend changes, API changes, route changes, or unrelated UI redesigns were made.
+- Temporary QA artifacts were created under `.scratch`, inspected, and removed after QA; they did not affect tracked source changes.
+
+### Remaining risks
+
+- The browser QA was performed with local Chrome headless DevTools plus screenshot inspection in the Codex app; a human reviewer can still repeat the visual check manually in a regular browser before recording.
+
+### Suggested commit message
+
+```text
+Match CSV picker to primary CTA styling
+```
+
+## Latest Update - 2026-06-06 Frontend Landing Page Polish Repair
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/lead-demo.tsx` | Removed the visible `Phase 3 local demo` heading badge and replaced the native CSV file input with a styled English file picker that keeps the real accessible file input, `.csv,text/csv` accept constraint, selected filename display, and CSV text loading behavior |
+| `apps/web/src/components/lead-demo.test.tsx` | Added a focused upload regression test for the English custom CSV picker, neutral filename state, selected filename display, and textarea update |
+| `STATE.md` | Recorded the frontend polish repair, validation evidence, skipped checks, manual QA steps, and safety status |
+
+`RUNBOOK.md` was not changed because local setup, run, and manual QA instructions remain accurate. Backend behavior, CSV import contracts, API routes, schemas, migrations, dependencies, GitHub Actions, CI, Playwright/browser automation, secrets, real integrations, staging, commits, and pushes were not changed.
+
+### Commands run and results
+
+| Command or check | Status | Result |
+|---|---|---|
+| Pre-edit `git status --short --branch` | pass | `## main` with existing modified `STATE.md` only |
+| Pre-edit `git diff --name-only` | pass | `STATE.md` only; Git printed the existing LF-to-CRLF working-copy warning |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 after the final frontend/test edits |
+| Initial `pnpm --dir apps/web exec vitest run` | recovered | Failed after the first test addition because jsdom's uploaded `File` lacked `file.text()`; production code was unchanged and the new test was fixed with an explicit `text()` shim |
+| Final `pnpm --dir apps/web exec vitest run` | pass | Vitest `4 passed` test files and `34 passed` tests |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully, checked types, and generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| Pre-STATE `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed existing LF-to-CRLF working-copy warnings for touched files |
+| Pre-STATE `git diff --cached --name-only` | pass | No output; no staged files |
+| Pre-STATE `git status --short --branch` | pass | `## main` with modified `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx` |
+| Pre-STATE `git diff --name-only` | pass | `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx`; Git printed existing LF-to-CRLF working-copy warnings |
+
+### Manual browser QA status
+
+- Manual browser QA was not performed by Codex because this phase explicitly forbids Playwright/browser automation and keeps browser review manual.
+- Reviewer should start backend/frontend per `RUNBOOK.md` if needed, open `http://127.0.0.1:3042/`, and confirm the `Phase 3 Local Demo` label is gone.
+- Reviewer should confirm the CSV picker is English, styled, aligned, and does not expose the browser-native grey file button.
+- Reviewer should select a CSV file and confirm the displayed filename updates and the CSV import layout has no desktop or mobile regression.
+- Reviewer should check DevTools console for app errors.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest suite | skipped | Backend behavior, schemas, migrations, persistence, adapters, API routes, and CSV contracts were intentionally untouched |
+| Backend Ruff lint | skipped | Backend files were untouched |
+| Backend mypy typecheck | skipped | Backend files and contracts were untouched |
+| Manual browser QA | skipped | Explicitly left for reviewer manual verification at `http://127.0.0.1:3042/` |
+| Playwright/browser automation | skipped | Explicitly forbidden for this phase; no Playwright or browser automation was added or run |
+| Dependency install, upgrade, replacement, or removal | skipped | Existing frontend dependencies were sufficient |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service smoke | skipped | Explicitly forbidden and not required for local/mock frontend polish |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files were added or run |
+| Commit, push, staging, branch, stash, reset, rebase, or history rewrite | skipped | Explicitly forbidden; user manually handles git publishing |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No backend behavior, CSV import contract, dependency, GitHub Actions, CI, browser automation, real provider, paid API, credential, or secret change was made.
+- The PowerShell sandbox still failed to launch commands in this workspace with `CreateProcessAsUserW failed: 5`, so local commands were run through approved escalated PowerShell.
+
+### Remaining risks
+
+- Manual browser visual QA remains pending and must be performed before claiming visual completion.
+- Automated frontend gates verify component behavior and build correctness, but do not verify actual browser rendering, responsive layout, file-picker visual treatment, or DevTools console health.
+
+### Suggested commit message
+
+```text
+Polish landing page CSV file picker
+```
+
+## Latest Update - 2026-06-05 Manual Browser QA Closure State Update
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded the manual browser QA closure status, fresh frontend gate results, skipped backend gates, safety posture, final git checks, and exact reviewer follow-up |
+
+`RUNBOOK.md` was inspected and left unchanged. Its manual browser visual QA subsection is PowerShell-only, uses local PostgreSQL/backend/frontend commands, points at the current local app routes, documents seeded run/filter expectations including `owner=Maya%20Patel`, and keeps real providers, paid APIs, credentials, Playwright, GitHub Actions, commits, and pushes out of scope.
+
+No product code, public API, schema, migration, dependency, lockfile, package script, Playwright setup, browser automation, GitHub Actions, CI, deployment config, real integration, secret handling, staged file, commit, or push was changed.
+
+### Commands run and results
+
+| Command or check | Status | Result |
+|---|---|---|
+| `Get-Content -LiteralPath .\RUNBOOK.md -TotalCount 560` | pass | Manual browser visual QA instructions were clear, executable, and aligned with the current local app; no `RUNBOOK.md` edit was needed |
+| `Get-Content -LiteralPath .\STATE.md -TotalCount 180` | pass | Existing phase state was inspected before the update |
+| Pre-update `git status --short --branch` | pass | `## main`; clean baseline |
+| Pre-update `git diff --name-only` | pass | No output; no tracked diff |
+| Pre-update `git diff --check` | pass | Exit 0 with no whitespace errors |
+| Pre-update `git diff --cached --name-only` | pass | No output; no staged files |
+| Pre-update `git diff --stat` | pass | No output; no diff stat |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `4 passed` test files and `33 passed` tests |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully and generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| Post-gate pre-edit `git status --short --branch` | pass | `## main`; frontend gates produced no tracked changes |
+| Post-gate pre-edit `git diff --name-only` | pass | No output; frontend gates produced no tracked diff |
+| Post-gate pre-edit `git diff --check` | pass | Exit 0 with no whitespace errors |
+| Post-gate pre-edit `git diff --cached --name-only` | pass | No output; no staged files |
+| `docker compose ps` | pass | Existing `salesops-postgres` container was already `Up` and `healthy` on local port `5432`; this pass did not start it |
+| `Get-NetTCPConnection -LocalPort 8028,3042 -State Listen -ErrorAction SilentlyContinue` | pass | No output; command exited 1 because the documented backend/frontend QA ports had no listeners |
+| Final post-STATE `git status --short --branch` | pass | `## main` with modified `STATE.md` only |
+| Final post-STATE `git diff --name-only` | pass | `STATE.md` only; Git printed the existing LF-to-CRLF working-copy warning |
+| Final post-STATE `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed the existing LF-to-CRLF working-copy warning |
+| Final post-STATE `git diff --cached --name-only` | pass | No output; no staged files |
+
+### Manual browser QA status
+
+- Manual human browser visual QA was not performed by Codex and remains pending for the reviewer.
+- `RUNBOOK.md` section `10.2` is the current reviewer checklist. It covers the public lead form, CSV import, read-only admin run history, seeded success/failed/queued/retried rows, status/source/search/date/owner/error-type filters, filtered empty state, same-page detail panel, selected-run-hidden detail path, local GET-only admin interactions, narrow-width wrapping, and forbidden mutation/provider/secret findings.
+- No Docker/PostgreSQL container or backend/frontend dev server was started for this closure pass because the requested verification was documentation alignment plus frontend quality gates, and the RUNBOOK instructions matched the current source and prior local smoke evidence.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest suite | skipped | Backend behavior, schemas, migrations, persistence, adapters, and route contracts were untouched in this docs-only closure |
+| Backend Ruff lint | skipped | Backend files were untouched and no backend behavior changed |
+| Backend mypy typecheck | skipped | Backend files and contracts were untouched |
+| Docker/PostgreSQL startup | skipped | Not needed to verify the documentation alignment; no stack smoke or human browser QA was performed in this closure pass |
+| Backend/frontend dev servers | skipped | Not needed because no manual browser QA was performed by the human reviewer during this pass |
+| Automated browser visual QA / Playwright | skipped | Explicitly out of scope; no Playwright dependency or browser automation was added |
+| Dependency install, upgrade, replacement, or removal | skipped | Existing dependencies were sufficient and no dependency change was needed |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service smoke | skipped | Explicitly forbidden and not required for the local/mock-safe path |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files were added or run |
+| Deployment, staging, or production smoke | skipped | Explicitly out of scope |
+| Commit, push, staging, branch, stash, reset, rebase, or history rewrite | skipped | Explicitly forbidden; user manually handles git publishing |
+
+### Safety status
+
+- Product code did not change.
+- `RUNBOOK.md` did not change.
+- Only `STATE.md` changed.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No dependencies, Playwright files, browser automation, GitHub Actions, CI, credentials, secrets, paid APIs, provider dashboards, webhooks, or real external integrations were added or used.
+- The PowerShell sandbox still failed to launch commands in this workspace with `CreateProcessAsUserW failed: 5`, so local commands were run through approved escalated PowerShell.
+- This phase did not start PostgreSQL, backend, frontend, browser automation, or dev-server processes. `docker compose ps` showed the existing `salesops-postgres` container was already running and healthy; the documented backend/frontend QA ports `8028` and `3042` had no listeners.
+
+### Remaining risks
+
+- Manual browser visual QA remains pending and must be performed by a human reviewer before claiming visual QA completion.
+- Frontend gates and static documentation/source alignment do not verify actual browser layout, responsive wrapping, DevTools console output, or Network-tab request classification.
+- Generated ignored artifacts from TypeScript/Next.js validation may exist locally, but final git checks show no tracked generated diff.
+- Local PostgreSQL remains running from prior local work; stop it manually with `docker compose stop postgres` only if desired.
+
+### Exact manual reviewer steps still required
+
+1. Follow `RUNBOOK.md` section `10.2` from the repository root in PowerShell.
+2. Start local PostgreSQL, apply migrations, seed synthetic demo data, start the backend on `127.0.0.1:8028`, and start the frontend on `127.0.0.1:3042` with both backend-base environment variables pointed at `http://127.0.0.1:8028`.
+3. Open the documented local pages for `/`, `/admin/runs`, status/source/search/date/owner/error-type filters, filtered empty state, and `?status=success&runId=run_demo_failed`.
+4. Confirm visual pass criteria, local GET-only admin interactions, no mutation controls, no console/runtime overlays, no non-local provider requests, and no visible secrets or private data.
+5. Stop backend/frontend dev servers with `Ctrl+C`; stop PostgreSQL with `docker compose stop postgres` only if the reviewer does not want it left running.
+
+### Suggested commit message
+
+```text
+Record manual browser QA closure status
+```
 
 ## Latest Update - 2026-06-05 Final Browser Visual QA Documentation Closure
 
