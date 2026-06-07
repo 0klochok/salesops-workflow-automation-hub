@@ -4,16 +4,179 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-06 |
+| Last updated | 2026-06-07 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | CSV picker primary CTA styling repair |
+| Current phase | Final portfolio demo readiness pass |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, Vitest, typecheck, build, git diff checks, and local browser visual QA passed |
-| Completion | CSV picker primary CTA styling repair implemented and locally validated |
+| Quality gate status | Frontend lint, Vitest, typecheck, build, git diff checks, local Browser QA, and CSV file-selection QA passed |
+| Completion | Final portfolio demo readiness pass implemented and locally validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-07 Final Portfolio Demo Readiness Pass
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Recentered reviewer quick start and portfolio demo path on backend `127.0.0.1:8028` and frontend `127.0.0.1:3042`; added a reviewer demo checklist for public form submit, CSV textarea import, CSV file picker, admin run history, run detail, and mock-only boundaries |
+| `RUNBOOK.md` | Updated phase metadata and added explicit `/` public-page QA checks for old-label absence, form submission, CSV textarea import, custom CSV picker filename state, and desktop/mobile layout |
+| `apps/web/src/components/lead-demo.tsx` | Preserved the existing public demo polish: portfolio-facing labels, custom English CSV picker, improved empty states, search placeholder, and contained session-table overflow |
+| `apps/web/src/components/lead-demo.test.tsx` | Preserved existing regression coverage for public demo labels, empty states, CSV file picker filename update, upload behavior, and dashboard filtering |
+| `STATE.md` | Recorded final readiness validation, manual QA evidence, skipped checks, and git safety status |
+
+Backend code, database schema, migrations, API contracts, adapters, proxy routes, dependencies, deployment config, GitHub Actions, CI, real integrations, secrets, staging, commits, pushes, branch operations, stashes, resets, rebases, and destructive checkout were not changed.
+
+### Commands run and results
+
+| Command or check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell checks | blocked/recovered | Windows sandbox failed to launch commands with `CreateProcessAsUserW failed: 5`; required PowerShell commands were rerun through approved escalated local PowerShell |
+| `git status --short --branch` | pass | `## main` with modified `README.md`, `RUNBOOK.md`, `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx` |
+| `git diff --name-only` | pass | `README.md`, `RUNBOOK.md`, `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx`; Git printed existing LF-to-CRLF working-copy warnings |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `4 passed` test files and `35 passed` tests |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully, checked types, and generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed existing LF-to-CRLF working-copy warnings |
+| `git diff --cached --name-only` | pass | No output; no staged files |
+| `Test-Path -LiteralPath ".env"` | pass | Returned `True`; local `.env` existed and was not printed |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized; no pending migration output |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| Backend health check | pass | `GET http://127.0.0.1:8028/health` returned `{"status":"ok","service":"salesops-workflow-automation-hub"}` |
+| Frontend readiness check | pass | `GET http://127.0.0.1:3042/` returned HTTP `200` |
+| Frontend proxy smoke | pass after restart | Initial hidden frontend process inherited the default backend port and was stopped; restarting Next through `pnpm.cmd` with inherited local env made `POST http://127.0.0.1:3042/api/leads/intake` return `run_status=success` |
+| Temporary listener cleanup | pass | Temporary backend/frontend listeners on ports `8028` and `3042` were stopped after QA; PostgreSQL was left running as the normal local Docker service |
+
+### Manual browser QA status
+
+- Local Browser QA passed at `http://127.0.0.1:3042/` with the frontend proxy pointed at backend `http://127.0.0.1:8028`.
+- Desktop viewport `1366x900` loaded title `SalesOps Workflow Automation Hub`, rendered the public page heading, and showed no old internal/demo-phase label, `POST /leads/intake`, or `local parser` text.
+- Desktop CSV picker checks passed: visible text `Choose CSV file`, initial filename `No file selected`, accept value `.csv,text/csv`, hidden input opacity `0`, primary CTA background `rgb(36, 150, 158)`, and white text `rgb(255, 255, 255)`.
+- Desktop form submission passed with synthetic `browser-final-...@example.com`: latest result showed `Success`, backend dedupe `unique`, CRM `created`, Slack `sent`, a visible `run_...` value, and no page-level horizontal overflow.
+- Desktop CSV textarea import passed with synthetic `csv-final-...@example.com`: summary showed `1 of 1 rows submitted locally.`, the CSV row appeared in the session dashboard, `Import rows` returned to idle state, and no page-level horizontal overflow appeared.
+- Mobile viewport `390x844` passed: heading and CSV picker were visible, no old phase label appeared, selected filename state began as `No file selected`, page-level horizontal overflow was false (`bodyScrollWidth=375`, viewport width `390`), and session-table overflow stayed contained in its scroll region (`tableClientWidth=310`, `tableScrollWidth=1105`).
+- Browser console checks passed on desktop and mobile with zero captured warnings/errors.
+- CSV file-selection state was verified with a separate local headless Chrome DevTools check because the in-app Browser API does not expose an OS file-picker upload method. The synthetic temp CSV selection updated the visible filename to `salesops-final-upload.csv` and loaded the uploaded row into the CSV textarea.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, provider dashboard, or external-service smoke was run.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest suite | skipped | Backend behavior, schemas, migrations, persistence, adapters, API routes, and contracts were intentionally untouched |
+| Backend Ruff lint | skipped | Backend files were untouched |
+| Backend mypy typecheck | skipped | Backend files and contracts were untouched |
+| Real OS file-picker interaction through in-app Browser | limited | The available in-app Browser API does not expose a file-upload method; selected filename state was verified with local headless Chrome DevTools and existing Vitest upload regression |
+| Dependency install, upgrade, replacement, or removal | skipped | Existing dependencies and tooling were sufficient |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service smoke | skipped | Explicitly forbidden and not required for local/mock portfolio readiness |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Commit, push, staging, branch, stash, reset, rebase, or history rewrite | skipped | Explicitly forbidden; user manually handles git publishing |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup command was run.
+- No secrets were created, printed, stored, logged, screenshotted, or committed.
+- No real provider credentials, paid API calls, production API calls, webhooks, deployment config, GitHub Actions, dependency changes, backend changes, schema changes, migration changes, or unrelated refactors were introduced.
+- Temporary QA logs and synthetic upload files were written under the local user temp directory, not into tracked repository files.
+
+### Remaining risks
+
+- Browser QA covered the in-app Browser and a local headless Chrome upload-state check; other browsers were not manually checked.
+- The local PostgreSQL container remains running for the user's environment; stop it manually only if desired.
+
+### Suggested commit message
+
+```text
+Finalize portfolio demo readiness docs
+```
+
+## Latest Update - 2026-06-06 Final Frontend Polish Sweep
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/lead-demo.tsx` | Replaced technical main-page badges with portfolio-facing `Validated intake` and `CSV upload` labels, tightened header copy, matched the header/admin link focus and overflow behavior to the admin page, improved empty states, added a search placeholder, and contained session-table overflow with a labeled scroll region and truncated lead identity text |
+| `apps/web/src/components/lead-demo.test.tsx` | Added regression coverage for polished labels, empty-state copy, search placeholder, accessible table scroll region, and filtered-empty dashboard messaging |
+| `STATE.md` | Recorded the final frontend polish sweep, validation commands, browser QA evidence, skipped checks, and no-stage/no-commit/no-push status |
+
+Backend behavior, database schema, migrations, API contracts, proxy routes, package managers, dependencies, deployment config, GitHub Actions, secrets, real integrations, staging, commits, pushes, branch operations, stashes, resets, and rebases were not changed.
+
+### Commands run and results
+
+| Command or check | Status | Result |
+|---|---|---|
+| Pre-edit sandboxed PowerShell checks | blocked | Windows sandbox failed to launch commands with `CreateProcessAsUserW failed: 5`; required commands were rerun through approved escalated PowerShell |
+| Pre-edit `git status --short --branch` | pass | `## main` with no modified files |
+| Pre-edit `git diff --name-only` | pass | No output; no pre-existing tracked diff |
+| `git status --short --branch` | pass | Before `STATE.md` update: `## main` with modified `apps/web/src/components/lead-demo.test.tsx` and `apps/web/src/components/lead-demo.tsx` |
+| `git diff --name-only` | pass | Before `STATE.md` update: `apps/web/src/components/lead-demo.test.tsx` and `apps/web/src/components/lead-demo.tsx`; Git printed existing LF-to-CRLF working-copy warnings |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `4 passed` test files and `35 passed` tests |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully, checked types, and generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| Pre-STATE `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed existing LF-to-CRLF working-copy warnings for touched frontend files |
+| Pre-STATE `git diff --cached --name-only` | pass | No output; no staged files |
+| `docker compose ps` | pass | Existing `salesops-postgres` container was already `Up` and `healthy` on local port `5432` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized; database was already at head |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| Temporary backend health | pass | `GET http://127.0.0.1:8028/health` returned `status=ok` and service `salesops-workflow-automation-hub` |
+| Temporary frontend readiness | pass | `GET http://127.0.0.1:3042/` returned HTTP `200` |
+| Final `git status --short --branch` | pass | `## main` with modified `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx` |
+| Final `git diff --name-only` | pass | `STATE.md`, `apps/web/src/components/lead-demo.test.tsx`, and `apps/web/src/components/lead-demo.tsx`; Git printed existing LF-to-CRLF working-copy warnings |
+| Final `git diff --check` | pass | Exit 0 with no whitespace errors; Git printed existing LF-to-CRLF working-copy warnings |
+| Final `git diff --cached --name-only` | pass | No output; no staged files |
+
+### Manual browser QA status
+
+- Local Browser QA passed at `http://127.0.0.1:3042/` with the frontend pointed at backend `http://127.0.0.1:8028`.
+- Desktop viewport `1365x900` loaded page title `SalesOps Workflow Automation Hub`, rendered meaningful app content, showed no framework overlay, reported no console warnings/errors, and had no body-level horizontal overflow (`pageScrollWidth=1350`, viewport width `1366`).
+- Desktop copy checks passed: polished header copy rendered, `Validated intake` and `CSV upload` badges rendered, old `POST /leads/intake` and `local parser` labels were absent, the search placeholder was `Email or company domain`, the improved latest-result and dashboard empty states rendered, and the session table had role `region`.
+- Lead form browser interaction passed with synthetic `browser-polish-...@example.com`: required fields filled, `Submit lead` submitted to the local backend, latest result showed backend dedupe/CRM/Slack metrics, the session dashboard included the lead, buttons returned to `Submit lead` and `Import rows`, console logs stayed clean, and horizontal overflow stayed false.
+- CSV textarea import browser interaction passed with synthetic `csv-polish-...@example.com`: textarea updated, `Import rows` submitted one local row, summary showed `1 of 1 rows submitted locally.`, the dashboard included the CSV lead, console logs stayed clean, and horizontal overflow stayed false.
+- CSV picker browser state remained correct: visible text was `Choose CSV file`, selected-file text started as `No file selected`, hidden input kept `accept=".csv,text/csv"` and computed opacity `0`, and submit/import CTAs remained visually prominent.
+- Mobile viewport `390x844` passed after scrolling to the top: the title wrapped cleanly, the admin link and card layout aligned, no framework overlay appeared, console logs stayed clean, body-level horizontal overflow was false (`pageScrollWidth=375`, viewport width `390`), and the session table overflow stayed contained inside its scroller (`tableClientWidth=310`, `tableScrollWidth=1105`).
+- Temporary backend and frontend listeners on ports `8028` and `3042` were stopped after QA. PostgreSQL was left running because it is the normal project Docker service and was already running before this pass.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest suite | skipped | Backend behavior, schemas, migrations, persistence, adapters, API routes, and contracts were intentionally untouched |
+| Backend Ruff lint | skipped | Backend files were untouched |
+| Backend mypy typecheck | skipped | Backend files and contracts were untouched |
+| Real browser file-selection upload | limited | The in-app Browser API used for QA does not expose a file-upload method; the existing Vitest upload regression passed and verifies selected filename update plus CSV textarea loading |
+| Dependency install, upgrade, replacement, or removal | skipped | Existing dependencies and tooling were sufficient |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service smoke | skipped | Explicitly forbidden and not required for local/mock frontend polish |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files were added or run |
+| Commit, push, staging, branch, stash, reset, rebase, or history rewrite | skipped | Explicitly forbidden; user manually handles git publishing |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No branch, stash, reset, rebase, destructive checkout, or destructive cleanup command was run.
+- No secrets, real provider calls, paid API calls, external webhooks, dependency changes, backend changes, API changes, route changes, schema changes, migration changes, deployment changes, or unrelated redesigns were made.
+- Temporary QA logs were written under the local user temp directory, not into tracked repository files.
+
+### Remaining risks
+
+- Browser QA covered the in-app Browser at desktop and mobile viewport sizes; other browsers were not manually checked.
+- Actual OS file-picker selection was not exercised in Browser because the available Browser API does not support file uploads; filename-update behavior remains covered by the frontend upload test.
+
+### Suggested commit message
+
+```text
+Polish main frontend demo page
+```
 
 ## Latest Update - 2026-06-06 CSV Picker Primary CTA Styling Repair
 

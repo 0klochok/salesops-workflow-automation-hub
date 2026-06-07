@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is ready for local reviewer handoff after the read-only admin dashboard QA closure.
+SalesOps Workflow Automation Hub is a portfolio project for a code-first lead operations workflow. It is ready for local reviewer handoff through a local-only, mock-safe demo path.
 
 Reviewer-facing handoff material, safe future credential boundaries, and a compact demo script are documented in `HANDOFF.md`.
 
@@ -52,25 +52,33 @@ uv run alembic upgrade head
 uv run python -m backend.app.leads.demo_seed
 ```
 
-Start the backend in one PowerShell window:
+Start the backend in one PowerShell window. Port `8028` is the reviewer-demo port used by the final local QA path:
 
 ```powershell
-uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
 ```
 
-Start the frontend in another PowerShell window:
+Start the frontend in another PowerShell window, pointed at that local backend:
 
 ```powershell
-$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
-$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
-pnpm --dir apps/web dev
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
 
 Open:
 
-- `http://localhost:3000` for the public demo form and CSV import;
-- `http://localhost:3000/admin/runs` for the read-only persisted run dashboard;
-- `http://127.0.0.1:8000/docs` for local FastAPI API docs.
+- `http://127.0.0.1:3042/` for the public demo form and CSV import;
+- `http://127.0.0.1:3042/admin/runs` for the read-only persisted run dashboard;
+- `http://127.0.0.1:8028/docs` for local FastAPI API docs.
+
+Reviewer demo checklist:
+
+1. On `/`, submit one synthetic lead through the form and confirm the latest result shows backend dedupe, mock CRM, and mock Slack outcomes.
+2. Paste a valid CSV row into the CSV textarea, select `Import rows`, and confirm the session dashboard records the CSV submission.
+3. Select a `.csv` file with the custom `Choose CSV file` picker and confirm the visible filename changes.
+4. Open `/admin/runs`, confirm seeded success, failed, queued, and retried runs render, then exercise status/source/search/date/owner/error-type filters.
+5. Open a run detail such as `run_demo_failed` and confirm the page stays read-only with sanitized failure detail only.
 
 ## Current Status
 
@@ -121,25 +129,27 @@ uv run alembic upgrade head
 uv run python -m backend.app.leads.demo_seed
 ```
 
-Start the backend and frontend in separate PowerShell windows:
+Start the backend and frontend in separate PowerShell windows for the final reviewer demo path:
 
 ```powershell
-uv run uvicorn backend.app.main:app --reload
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
 ```
 
 ```powershell
-$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
-$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
-pnpm --dir apps/web dev
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
 
-Open `http://localhost:3000/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/source/search/date/owner/error-type filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
+Open `http://127.0.0.1:3042/`. Confirm the public form has no internal phase label near the heading, the CSV picker is English/custom-styled, form submission works with synthetic data, CSV textarea import works, selected CSV filenames are visible, and desktop/mobile layouts have no obvious overlap.
+
+Open `http://127.0.0.1:3042/admin/runs`. Confirm the seeded success, failed, queued, and retried runs appear; status/source/search/date/owner/error-type filters update the URL; unmatched filters show the filtered empty state; selecting a run opens the same-page read-only detail panel; and a URL such as `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed` shows that the selected run is outside the current filtered list while keeping its detail visible.
 
 The admin screen is read-only. Interacting with `/admin/runs` should only issue local `GET` requests for run history and selected run detail through the Next.js API proxy. It must not expose retry, edit, delete, submit, resubmit, rerun, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
 
 ## Known Limitations And Local-Only Boundaries
 
-- Authentication, authorization, deployment configuration, and GitHub Actions are intentionally absent.
+- Real CRM integration, paid APIs, production authentication, deployment configuration, and GitHub Actions/CI are intentionally absent.
 - CRM, Slack, Google Sheets, OpenAI, paid APIs, production APIs, and webhooks are not required for the documented demo path and must not be called without explicit approval.
 - CRM upsert and Slack notification behavior is simulated by local mock adapters.
 - The public admin UI is read-only; manual retry exists as a backend-only local endpoint and is intentionally not exposed in `/admin/runs`.
@@ -153,11 +163,12 @@ Final local handoff checklist:
 1. From PowerShell at the repository root, run `docker compose up -d postgres`.
 2. Run `uv run alembic upgrade head`.
 3. Run `uv run python -m backend.app.leads.demo_seed`.
-4. Start the backend on a free local port with `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port <backend-port>`.
-5. Start the frontend in another PowerShell window with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the backend port.
-6. Open `/admin/runs`, confirm seeded rows render, status/source/search/date/owner/error-type filters work, selected detail opens, and the selected-run-hidden notice appears for a filtered-out selected run.
-7. Confirm the admin path uses local `GET` requests only and has no retry, edit, delete, submit, resubmit, rerun, worker, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
-8. Before any manual commit, review generated artifacts with `git status --short` and `git diff --stat`. TypeScript build-info, Next.js output, dependency folders, coverage, caches, logs, and local `.env` files are ignored and should not appear as source changes.
+4. Start the backend on `127.0.0.1:8028`, or another free local port if `8028` is busy.
+5. Start the frontend on `127.0.0.1:3042` with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the backend port.
+6. Open `/`, confirm public lead form submission, CSV textarea import, and custom CSV file selection all work with synthetic data.
+7. Open `/admin/runs`, confirm seeded rows render, status/source/search/date/owner/error-type filters work, selected detail opens, and the selected-run-hidden notice appears for a filtered-out selected run.
+8. Confirm the admin path uses local `GET` requests only and has no retry, edit, delete, submit, resubmit, rerun, worker, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
+9. Before any manual commit, review generated artifacts with `git status --short` and `git diff --stat`. TypeScript build-info, Next.js output, dependency folders, coverage, caches, logs, and local `.env` files are ignored and should not appear as source changes.
 
 ## Local Backend Setup
 

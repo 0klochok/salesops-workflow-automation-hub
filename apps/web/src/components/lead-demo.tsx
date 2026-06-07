@@ -172,28 +172,29 @@ export function LeadDemo() {
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-2 border-b border-border pb-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-normal text-foreground">
+      <div className="mx-auto flex min-w-0 w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+        <header className="flex min-w-0 flex-col gap-3 border-b border-border pb-5">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              <h1 className="min-w-0 text-2xl font-semibold tracking-normal text-foreground">
                 SalesOps Workflow Automation Hub
               </h1>
             </div>
             <Link
-              className="inline-flex min-h-9 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel hover:bg-muted"
+              className="inline-flex min-h-9 shrink-0 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               href="/admin/runs"
             >
               Admin runs
             </Link>
           </div>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            Submit synthetic leads to the deterministic backend, import local CSV
-            rows, and review current-session automation results.
+            Capture synthetic form and CSV leads, surface validation and dedupe
+            outcomes, and review mock CRM/Slack automation results in a
+            browser-session dashboard.
           </p>
         </header>
 
-        <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)]">
+        <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)]">
           <LeadForm
             form={form}
             onChange={setForm}
@@ -237,12 +238,12 @@ function LeadForm({
 
   return (
     <form
-      className="rounded-lg border border-border bg-surface p-4 shadow-panel"
+      className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel"
       onSubmit={onSubmit}
     >
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold">Lead intake form</h2>
-        <Badge tone="neutral">POST /leads/intake</Badge>
+        <Badge tone="neutral">Validated intake</Badge>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -385,10 +386,10 @@ function CsvImport({
   }
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-4 shadow-panel">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <section className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold">CSV import</h2>
-        <Badge tone="neutral">local parser</Badge>
+        <Badge tone="neutral">CSV upload</Badge>
       </div>
       <div className="space-y-4">
         <div className="space-y-1.5">
@@ -456,8 +457,12 @@ function CsvImport({
 function LatestResult({ record }: { record: SubmissionRecord | null }) {
   if (!record) {
     return (
-      <section className="rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground">
-        No local submissions yet.
+      <section className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm text-muted-foreground">
+        <h2 className="text-base font-semibold text-foreground">Latest result</h2>
+        <p className="mt-1">
+          Submit a lead or import CSV rows to see validation, dedupe, CRM, and
+          Slack outcomes here.
+        </p>
       </section>
     );
   }
@@ -466,7 +471,7 @@ function LatestResult({ record }: { record: SubmissionRecord | null }) {
 
   return (
     <section
-      className="rounded-lg border border-border bg-surface p-4 shadow-panel"
+      className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel"
       data-testid="latest-result"
     >
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -498,6 +503,11 @@ function SubmissionDashboard({ records }: { records: SubmissionRecord[] }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dedupeFilter, setDedupeFilter] = useState("all");
   const [query, setQuery] = useState("");
+  const hasActiveFilters =
+    sourceFilter !== "all" ||
+    statusFilter !== "all" ||
+    dedupeFilter !== "all" ||
+    query.trim().length > 0;
 
   const filteredRecords = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -531,9 +541,17 @@ function SubmissionDashboard({ records }: { records: SubmissionRecord[] }) {
       {
         header: "Lead",
         cell: ({ row }) => (
-          <div className="min-w-48">
-            <p className="font-medium">{row.original.payload.email}</p>
-            <p className="text-muted-foreground">
+          <div className="min-w-0">
+            <p
+              className="truncate font-medium"
+              title={row.original.payload.email}
+            >
+              {row.original.payload.email}
+            </p>
+            <p
+              className="truncate text-muted-foreground"
+              title={`${row.original.payload.company_name} / ${row.original.payload.company_domain}`}
+            >
               {row.original.payload.company_name} /{" "}
               {row.original.payload.company_domain}
             </p>
@@ -564,12 +582,12 @@ function SubmissionDashboard({ records }: { records: SubmissionRecord[] }) {
         header: "Details",
         cell: ({ row }) =>
           row.original.status === "success" && row.original.response ? (
-            <span>
+            <span className="break-words">
               {row.original.response.crm.action}; Slack{" "}
               {row.original.response.slack ? "sent" : "skipped"}
             </span>
           ) : (
-            <span>{formatApiError(row.original.error)}</span>
+            <span className="break-words">{formatApiError(row.original.error)}</span>
           ),
       },
     ],
@@ -583,15 +601,15 @@ function SubmissionDashboard({ records }: { records: SubmissionRecord[] }) {
   });
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-4 shadow-panel">
-      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
+    <section className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel">
+      <div className="mb-4 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
           <h2 className="text-base font-semibold">Session dashboard</h2>
           <p className="text-sm text-muted-foreground">
             {filteredRecords.length} of {records.length} local submissions shown.
           </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Filter by source">
             <Select
               id="filter_source"
@@ -634,14 +652,31 @@ function SubmissionDashboard({ records }: { records: SubmissionRecord[] }) {
             <Input
               id="filter_search"
               onChange={(event) => setQuery(event.target.value)}
+              placeholder="Email or company domain"
+              type="search"
               value={query}
             />
           </Field>
         </div>
       </div>
 
-      <div className="overflow-x-auto" data-testid="submission-table">
-        <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+      <div
+        aria-label="Scrollable session submissions table"
+        className="max-w-full overflow-x-auto rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        data-testid="submission-table"
+        role="region"
+        tabIndex={0}
+      >
+        <table className="w-full min-w-[960px] table-fixed border-collapse text-left text-sm">
+          <colgroup>
+            <col className="w-[145px]" />
+            <col className="w-[230px]" />
+            <col className="w-[95px]" />
+            <col className="w-[125px]" />
+            <col className="w-[135px]" />
+            <col className="w-[155px]" />
+            <col className="w-[220px]" />
+          </colgroup>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-border">
@@ -676,7 +711,13 @@ function SubmissionDashboard({ records }: { records: SubmissionRecord[] }) {
                   className="px-3 py-6 text-center text-muted-foreground"
                   colSpan={columns.length}
                 >
-                  No matching local submissions.
+                  {records.length === 0 ? (
+                    "Submit a lead or import CSV rows to populate this dashboard."
+                  ) : hasActiveFilters ? (
+                    "No submissions match the current filters."
+                  ) : (
+                    "No local submissions yet."
+                  )}
                 </td>
               </tr>
             )}

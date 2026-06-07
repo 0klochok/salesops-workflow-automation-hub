@@ -32,6 +32,30 @@ describe("LeadDemo", () => {
     vi.restoreAllMocks();
   });
 
+  it("renders portfolio-facing labels and helpful empty states", () => {
+    render(<LeadDemo />);
+
+    expect(
+      screen.getByText(/Capture synthetic form and CSV leads/)
+    ).toBeInTheDocument();
+    expect(screen.getByText("Validated intake")).toBeInTheDocument();
+    expect(screen.getByText("CSV upload")).toBeInTheDocument();
+    expect(screen.queryByText("POST /leads/intake")).not.toBeInTheDocument();
+    expect(screen.queryByText("local parser")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Submit a lead or import CSV rows to see validation/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Submit a lead or import CSV rows to populate this dashboard.")
+    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Email or company domain")).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", {
+        name: "Scrollable session submissions table",
+      })
+    ).toBeInTheDocument();
+  });
+
   it("renders schema-aligned fields and submits the expected JSON payload", async () => {
     const fetchMock = mockFetch(successResponse, 201);
 
@@ -159,6 +183,9 @@ describe("LeadDemo", () => {
     const table = within(screen.getByTestId("submission-table"));
     expect(table.getByText("manual@example.com")).toBeInTheDocument();
     expect(table.queryByText("ada@example.com")).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText("Filter by source"), "csv_upload");
+    expect(table.getByText("No submissions match the current filters.")).toBeInTheDocument();
   });
 });
 

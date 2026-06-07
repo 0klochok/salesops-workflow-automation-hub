@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-05 |
+| Last updated | 2026-06-07 |
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Local-first final readiness audit after documentation polish |
+| Current phase | Final portfolio demo readiness pass |
 
 ## 2. Operating Rules
 
@@ -453,6 +453,14 @@ On `/admin/runs`, verify:
 - no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered;
 - if the Next.js dev tools badge appears because the frontend is running under `next dev`, keep it closed or crop it out of final footage when desired. It is a local development indicator, not app behavior or an integration.
 
+On `/`, verify:
+
+- no old internal or demo-phase label is visible near the heading;
+- the public lead form submits a synthetic lead successfully and shows validation, dedupe, mock CRM, and mock Slack outcomes;
+- the CSV textarea import submits valid synthetic CSV rows and records them in the session dashboard;
+- the CSV file picker is English, custom styled, visually prominent, and updates the visible selected filename;
+- desktop and mobile widths render without overlapping controls or page-level horizontal overflow.
+
 ### Manual Browser Visual QA
 
 This is a manual browser visual QA procedure, not automated Playwright coverage. The repository does not provide a documented PowerShell-only browser automation script, and no Playwright dependency is required for this check.
@@ -470,6 +478,8 @@ Open the local pages listed in "Browser Pages To Show", including `/`, `/admin/r
 Visually pass the check only when:
 
 - the public lead form and CSV import render without layout overlap or unreadable controls;
+- no old internal/demo-phase label appears near the public-page heading;
+- the custom CSV picker is English, visually prominent, and shows selected filename state;
 - seeded success, failed, queued, and retried admin rows render with readable status, source, owner, error type, attempts, and failure-detail values;
 - status, source, search, date, owner, and error-type filters update the URL and visible rows correctly;
 - the filtered empty state, same-page detail panel, and selected-run-hidden notice are visible in the documented scenarios;
