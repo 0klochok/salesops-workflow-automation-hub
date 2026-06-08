@@ -4,16 +4,228 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-07 |
+| Last updated | 2026-06-08 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final portfolio demo readiness pass |
+| Current phase | RC repair: admin run details click regression |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, Vitest, typecheck, build, git diff checks, local Browser QA, and CSV file-selection QA passed |
-| Completion | Final portfolio demo readiness pass implemented and locally validated |
+| Quality gate status | Frontend lint, Vitest, typecheck, build, local browser QA, and git diff checks passed; backend checks skipped with written frontend-only reason |
+| Completion | Admin run details click regression repaired and locally validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-08 RC Repair: Admin Run Details Click Regression
+
+### Regression found
+
+After the persisted-runs table drag-to-scroll phase, a normal click on `View details` could fail to open run details. The regression was isolated to `apps/web/src/components/admin-run-history.tsx`; the button still called `onSelectRun(run.run_id)` directly, but the parent table scroller captured pointer state before proving the gesture was a real horizontal drag.
+
+### Root cause
+
+The table scroll container called `setPointerCapture()` on every primary non-touch `pointerdown`, including ordinary clicks that started on nested `View details` buttons. In real browser behavior that premature capture could retarget or swallow the nested button click before the button handler ran. Click suppression also lived on the parent capture path, so the safe behavior is to arm capture and suppression only after the existing horizontal drag threshold is crossed.
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Moved pointer capture from `pointerdown` into the true-drag threshold branch, leaving `preventDefault()` and click suppression limited to real horizontal drags; preserved touch ignore behavior, vertical-dominant movement behavior, the top rail, table layout, and the simple `View details` button handler |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added focused regression coverage for normal details clicks, ordinary button pointer presses not arming capture, left-mouse horizontal drag scrolling, drag-release click suppression, post-drag click recovery, and vertical-dominant movement not hijacking the table |
+| `STATE.md` | Recorded the regression, root cause, fix, validation, browser QA, skipped checks, and safety status for this frontend-only repair |
+
+No backend file, API route, schema, migration, dependency, environment variable, GitHub Actions workflow, real integration, or lead-demo file was changed by this repair. Existing unrelated dirty `apps/web/src/components/lead-demo.tsx` and `apps/web/src/components/lead-demo.test.tsx` changes were preserved.
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | The workspace sandbox still could not launch PowerShell (`CreateProcessAsUserW failed: 5`), so required local PowerShell commands were run through approved escalated local PowerShell |
+| Focused admin tests | pass | `pnpm --dir apps/web exec vitest run admin-run-history` passed: 1 test file, 30 tests |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files and 41 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build completed and generated `/admin/runs` plus local API proxy routes |
+| `git diff --check` | pass | Exit 0; Git printed existing LF-to-CRLF working-copy warnings |
+| `git diff --name-only` | pass | Listed `STATE.md`, `apps/web/src/components/admin-run-history.test.tsx`, `apps/web/src/components/admin-run-history.tsx`, and the pre-existing dirty lead-demo files |
+| `git diff --stat` | pass | Diff stat was produced; the total includes existing uncommitted admin and lead-demo changes from prior phases |
+| `git status --short --branch` | pass | Branch remained `main` with modified `STATE.md`, admin-run-history files, and existing lead-demo files; no staged files |
+
+### Browser QA details
+
+- Local setup: PostgreSQL was already healthy, Alembic reached head, demo seed wrote `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`, backend health passed on `127.0.0.1:8028`, `/admin/runs` returned HTTP 200 on `127.0.0.1:3042`, and the frontend proxy returned local run data.
+- Browser path: Browser plugin was not available; project Playwright was not installed (`Command "playwright" not found`), so QA used installed Chrome headless through Chrome DevTools Protocol without adding dependencies.
+- Desktop `1366x768`: `/admin/runs` loaded with title `SalesOps Workflow Automation Hub`; initial detail panel stayed idle; document/body scroll width was `1351` against viewport `1366`, so page-level horizontal overflow was false.
+- Desktop normal click: actual CDP mouse click on `View details for run_demo_failed` opened `/admin/runs?runId=run_demo_failed` and rendered the read-only `Run detail` panel.
+- Desktop drag behavior: Chrome CDP mouse events did not synthesize DOM pointer movement for this React pointer-handler path, so the drag check used DOM-dispatched `PointerEvent` gestures against the rendered component; table `scrollLeft` moved to `160`, and drag-release/click over `View details` left the detail panel idle.
+- Post-drag recovery: after the drag-release suppression check, a normal actual CDP mouse click on `View details for run_demo_failed` opened the run detail panel again.
+- Scroll sync: setting the top rail scroll and dispatching a scroll event synced the table/rail to `160`; setting table scroll and dispatching a scroll event synced both to `90`.
+- Mobile `390x844`: document/body scroll width stayed `390`, page-level horizontal overflow was false, table remained horizontally scrollable (`clientWidth=324`, `scrollWidth=1345`), computed `touch-action` was `auto`, vertical page scroll moved from `0` to `320`, and table/rail stayed synced at `scrollLeft=200`.
+- Console checks returned no warning/error entries; no framework overlay was detected.
+- Temporary backend/frontend listeners on ports `8028` and `3042` were stopped after QA; both ports were clear. PostgreSQL was left running as the existing local Docker service.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | skipped | This repair changed only frontend table interaction code, frontend component tests, and `STATE.md`; backend behavior, contracts, schemas, migrations, adapters, dependencies, and environment variables were intentionally untouched |
+| Browser plugin QA | skipped | Browser plugin tools were not available in this session |
+| Project Playwright QA | skipped | The project has no Playwright binary; no dependency install was requested or needed |
+| Native scrollbar thumb drag | limited | Chrome CDP does not directly drag the overlay/native scrollbar thumb in this setup; scroll-handler sync was verified by dispatching scroll events on both scrollers, and component tests cover the same sync path |
+| Real provider/API smoke | skipped | Explicitly forbidden and not relevant; all QA stayed local and mock-safe |
+| GitHub Actions/CI | skipped | Explicitly out of scope |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, dependency install, provider API call, or GitHub Actions change was run.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service call was made.
+- Temporary Chrome profile cleanup was attempted only under the OS temp directory; the Chrome process was stopped after QA.
+
+## Latest Update - 2026-06-08 RC UI Polish: Persisted Runs Table Drag-To-Scroll
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Added horizontal drag-to-scroll on the persisted-runs table scroll container using primary pointer events, a small drag threshold, click suppression after real drags, rail synchronization, `cursor-grab`/`cursor-grabbing` affordance, touch-pointer ignore behavior, and a no-dependency mouse fallback for jsdom/non-pointer environments |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added regression coverage for horizontal drag updating `scrollLeft`, syncing the top rail, ignoring non-primary/touch-like input, preserving drag cursor classes, suppressing accidental detail clicks after a drag, and keeping normal `View details` clicks working |
+| `STATE.md` | Recorded this frontend-only drag-to-scroll phase, validation, browser QA notes, skipped checks, limitations, and safety status |
+
+Existing table heading/cell alignment, top rail behavior, Source/Owner truncation titles, `View details` button styling, no page-level horizontal overflow posture, and read-only admin behavior were preserved. Backend behavior, API contracts, migrations, dependencies, provider logic, environment variables, deployment configuration, GitHub Actions, real integrations, CSV import, lead demo behavior, secrets, commits, pushes, branch operations, stashes, resets, rebases, and destructive Git actions were not changed.
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | Workspace sandbox still failed to launch PowerShell with `CreateProcessAsUserW failed: 5`; required PowerShell commands were rerun through approved escalated local PowerShell |
+| `pnpm --dir apps/web exec vitest run admin-run-history` | pass after test adjustment | Focused admin suite passed: 1 file and 25 tests; an initial focused run failed because jsdom did not provide reliable pointer-event coordinates, so the implementation kept pointer events for browsers and added a no-dependency mouse fallback for jsdom/non-pointer environments |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files and 36 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build completed and generated 8 routes including `/admin/runs` |
+| Local setup for browser QA | pass | `docker compose ps` showed PostgreSQL healthy, Alembic reached head, demo seed wrote `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`, backend health passed on `127.0.0.1:8028`, and `/admin/runs` returned HTTP 200 from frontend `127.0.0.1:3042` |
+| Browser QA | pass/limited | In-app Browser loaded `/admin/runs`, verified seeded rows render, top rail scroll syncs into the table, table drag works, drag gestures do not open details, `View details` opens the detail panel, desktop/mobile page overflow stayed false, mobile table remained usable, computed mobile `touch-action` stayed `auto`, and console warnings/errors were empty |
+| Final git checks | pass | `git status --short --branch`, `git diff --name-only`, `git diff --stat`, and `git diff --check` were run after this update; whitespace check exited 0 |
+
+### Browser QA details
+
+- Browser path: in-app Browser plugin was available and used.
+- Desktop `1366x768`: page title was `SalesOps Workflow Automation Hub`; seeded `run_demo_failed` content was present; table cursor was `grab`; rail `clientWidth=1181`, `scrollWidth=1340`; table `clientWidth=1182`, `scrollWidth=1345`; body scroll width was `1351` against viewport `1366`; page-level horizontal overflow was false.
+- Desktop top rail interaction: Browser horizontal scroll on the top rail moved both rail and table to `scrollLeft=159.2`.
+- Desktop table drag interaction: dragging the table horizontally changed table `scrollLeft`, left the detail panel idle, kept URL at `/admin/runs`, and did not create page-level horizontal overflow; clicking `View details for run_demo_failed` then opened `/admin/runs?runId=run_demo_failed` and rendered the read-only detail panel.
+- Mobile `390x844`: after scrolling to the table, body/document scroll width was `375` against viewport `390`; rail `clientWidth=308`, `scrollWidth=1340`; table `clientWidth=310`, `scrollWidth=1345`; table cursor was `grab`; computed `touch-action` was `auto`; table drag synced both rail and table to `scrollLeft=200`; page-level horizontal overflow remained false.
+- Console checks returned no warnings or errors on desktop and mobile.
+- Temporary backend/frontend listeners used for QA were stopped after verification; PostgreSQL was left running as the existing local Docker service.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | skipped | This phase changed only frontend table interaction code, frontend component tests, and `STATE.md`; backend behavior, API contracts, schemas, migrations, adapters, dependencies, and environment variables were intentionally untouched |
+| Native bottom scrollbar sync in Browser | limited | The in-app Browser wheel-style table scroll can mutate `scrollLeft` without firing React scroll handlers, and the overlay/native scrollbar thumb was not directly draggable through Browser automation; scroll-event synchronization remains covered by Vitest and should be spot-checked manually with a real mouse if desired |
+| Browser screenshots | limited | Browser screenshot capture timed out during desktop QA; DOM metrics, interactions, URL state, detail panel state, and console logs were captured instead |
+| Real provider/API smoke | skipped | Explicitly forbidden and not relevant; all QA stayed local and mock-safe |
+| GitHub Actions/CI | skipped | Explicitly out of scope |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, dependency install, provider API call, or GitHub Actions change was run.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service call was made.
+- Existing unrelated dirty `apps/web/src/components/lead-demo.tsx` and `apps/web/src/components/lead-demo.test.tsx` changes were preserved and not modified in this phase.
+
+## Latest Update - 2026-06-07 RC UI Polish: Persisted Runs Table Alignment And Top Scroll Rail
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Centered every persisted-runs table heading, centered Status/Source/Owner/Error type/Attempts/Failure detail/Detail cells, added a synchronized top horizontal scroll rail, and kept Source/Owner truncation titles plus centered `View details` actions |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added regression coverage for the top scroll rail, bidirectional scroll sync, centered headings, requested centered cells, and preserved Source/Owner truncation titles |
+| `STATE.md` | Recorded this frontend-only repair, validation, browser QA, skipped backend reason, and git safety status |
+
+CSV textarea behavior, backend behavior, API contracts, migrations, dependencies, provider logic, environment variables, deployment configuration, GitHub Actions, real integrations, secrets, commits, pushes, branch operations, stashes, resets, rebases, and destructive Git actions were not changed.
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| `pnpm --dir apps/web exec vitest run admin-run-history` | pass | Focused admin component suite passed: 1 file, 24 tests |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files and 35 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build completed, including `/admin/runs` |
+| Local setup for browser QA | pass | PostgreSQL was running, Alembic reached head, demo seed wrote the four synthetic run IDs, backend listened on `127.0.0.1:8028`, and frontend listened on `127.0.0.1:3042` |
+| Browser QA | pass | Chrome headless via CDP loaded `/admin/runs`, verified all headings centered, requested body cells centered, unrequested data cells left-aligned, Source/Owner titles and ellipsis preserved, `View details` loaded the detail panel, top rail and table scroller synced both directions, desktop/mobile page overflow stayed false, and console warnings/errors were empty |
+
+### Browser QA details
+
+- Browser plugin tools were not available in this session.
+- `pnpm --dir apps/web exec playwright --version` failed because the project has no Playwright binary; `npx` was available, but the local wrapper is a shell script and this task requires PowerShell-compatible commands.
+- Fallback used installed Chrome headless through Chrome DevTools Protocol without adding dependencies.
+- Desktop `1366x768`: rail `clientWidth=1180`, `scrollWidth=1340`; table `clientWidth=1182`, `scrollWidth=1345`; page/body scroll widths stayed within viewport; `View details` center delta was `0.25px`.
+- Mobile `390x844`: rail `clientWidth=322`, `scrollWidth=1340`; table `clientWidth=324`, `scrollWidth=1345`; page/body scroll widths were `390`; `View details` center delta was `0.25px`.
+- Temporary backend/frontend listeners on ports `8028` and `3042` were stopped after QA; temporary Chrome profile directories were removed.
+
+### Skipped checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | skipped | This repair changed only frontend table presentation, frontend tests, and `STATE.md`; backend behavior, API contracts, schemas, migrations, adapters, dependencies, and environment variables were intentionally untouched |
+| Real provider/API smoke | skipped | Explicitly forbidden and not relevant; all QA stayed local and mock-safe |
+| GitHub Actions/CI | skipped | Explicitly out of scope |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, dependency install, provider API call, or GitHub Actions change was run.
+
+## Latest Update - 2026-06-07 RC UI Polish: CSV Empty State And Admin Table Alignment
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/lead-demo.tsx` | Made the CSV textarea empty by default and kept the example CSV as placeholder-only guidance |
+| `apps/web/src/components/lead-demo.test.tsx` | Added regression coverage for the empty CSV textarea default and placeholder sample |
+| `apps/web/src/components/admin-run-history.tsx` | Widened the persisted runs table, added column separation/padding, truncated Source/Owner values with titles, and used tabular numeric styling for table timestamps/attempt counts |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added focused assertions for the wider table, Source/Owner separation, and Source/Owner truncation |
+
+Backend behavior, API contracts, migrations, dependencies, GitHub Actions, real integrations, secrets, staging, commits, pushes, branch operations, stashes, resets, rebases, and destructive cleanup were not changed.
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files and 35 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build completed and generated 8 routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | 48 tests passed with 1 existing FastAPI/Starlette deprecation warning |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | All checks passed |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | No issues in 26 source files |
+| Local smoke | pass | Alembic upgrade reached local PostgreSQL, demo seed wrote 4 synthetic runs, backend `/health` passed on `127.0.0.1:8028`, frontend `/` and `/admin/runs` returned HTTP 200 on `127.0.0.1:3042`, and one synthetic proxy `POST /api/leads/intake` returned `run_status=success` |
+| Browser QA | pass/limited | In-app Browser verified homepage load, empty CSV textarea default, placeholder sample, CSV textarea import, form submit, duplicate hint, `/admin/runs`, native date inputs with English app labels, clearer table separation, contained mobile overflow, and zero console warnings/errors; screenshot capture timed out and Browser file upload is not exposed, so CSV file upload remains covered by Vitest |
+| Forbidden-pattern scans | pass/limited | No live provider URLs or token-shaped secrets found; old phase-label and Cyrillic matches are historical `STATE.md`/path text, not app-owned active UI |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, dependency install, provider API call, or GitHub Actions change was run.
+- Temporary backend/frontend listeners started for QA on ports `8028` and `3042` were stopped after validation.
+
+### Remaining risks
+
+- Browser screenshot capture timed out through the Browser API, so visual proof is based on DOM, layout metrics, interactions, and console checks.
+- The Browser API does not expose a file upload method; selected-file loading is covered by existing Vitest upload coverage rather than live Browser file selection.
 
 ## Latest Update - 2026-06-07 Final Portfolio Demo Readiness Pass
 

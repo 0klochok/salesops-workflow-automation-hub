@@ -61,7 +61,7 @@ export function LeadDemo() {
   const [latestRecord, setLatestRecord] = useState<SubmissionRecord | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [csvSubmitting, setCsvSubmitting] = useState(false);
-  const [csvText, setCsvText] = useState(sampleCsv);
+  const [csvText, setCsvText] = useState("");
   const [csvErrors, setCsvErrors] = useState<CsvParseError[]>([]);
   const [csvSummary, setCsvSummary] = useState("");
   const [hydrated, setHydrated] = useState(false);
@@ -423,6 +423,7 @@ function CsvImport({
           <Textarea
             id="csv_input"
             onChange={(event) => onCsvTextChange(event.target.value)}
+            placeholder={sampleCsv}
             rows={8}
             value={csvText}
           />

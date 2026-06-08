@@ -49,6 +49,11 @@ describe("LeadDemo", () => {
       screen.getByText("Submit a lead or import CSV rows to populate this dashboard.")
     ).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Email or company domain")).toBeInTheDocument();
+    expect(screen.getByLabelText("CSV input")).toHaveValue("");
+    expect(screen.getByLabelText("CSV input")).toHaveAttribute(
+      "placeholder",
+      expect.stringContaining("email,first_name,last_name,company_name")
+    );
     expect(
       screen.getByRole("region", {
         name: "Scrollable session submissions table",

@@ -1,4 +1,10 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -235,9 +241,46 @@ describe("AdminRunHistory", () => {
     const tableScroller = screen.getByRole("region", {
       name: /scrollable run history table/i,
     });
+    const topScrollRail = screen.getByRole("region", {
+      name: /top horizontal scroll for persisted runs table/i,
+    });
     expect(tableScroller).toBe(screen.getByTestId("run-history-table"));
     expect(tableScroller).toHaveAttribute("tabindex", "0");
     expect(tableScroller).toHaveClass("overflow-x-auto", "focus-visible:ring-2");
+    expect(topScrollRail).toBe(screen.getByTestId("run-history-scroll-rail"));
+    expect(topScrollRail).toHaveAttribute("tabindex", "0");
+    expect(topScrollRail).toHaveClass("overflow-x-auto", "focus-visible:ring-2");
+    expect(topScrollRail.firstElementChild).toHaveClass("min-w-[1340px]");
+    expect(tableScroller.querySelector("table")).toHaveClass(
+      "min-w-[1340px]",
+      "table-fixed"
+    );
+    expect(screen.getByRole("columnheader", { name: "Source" })).toHaveClass(
+      "border-r",
+      "px-4"
+    );
+    expect(screen.getByRole("columnheader", { name: "Owner" })).toHaveClass(
+      "border-r",
+      "px-4"
+    );
+    expect(screen.getAllByRole("columnheader")).toHaveLength(11);
+    for (const heading of screen.getAllByRole("columnheader")) {
+      expect(heading).toHaveClass("text-center");
+    }
+    const failedRunRow = table.getByTitle("run_demo_failed").closest("tr");
+    expect(failedRunRow).not.toBeNull();
+    const cells = Array.from(failedRunRow?.querySelectorAll("td") ?? []);
+    for (const cellIndex of [3, 4, 5, 6, 7, 9, 10]) {
+      expect(cells[cellIndex]).toHaveClass("text-center");
+    }
+    expect(table.getByTitle("demo_form")).toHaveClass("truncate");
+    expect(table.getByTitle("Maya Patel")).toHaveClass("truncate");
+    topScrollRail.scrollLeft = 240;
+    fireEvent.scroll(topScrollRail);
+    expect(tableScroller.scrollLeft).toBe(240);
+    tableScroller.scrollLeft = 80;
+    fireEvent.scroll(tableScroller);
+    expect(topScrollRail.scrollLeft).toBe(80);
     expect(screen.getByTestId("run-detail-panel")).toHaveAttribute(
       "aria-label",
       "Run detail panel"
@@ -248,6 +291,330 @@ describe("AdminRunHistory", () => {
         accept: "application/json",
       },
       cache: "no-store",
+    });
+  });
+
+  it("supports horizontal table drag without hijacking details clicks", async () => {
+    const user = userEvent.setup();
+    const fetchMock = mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    const tableScroller = screen.getByTestId("run-history-table");
+    const topScrollRail = screen.getByTestId("run-history-scroll-rail");
+    const detailButton = screen.getByRole("button", {
+      name: /view details for run_demo_failed/i,
+    });
+
+    tableScroller.scrollLeft = 40;
+    fireEvent.mouseDown(tableScroller, {
+      button: 1,
+      buttons: 4,
+      clientX: 300,
+      clientY: 20,
+    });
+    fireEvent.mouseMove(tableScroller, {
+      buttons: 4,
+      clientX: 180,
+      clientY: 20,
+    });
+    expect(tableScroller.scrollLeft).toBe(40);
+
+    fireEvent.pointerDown(tableScroller, {
+      button: 0,
+      buttons: 1,
+      clientX: 300,
+      clientY: 20,
+      isPrimary: true,
+      pointerId: 2,
+      pointerType: "touch",
+    });
+    fireEvent.pointerMove(tableScroller, {
+      buttons: 1,
+      clientX: 180,
+      clientY: 20,
+      isPrimary: true,
+      pointerId: 2,
+      pointerType: "touch",
+    });
+    expect(tableScroller.scrollLeft).toBe(40);
+
+    tableScroller.scrollLeft = 120;
+    fireEvent.mouseDown(tableScroller, {
+      button: 0,
+      buttons: 1,
+      clientX: 300,
+      clientY: 20,
+    });
+    fireEvent.mouseMove(tableScroller, {
+      buttons: 1,
+      clientX: 240,
+      clientY: 22,
+    });
+
+    expect(tableScroller.scrollLeft).toBe(180);
+    expect(topScrollRail.scrollLeft).toBe(180);
+    expect(tableScroller).toHaveClass(
+      "cursor-grab",
+      "cursor-grabbing",
+      "select-none"
+    );
+
+    fireEvent.mouseUp(tableScroller, {
+      button: 0,
+      buttons: 0,
+      clientX: 240,
+      clientY: 22,
+    });
+    expect(tableScroller).toHaveClass("cursor-grab");
+    expect(tableScroller).not.toHaveClass("cursor-grabbing");
+
+    fireEvent.mouseDown(detailButton, {
+      button: 0,
+      buttons: 1,
+      clientX: 300,
+      clientY: 20,
+    });
+    fireEvent.mouseMove(tableScroller, {
+      buttons: 1,
+      clientX: 220,
+      clientY: 20,
+    });
+    fireEvent.mouseUp(tableScroller, {
+      button: 0,
+      buttons: 0,
+      clientX: 220,
+      clientY: 20,
+    });
+    fireEvent.click(detailButton);
+
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "Select a run to inspect read-only details."
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await user.click(detailButton);
+
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs/run_demo_failed", {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+      },
+      cache: "no-store",
+    });
+  });
+
+  it("opens run details on a normal View details click", async () => {
+    const user = userEvent.setup();
+    const fetchMock = mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs/run_demo_failed", {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+      },
+      cache: "no-store",
+    });
+  });
+
+  it("does not capture an ordinary View details press before a real drag", async () => {
+    const user = userEvent.setup();
+    const fetchMock = mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    const tableScroller = screen.getByTestId("run-history-table");
+    const pointerCapture = installPointerCaptureMocks(tableScroller);
+    const detailButton = screen.getByRole("button", {
+      name: /view details for run_demo_failed/i,
+    });
+
+    fireEvent.pointerDown(detailButton, {
+      button: 0,
+      buttons: 1,
+      clientX: 300,
+      clientY: 20,
+      isPrimary: true,
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+    expect(pointerCapture.setPointerCapture).not.toHaveBeenCalled();
+    fireEvent.pointerUp(detailButton, {
+      button: 0,
+      buttons: 0,
+      clientX: 300,
+      clientY: 20,
+      isPrimary: true,
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+
+    await user.click(detailButton);
+
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs/run_demo_failed", {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+      },
+      cache: "no-store",
+    });
+  });
+
+  it("scrolls horizontally after a real left-mouse drag and syncs the top rail", async () => {
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    const tableScroller = screen.getByTestId("run-history-table");
+    const topScrollRail = screen.getByTestId("run-history-scroll-rail");
+
+    tableScroller.scrollLeft = 120;
+    fireEvent.mouseDown(tableScroller, {
+      button: 0,
+      buttons: 1,
+      clientX: 300,
+      clientY: 20,
+    });
+    fireEvent.mouseMove(tableScroller, {
+      buttons: 1,
+      clientX: 240,
+      clientY: 22,
+    });
+
+    expect(tableScroller.scrollLeft).toBe(180);
+    expect(topScrollRail.scrollLeft).toBe(180);
+    expect(tableScroller).toHaveClass(
+      "cursor-grab",
+      "cursor-grabbing",
+      "select-none"
+    );
+
+    fireEvent.mouseUp(tableScroller, {
+      button: 0,
+      buttons: 0,
+      clientX: 240,
+      clientY: 22,
+    });
+
+    expect(tableScroller).toHaveClass("cursor-grab");
+    expect(tableScroller).not.toHaveClass("cursor-grabbing");
+  });
+
+  it("suppresses one click after drag release over View details and then allows the next click", async () => {
+    const user = userEvent.setup();
+    const fetchMock = mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    const tableScroller = screen.getByTestId("run-history-table");
+    const detailButton = screen.getByRole("button", {
+      name: /view details for run_demo_failed/i,
+    });
+
+    tableScroller.scrollLeft = 120;
+    fireEvent.mouseDown(tableScroller, {
+      button: 0,
+      buttons: 1,
+      clientX: 300,
+      clientY: 20,
+    });
+    fireEvent.mouseMove(tableScroller, {
+      buttons: 1,
+      clientX: 220,
+      clientY: 20,
+    });
+    fireEvent.mouseUp(detailButton, {
+      button: 0,
+      buttons: 0,
+      clientX: 220,
+      clientY: 20,
+    });
+    fireEvent.click(detailButton);
+
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "Select a run to inspect read-only details."
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await user.click(detailButton);
+
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs/run_demo_failed", {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+      },
+      cache: "no-store",
+    });
+  });
+
+  it("does not hijack vertical-dominant pointer movement", async () => {
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    const tableScroller = screen.getByTestId("run-history-table");
+
+    tableScroller.scrollLeft = 90;
+    fireEvent.mouseDown(tableScroller, {
+      button: 0,
+      buttons: 1,
+      clientX: 300,
+      clientY: 20,
+    });
+    fireEvent.mouseMove(tableScroller, {
+      buttons: 1,
+      clientX: 292,
+      clientY: 70,
+    });
+
+    expect(tableScroller.scrollLeft).toBe(90);
+    expect(tableScroller).not.toHaveClass("cursor-grabbing");
+
+    fireEvent.mouseUp(tableScroller, {
+      button: 0,
+      buttons: 0,
+      clientX: 292,
+      clientY: 70,
     });
   });
 
@@ -870,6 +1237,34 @@ function mockJsonResponse(body: unknown, status: number) {
     json: async () => body,
     text: async () => JSON.stringify(body),
   };
+}
+
+function installPointerCaptureMocks(element: HTMLElement) {
+  const capturedPointerIds = new Set<number>();
+  const setPointerCapture = vi.fn((pointerId: number) => {
+    capturedPointerIds.add(pointerId);
+  });
+  const hasPointerCapture = vi.fn((pointerId: number) =>
+    capturedPointerIds.has(pointerId)
+  );
+  const releasePointerCapture = vi.fn((pointerId: number) => {
+    capturedPointerIds.delete(pointerId);
+  });
+
+  Object.defineProperty(element, "setPointerCapture", {
+    configurable: true,
+    value: setPointerCapture,
+  });
+  Object.defineProperty(element, "hasPointerCapture", {
+    configurable: true,
+    value: hasPointerCapture,
+  });
+  Object.defineProperty(element, "releasePointerCapture", {
+    configurable: true,
+    value: releasePointerCapture,
+  });
+
+  return { hasPointerCapture, releasePointerCapture, setPointerCapture };
 }
 
 function urlFromFetchInput(input: RequestInfo | URL): string {

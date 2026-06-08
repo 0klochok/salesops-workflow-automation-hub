@@ -8,7 +8,10 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type UIEvent,
 } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +77,17 @@ const RUN_ERROR_TYPE_OPTIONS = [
   "unknown",
 ] as const satisfies readonly ErrorType[];
 const RUN_ERROR_TYPE_SET = new Set<string>(RUN_ERROR_TYPE_OPTIONS);
+const HORIZONTAL_DRAG_THRESHOLD_PX = 6;
+const MOUSE_DRAG_POINTER_ID = -1;
+
+type HorizontalDragState = {
+  pointerId: number | null;
+  startX: number;
+  startY: number;
+  startScrollLeft: number;
+  hasDragStarted: boolean;
+  suppressClick: boolean;
+};
 
 export function AdminRunHistory() {
   const pathname = usePathname();
@@ -468,6 +482,21 @@ function RunHistoryTable({
   onResetFilters: () => void;
   onSelectRun: (runId: string) => void;
 }) {
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const syncTableScrollPosition = useCallback((source: HTMLDivElement) => {
+    syncHorizontalScroll(source, topScrollRef.current);
+  }, []);
+  const dragScroll = useHorizontalDragScroll({
+    onScrollLeftChange: syncTableScrollPosition,
+  });
+  const handleTopScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
+    syncHorizontalScroll(event.currentTarget, tableScrollRef.current);
+  }, []);
+  const handleTableScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
+    syncTableScrollPosition(event.currentTarget);
+  }, [syncTableScrollPosition]);
+
   if (runs.length === 0) {
     if (hasActiveFilters) {
       return (
@@ -508,55 +537,85 @@ function RunHistoryTable({
       </div>
 
       <div
-        aria-label="Scrollable run history table"
-        className="max-w-full overflow-x-auto rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        data-testid="run-history-table"
+        aria-label="Top horizontal scroll for persisted runs table"
+        className="mb-2 max-w-full overflow-x-auto rounded-md border border-border/70 bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        data-testid="run-history-scroll-rail"
+        onScroll={handleTopScroll}
+        ref={topScrollRef}
         role="region"
         tabIndex={0}
       >
-        <table className="w-full min-w-[1100px] table-fixed border-collapse text-left text-sm">
+        <div aria-hidden="true" className="h-3 w-full min-w-[1340px]" />
+      </div>
+      <div
+        aria-label="Scrollable run history table"
+        className={cn(
+          "max-w-full cursor-grab overflow-x-auto rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          dragScroll.isDragging && "cursor-grabbing select-none"
+        )}
+        data-testid="run-history-table"
+        onClickCapture={dragScroll.handlers.onClickCapture}
+        onLostPointerCapture={dragScroll.handlers.onLostPointerCapture}
+        onMouseDown={dragScroll.handlers.onMouseDown}
+        onMouseLeave={dragScroll.handlers.onMouseLeave}
+        onMouseMove={dragScroll.handlers.onMouseMove}
+        onMouseUp={dragScroll.handlers.onMouseUp}
+        onPointerCancel={dragScroll.handlers.onPointerCancel}
+        onPointerDown={dragScroll.handlers.onPointerDown}
+        onPointerMove={dragScroll.handlers.onPointerMove}
+        onPointerUp={dragScroll.handlers.onPointerUp}
+        onScroll={handleTableScroll}
+        ref={tableScrollRef}
+        role="region"
+        tabIndex={0}
+      >
+        <table className="w-full min-w-[1340px] table-fixed border-collapse text-left text-sm">
           <colgroup>
-            <col className="w-[100px]" />
+            <col className="w-[125px]" />
+            <col className="w-[125px]" />
+            <col className="w-[180px]" />
+            <col className="w-[90px]" />
             <col className="w-[115px]" />
-            <col className="w-[160px]" />
-            <col className="w-[70px]" />
-            <col className="w-[70px]" />
-            <col className="w-[80px]" />
-            <col className="w-[70px]" />
-            <col className="w-[85px]" />
-            <col className="w-[135px]" />
-            <col className="w-[80px]" />
-            <col className="w-[128px]" />
+            <col className="w-[130px]" />
+            <col className="w-[105px]" />
+            <col className="w-[95px]" />
+            <col className="w-[150px]" />
+            <col className="w-[110px]" />
+            <col className="w-[120px]" />
           </colgroup>
           <thead>
             <tr className="border-b border-border">
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
                 Created
               </th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">Run</th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">Lead</th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
+                Run
+              </th>
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
+                Lead
+              </th>
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
                 Status
               </th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
                 Source
               </th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
                 Owner
               </th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
                 Error type
               </th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
                 Attempts
               </th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
                 Latest attempt
               </th>
-              <th className="px-3 py-2 font-semibold text-muted-foreground">
+              <th className="border-r border-border/70 px-4 py-2 text-center font-semibold text-muted-foreground">
                 Failure detail
               </th>
-              <th className="px-2 py-2 text-center font-semibold text-muted-foreground">
+              <th className="px-3 py-2 text-center font-semibold text-muted-foreground">
                 Detail
               </th>
             </tr>
@@ -564,13 +623,13 @@ function RunHistoryTable({
           <tbody>
             {runs.map((run) => (
               <tr className="border-b border-border align-top" key={run.run_id}>
-                <td className="px-3 py-3">
+                <td className="border-r border-border/70 px-4 py-3 tabular-nums">
                   <p>{formatTimestamp(run.created_at)}</p>
                   <p className="text-muted-foreground">
                     Updated {formatTimestamp(run.updated_at)}
                   </p>
                 </td>
-                <td className="px-3 py-3">
+                <td className="border-r border-border/70 px-4 py-3">
                   <TruncatedTableText
                     className="font-mono text-xs font-medium text-foreground"
                     value={run.run_id}
@@ -580,7 +639,7 @@ function RunHistoryTable({
                     value={run.lead_id}
                   />
                 </td>
-                <td className="px-3 py-3">
+                <td className="border-r border-border/70 px-4 py-3">
                   <TruncatedTableText
                     className="font-medium"
                     value={run.email ?? run.lead_id}
@@ -598,14 +657,18 @@ function RunHistoryTable({
                     />
                   ) : null}
                 </td>
-                <td className="px-3 py-3">
+                <td className="border-r border-border/70 px-4 py-3 text-center">
                   <Badge tone={runStatusTone(run.run_status)}>
                     {run.run_status}
                   </Badge>
                 </td>
-                <td className="px-3 py-3">{run.source}</td>
-                <td className="px-3 py-3">{run.owner ?? "Unassigned"}</td>
-                <td className="px-3 py-3">
+                <td className="border-r border-border/70 px-4 py-3 text-center">
+                  <TruncatedTableText value={run.source} />
+                </td>
+                <td className="border-r border-border/70 px-4 py-3 text-center">
+                  <TruncatedTableText value={run.owner ?? "Unassigned"} />
+                </td>
+                <td className="border-r border-border/70 px-4 py-3 text-center">
                   {getRunErrorType(run) ? (
                     <Badge tone={errorTypeTone(getRunErrorType(run))}>
                       {getRunErrorType(run)}
@@ -614,8 +677,10 @@ function RunHistoryTable({
                     <span className="text-muted-foreground">None</span>
                   )}
                 </td>
-                <td className="px-3 py-3">{run.attempt_count}</td>
-                <td className="px-3 py-3">
+                <td className="border-r border-border/70 px-4 py-3 text-center tabular-nums">
+                  {run.attempt_count}
+                </td>
+                <td className="border-r border-border/70 px-4 py-3">
                   {run.latest_attempt ? (
                     <div className="min-w-0 max-w-md">
                       <p>
@@ -637,7 +702,7 @@ function RunHistoryTable({
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-3">
+                <td className="border-r border-border/70 px-4 py-3 text-center">
                   <Badge
                     tone={
                       run.failure_detail_available ? "warning" : "neutral"
@@ -646,15 +711,17 @@ function RunHistoryTable({
                     {run.failure_detail_available ? "Available" : "None"}
                   </Badge>
                 </td>
-                <td className="px-2 py-3 text-center align-middle">
-                  <Button
-                    aria-label={`View details for ${run.run_id}`}
-                    className="h-10 min-w-[7rem] whitespace-nowrap px-4"
-                    onClick={() => onSelectRun(run.run_id)}
-                    variant="secondary"
-                  >
-                    View details
-                  </Button>
+                <td className="px-3 py-3 text-center align-middle">
+                  <div className="flex justify-center">
+                    <Button
+                      aria-label={`View details for ${run.run_id}`}
+                      className="h-10 min-w-[7rem] whitespace-nowrap px-4"
+                      onClick={() => onSelectRun(run.run_id)}
+                      variant="secondary"
+                    >
+                      View details
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -663,6 +730,257 @@ function RunHistoryTable({
       </div>
     </section>
   );
+}
+
+function syncHorizontalScroll(
+  source: HTMLDivElement,
+  target: HTMLDivElement | null
+) {
+  if (target && target.scrollLeft !== source.scrollLeft) {
+    target.scrollLeft = source.scrollLeft;
+  }
+}
+
+function useHorizontalDragScroll({
+  onScrollLeftChange,
+}: {
+  onScrollLeftChange: (source: HTMLDivElement) => void;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStateRef = useRef<HorizontalDragState>(
+    createHorizontalDragState()
+  );
+  const suppressClickResetRef = useRef<number | null>(null);
+
+  const clearSuppressClickReset = useCallback(() => {
+    if (suppressClickResetRef.current !== null) {
+      window.clearTimeout(suppressClickResetRef.current);
+      suppressClickResetRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearSuppressClickReset, [clearSuppressClickReset]);
+
+  const scheduleClickSuppressionReset = useCallback(() => {
+    clearSuppressClickReset();
+    suppressClickResetRef.current = window.setTimeout(() => {
+      dragStateRef.current.suppressClick = false;
+      suppressClickResetRef.current = null;
+    }, 250);
+  }, [clearSuppressClickReset]);
+
+  const finishDrag = useCallback(
+    (target: HTMLDivElement) => {
+      const dragState = dragStateRef.current;
+      const pointerId = dragState.pointerId;
+      const shouldSuppressClick = dragState.hasDragStarted;
+
+      if (
+        pointerId !== null &&
+        typeof target.hasPointerCapture === "function" &&
+        target.hasPointerCapture(pointerId)
+      ) {
+        target.releasePointerCapture(pointerId);
+      }
+
+      dragStateRef.current = {
+        ...createHorizontalDragState(),
+        suppressClick: shouldSuppressClick,
+      };
+      setIsDragging(false);
+
+      if (shouldSuppressClick) {
+        scheduleClickSuppressionReset();
+      }
+    },
+    [scheduleClickSuppressionReset]
+  );
+
+  const updateDragPosition = useCallback(
+    (
+      target: HTMLDivElement,
+      clientX: number,
+      clientY: number,
+      preventDefault: () => void
+    ) => {
+      const dragState = dragStateRef.current;
+      const deltaX = clientX - dragState.startX;
+      const deltaY = clientY - dragState.startY;
+
+      if (!dragState.hasDragStarted) {
+        if (
+          Math.abs(deltaX) < HORIZONTAL_DRAG_THRESHOLD_PX ||
+          Math.abs(deltaX) < Math.abs(deltaY)
+        ) {
+          return;
+        }
+
+        dragState.hasDragStarted = true;
+        dragState.suppressClick = true;
+        if (
+          dragState.pointerId !== null &&
+          dragState.pointerId !== MOUSE_DRAG_POINTER_ID &&
+          typeof target.setPointerCapture === "function"
+        ) {
+          target.setPointerCapture(dragState.pointerId);
+        }
+        setIsDragging(true);
+      }
+
+      preventDefault();
+      target.scrollLeft = dragState.startScrollLeft - deltaX;
+      onScrollLeftChange(target);
+    },
+    [onScrollLeftChange]
+  );
+
+  const handlePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (
+        event.isPrimary === false ||
+        event.button !== 0 ||
+        event.pointerType === "touch"
+      ) {
+        return;
+      }
+
+      clearSuppressClickReset();
+      dragStateRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        startScrollLeft: event.currentTarget.scrollLeft,
+        hasDragStarted: false,
+        suppressClick: false,
+      };
+    },
+    [clearSuppressClickReset]
+  );
+
+  const handlePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const dragState = dragStateRef.current;
+      if (dragState.pointerId !== event.pointerId) {
+        return;
+      }
+
+      updateDragPosition(event.currentTarget, event.clientX, event.clientY, () =>
+        event.preventDefault()
+      );
+    },
+    [updateDragPosition]
+  );
+
+  const handlePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (dragStateRef.current.pointerId === event.pointerId) {
+        finishDrag(event.currentTarget);
+      }
+    },
+    [finishDrag]
+  );
+
+  const handlePointerEnd = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (dragStateRef.current.pointerId === event.pointerId) {
+        finishDrag(event.currentTarget);
+      }
+    },
+    [finishDrag]
+  );
+
+  const handleClickCapture = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      if (!dragStateRef.current.suppressClick) {
+        return;
+      }
+
+      clearSuppressClickReset();
+      dragStateRef.current.suppressClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+      event.nativeEvent.stopImmediatePropagation();
+    },
+    [clearSuppressClickReset]
+  );
+
+  const handleMouseDown = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      if (supportsPointerEvents() || event.button !== 0) {
+        return;
+      }
+
+      clearSuppressClickReset();
+      dragStateRef.current = {
+        pointerId: MOUSE_DRAG_POINTER_ID,
+        startX: event.clientX,
+        startY: event.clientY,
+        startScrollLeft: event.currentTarget.scrollLeft,
+        hasDragStarted: false,
+        suppressClick: false,
+      };
+    },
+    [clearSuppressClickReset]
+  );
+
+  const handleMouseMove = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      if (
+        supportsPointerEvents() ||
+        dragStateRef.current.pointerId !== MOUSE_DRAG_POINTER_ID
+      ) {
+        return;
+      }
+
+      updateDragPosition(event.currentTarget, event.clientX, event.clientY, () =>
+        event.preventDefault()
+      );
+    },
+    [updateDragPosition]
+  );
+
+  const handleMouseEnd = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      if (
+        !supportsPointerEvents() &&
+        dragStateRef.current.pointerId === MOUSE_DRAG_POINTER_ID
+      ) {
+        finishDrag(event.currentTarget);
+      }
+    },
+    [finishDrag]
+  );
+
+  return {
+    isDragging,
+    handlers: {
+      onClickCapture: handleClickCapture,
+      onLostPointerCapture: handlePointerEnd,
+      onMouseDown: handleMouseDown,
+      onMouseLeave: handleMouseEnd,
+      onMouseMove: handleMouseMove,
+      onMouseUp: handleMouseEnd,
+      onPointerCancel: handlePointerEnd,
+      onPointerDown: handlePointerDown,
+      onPointerMove: handlePointerMove,
+      onPointerUp: handlePointerUp,
+    },
+  };
+}
+
+function createHorizontalDragState(): HorizontalDragState {
+  return {
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startScrollLeft: 0,
+    hasDragStarted: false,
+    suppressClick: false,
+  };
+}
+
+function supportsPointerEvents(): boolean {
+  return typeof window !== "undefined" && "PointerEvent" in window;
 }
 
 function TruncatedTableText({
