@@ -439,6 +439,38 @@ describe("AdminRunHistory", () => {
     });
   });
 
+  it("opens run details from keyboard activation on View details", async () => {
+    const user = userEvent.setup();
+    const fetchMock = mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    const detailButton = screen.getByRole("button", {
+      name: /view details for run_demo_failed/i,
+    });
+    detailButton.focus();
+
+    expect(detailButton).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs/run_demo_failed", {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+      },
+      cache: "no-store",
+    });
+  });
+
   it("does not capture an ordinary View details press before a real drag", async () => {
     const user = userEvent.setup();
     const fetchMock = mockFetchByUrl({

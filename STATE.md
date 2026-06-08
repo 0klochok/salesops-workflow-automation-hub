@@ -9,11 +9,75 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | RC repair: admin run details click regression |
+| Current phase | Final UX/regression hardening: admin persisted runs table |
 | Overall status | on-track |
 | Quality gate status | Frontend lint, Vitest, typecheck, build, local browser QA, and git diff checks passed; backend checks skipped with written frontend-only reason |
-| Completion | Admin run details click regression repaired and locally validated |
+| Completion | Persisted runs table interaction model rechecked, keyboard regression coverage added, and local QA passed |
 | Main blocker | none |
+
+## Latest Update - 2026-06-08 Final UX/Regression Hardening: Admin Persisted Runs Table
+
+### What was checked
+
+- `apps/web/src/components/admin-run-history.tsx` was inspected for the persisted-runs table interaction model after the drag-to-scroll and `View details` click repair.
+- `apps/web/src/components/admin-run-history.test.tsx` was inspected for focused regression coverage around normal details clicks, real horizontal left-mouse drag, drag-release click suppression, post-drag click recovery, vertical-dominant movement, touch-pointer ignore behavior, and table/rail scroll sync.
+- The component code already scoped drag behavior to primary non-touch left-pointer input, delayed pointer capture until the horizontal threshold is crossed, avoided `preventDefault()` for vertical-dominant motion, kept touch behavior natural by ignoring touch pointer gestures, and left `View details` as a native button.
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.test.tsx` | Added one focused regression test proving keyboard activation on `View details` still opens the selected run detail, covering the remaining accessibility edge case without changing component behavior |
+| `STATE.md` | Recorded this final frontend-only hardening pass, validation, browser QA, skipped checks, and cleanup status |
+
+No backend file, API route, schema, migration, dependency, environment variable, GitHub Actions workflow, real integration, or lead-demo file was changed. `apps/web/src/components/admin-run-history.tsx` was inspected but not edited.
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | The workspace sandbox could not launch PowerShell (`CreateProcessAsUserW failed: 5`), so required local commands were run through approved escalated local PowerShell |
+| `pnpm --dir apps/web exec vitest run admin-run-history` | pass | 1 test file and 31 tests passed |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files and 42 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build completed and generated `/admin/runs` plus local API proxy routes |
+| `git diff --check` | pass | Exit 0 after this update |
+| `git status --short --branch` | pass | Branch remained `main`; changed files are limited to `STATE.md` and `apps/web/src/components/admin-run-history.test.tsx`; no staged files |
+
+### Browser QA details
+
+- Browser path: Browser plugin tools were not available; project Playwright was not installed (`Command "playwright" not found`); Node REPL did not have Playwright; QA used installed Chrome headless through Chrome DevTools Protocol without adding dependencies.
+- Local setup: the existing frontend listener on `3042` initially served a stale Next dev 500 error and exited before it could be stopped; the backend listener on `8028` later disappeared during setup. PostgreSQL was already healthy, Alembic reached head, deterministic demo seed wrote `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`, then temporary backend/frontend listeners were started on `127.0.0.1:8028` and `127.0.0.1:3042`.
+- Desktop `1366x768`: `/admin/runs` loaded with title `SalesOps Workflow Automation Hub`; the page was not blank; no Next/runtime overlay appeared; page-level horizontal overflow was false (`scrollWidth=1351`, viewport `1366`).
+- Normal `View details` click opened the read-only detail panel and updated the URL with the clicked run ID.
+- Horizontal left-mouse drag over the table moved table `scrollLeft` from `120` to `163`; the top rail synced within a small browser scroll-limit rounding tolerance (`160`), and the detail panel stayed idle.
+- Drag-release over `View details` did not open details; the next normal click opened details again.
+- Vertical-dominant movement left table `scrollLeft` unchanged at `90`, did not add the dragging class, and did not open details.
+- Scrollbar/table sync passed both directions: rail `160` synced table `160`, and table `90` synced rail `90`.
+- Mobile `390x844`: page-level horizontal overflow was false (`scrollWidth=390`, viewport `390`), the table remained horizontally scrollable (`clientWidth=324`, `scrollWidth=1345`), computed `touch-action` was `auto`, touch vertical scroll moved the page from `0` to `395`, and table/rail sync stayed usable at `scrollLeft=200`.
+- Console warning/error capture returned no entries; screenshots were captured under the OS temp directory for desktop and mobile evidence.
+- Temporary Chrome profiles were removed after QA. The temporary backend/frontend listeners on `8028` and `3042` were stopped after verification; both ports were clear. PostgreSQL was left running as the existing local Docker service.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | skipped | This pass changed only a frontend component test and `STATE.md`; backend behavior, contracts, schemas, migrations, adapters, dependencies, and environment variables were intentionally untouched |
+| Browser plugin QA | skipped | Browser plugin tools were not available in this session |
+| Project Playwright QA | skipped | The project has no Playwright binary; no dependency install was requested or needed |
+| Native scrollbar thumb drag | limited | Chrome CDP does not directly drag the native scrollbar thumb; scroll-handler sync was verified by scroll events on both scrollers and by real table drag movement |
+| Real provider/API smoke | skipped | Explicitly forbidden and not relevant; all QA stayed local and mock-safe |
+| GitHub Actions/CI | skipped | Explicitly out of scope |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, dependency install, provider API call, or GitHub Actions change was run.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service call was made.
+- No lead-demo file was edited.
 
 ## Latest Update - 2026-06-08 RC Repair: Admin Run Details Click Regression
 
