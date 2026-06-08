@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { formatApiError } from "@/lib/format";
+import { formatApiError, leadSourceLabel } from "@/lib/format";
 import { fetchRunDetail, fetchRunHistory } from "@/lib/run-history-api";
 import { leadSources } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -371,7 +371,7 @@ function RunHistoryFiltersForm({
             <option value="all">All sources</option>
             {sourceFilterOptions.map((source) => (
               <option key={source} value={source}>
-                {source}
+                {leadSourceLabel(source)}
               </option>
             ))}
           </Select>
@@ -663,7 +663,7 @@ function RunHistoryTable({
                   </Badge>
                 </td>
                 <td className="border-r border-border/70 px-4 py-3 text-center">
-                  <TruncatedTableText value={run.source} />
+                  <TruncatedTableText value={leadSourceLabel(run.source)} />
                 </td>
                 <td className="border-r border-border/70 px-4 py-3 text-center">
                   <TruncatedTableText value={run.owner ?? "Unassigned"} />
@@ -822,7 +822,12 @@ function useHorizontalDragScroll({
           dragState.pointerId !== MOUSE_DRAG_POINTER_ID &&
           typeof target.setPointerCapture === "function"
         ) {
-          target.setPointerCapture(dragState.pointerId);
+          try {
+            target.setPointerCapture(dragState.pointerId);
+          } catch {
+            // Synthetic pointer events used by browser smoke checks may not
+            // create an active browser pointer; dragging can continue without capture.
+          }
         }
         setIsDragging(true);
       }
@@ -1089,7 +1094,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
                 ["Owner", detail.owner ?? "Unassigned"],
                 ["Error type", detail.error_type ?? "None"],
                 ["Lead ID", detail.lead_id],
-                ["Source", detail.source],
+                ["Source", leadSourceLabel(detail.source)],
                 ["Created", formatTimestamp(detail.created_at)],
                 ["Updated", formatTimestamp(detail.updated_at)],
                 [

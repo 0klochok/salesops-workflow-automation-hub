@@ -9,11 +9,84 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final UX/regression hardening: admin persisted runs table |
+| Current phase | Portfolio release polish and final local smoke pass |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, Vitest, typecheck, build, local browser QA, and git diff checks passed; backend checks skipped with written frontend-only reason |
-| Completion | Persisted runs table interaction model rechecked, keyboard regression coverage added, and local QA passed |
+| Quality gate status | Frontend lint, Vitest, typecheck, build, local Chrome/CDP smoke, and final git checks passed; backend checks skipped with written frontend-only reason |
+| Completion | Main-page source labels polished, admin source labels polished, pointer-capture smoke regression hardened, and local QA passed |
 | Main blocker | none |
+
+## Latest Update - 2026-06-08 Portfolio Release Polish and Final Local Smoke Pass
+
+### Phase summary
+
+This was a controlled frontend-only release-polish and local smoke pass for the reviewer demo path at `http://127.0.0.1:3042/` and `http://127.0.0.1:3042/admin/runs`.
+
+Small polish issues found and fixed:
+
+- Source dropdowns and source table/detail cells rendered raw enum text such as `demo_form`, `csv_upload`, and `manual`. They now display reviewer-facing labels while keeping the same submitted values, query params, and backend contract.
+- A synthetic Chrome/CDP drag smoke check exposed a `setPointerCapture` `NotFoundError` when the browser event was not an active pointer. The table now continues dragging without capture in that edge case, preventing console errors during smoke checks.
+
+No backend file, API route, schema, migration, dependency, environment variable, GitHub Actions workflow, real integration, secret, commit, push, or staging action was changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/lib/format.ts` | Added `leadSourceLabel()` for shared reviewer-facing lead source labels |
+| `apps/web/src/components/lead-demo.tsx` | Displayed source labels in the main form, session dashboard, and source filter while preserving raw values |
+| `apps/web/src/components/lead-demo.test.tsx` | Added assertions that source controls show English labels and keep API values |
+| `apps/web/src/components/admin-run-history.tsx` | Displayed source labels in the admin filter, run table, and detail panel; guarded pointer capture during drag |
+| `apps/web/src/components/admin-run-history.test.tsx` | Updated source-label expectations and added pointer-capture failure regression coverage |
+| `STATE.md` | Recorded this final polish/smoke pass, validation, manual QA, skipped checks, and safety status |
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | The workspace sandbox still could not launch PowerShell (`CreateProcessAsUserW failed: 5`), so required local commands were run through approved escalated local PowerShell |
+| Starting `git status --short --branch` | pass | `## main` at phase start |
+| Post-change `git status --short --branch` | pass | Branch `main`; modified files limited to frontend source/test files before this `STATE.md` update |
+| Focused regression tests | pass after test selector/helper adjustments | `pnpm --dir apps/web exec vitest run lead-demo admin-run-history`: 2 test files and 39 tests passed |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files and 43 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build compiled successfully and generated 8 routes including `/` and `/admin/runs` |
+| Final `git diff --check` | pass | Exit 0; Git printed LF-to-CRLF working-copy warnings for the touched files only |
+| Final `git status --short --branch` | pass | Branch `main`; modified files are `STATE.md`, `admin-run-history` source/test, `lead-demo` source/test, and `apps/web/src/lib/format.ts`; no staged files |
+
+### Browser QA details
+
+- Browser path: direct Browser plugin tools were not exposed in this session; project Playwright was not installed and was not added. QA used installed Chrome headless through Chrome DevTools Protocol from PowerShell, with no dependency install and no external service calls.
+- Local setup: PostgreSQL was already healthy, Alembic reached head, the deterministic demo seed inserted `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`, then temporary backend/frontend listeners were started on `127.0.0.1:8028` and `127.0.0.1:3042`.
+- Main page desktop `1366x768`: page loaded at `/`, title and H1 were `SalesOps Workflow Automation Hub`, no internal phase/API/parser label appeared near the heading, source options displayed `Demo form`, `CSV upload`, and `Manual entry`, and page-level horizontal overflow was false (`scrollWidth=1351`, viewport `1366`).
+- CSV controls: custom `Choose CSV file` control rendered with initial `No file selected`; selecting `agency-leads.csv` updated the visible filename and populated the CSV textarea; `Import rows` submitted the file content and showed `1 of 1 rows submitted locally.`
+- Main form flow: a synthetic lead submission returned a successful latest result with backend dedupe, mock CRM, and mock Slack outcomes; no page-level overflow appeared after flows.
+- Admin desktop `1366x768`: `/admin/runs` loaded, `run_demo_failed` was present, source labels were English-facing, raw source enum cells were absent from the table, the table had 11 headers and 11 cells in the first row, and page-level overflow was false (`scrollWidth=1351`, viewport `1366`).
+- Admin detail and keyboard: focusing `View details for run_demo_failed` and activating from keyboard opened the detail panel.
+- Admin drag and sync: top rail `scrollLeft=160` synced the table to `160`; table `scrollLeft=90` synced the rail to `90`; horizontal drag moved table scroll from `120` to `163`; drag-release over `View details` did not open details; the next normal click opened the read-only detail panel.
+- Admin mobile `390x844`: page-level horizontal overflow was false (`scrollWidth=390`, viewport `390`); the table remained horizontally scrollable (`clientWidth=324`, `scrollWidth=1345`); rail/table sync stayed aligned at `scrollLeft=200`; 11 headers and 11 row cells remained present.
+- Console capture: final main desktop, admin desktop, admin mobile, and CDP warning/error event captures were empty.
+- Cleanup: temporary backend/frontend/Chrome listeners were stopped; ports `3042`, `8028`, and `9223` were clear; the temporary Chrome profile under the OS temp directory was removed. PostgreSQL was left running as the existing local Docker service.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | skipped | This phase changed only frontend source/tests and `STATE.md`; backend behavior, contracts, schemas, migrations, adapters, dependencies, and environment variables were intentionally untouched |
+| Browser plugin direct QA | skipped/fallback used | Direct Browser MCP tools were not exposed; Chrome/CDP was used instead |
+| Project Playwright QA | skipped | Playwright is not installed in this project, and the phase explicitly says not to introduce it unless already configured |
+| Real provider/API smoke | skipped | Explicitly forbidden and not relevant; all traffic stayed local and mock-safe |
+| GitHub Actions/CI | skipped | Explicitly out of scope; no workflow files were created or modified |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No dependency install, upgrade, removal, or lockfile change was performed.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external service call was made.
+- Forbidden-pattern checks for changed files are recorded in the final response for this phase.
 
 ## Latest Update - 2026-06-08 Final UX/Regression Hardening: Admin Persisted Runs Table
 

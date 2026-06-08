@@ -1,4 +1,4 @@
-import type { ApiErrorResponse, SubmissionRecord } from "./types";
+import type { ApiErrorResponse, LeadSource, SubmissionRecord } from "./types";
 
 export function formatApiError(error: ApiErrorResponse | undefined): string {
   if (!error) {
@@ -31,6 +31,16 @@ export function statusLabel(record: SubmissionRecord): string {
     return "Validation failed";
   }
   return "Error";
+}
+
+export function leadSourceLabel(source: LeadSource): string {
+  if (source === "demo_form") {
+    return "Demo form";
+  }
+  if (source === "csv_upload") {
+    return "CSV upload";
+  }
+  return "Manual entry";
 }
 
 function appendSuggestedAction(message: string, suggestedAction: string | undefined): string {

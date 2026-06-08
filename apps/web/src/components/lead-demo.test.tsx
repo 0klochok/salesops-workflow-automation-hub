@@ -39,7 +39,24 @@ describe("LeadDemo", () => {
       screen.getByText(/Capture synthetic form and CSV leads/)
     ).toBeInTheDocument();
     expect(screen.getByText("Validated intake")).toBeInTheDocument();
-    expect(screen.getByText("CSV upload")).toBeInTheDocument();
+    expect(screen.getAllByText("CSV upload").length).toBeGreaterThan(0);
+    expect(
+      within(screen.getByLabelText(/Source/)).getByRole("option", {
+        name: "Demo form",
+      })
+    ).toHaveValue("demo_form");
+    expect(
+      within(screen.getByLabelText(/Source/)).getByRole("option", {
+        name: "CSV upload",
+      })
+    ).toHaveValue("csv_upload");
+    expect(
+      within(screen.getByLabelText(/Source/)).getByRole("option", {
+        name: "Manual entry",
+      })
+    ).toHaveValue("manual");
+    expect(screen.queryByRole("option", { name: "demo_form" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "csv_upload" })).not.toBeInTheDocument();
     expect(screen.queryByText("POST /leads/intake")).not.toBeInTheDocument();
     expect(screen.queryByText("local parser")).not.toBeInTheDocument();
     expect(

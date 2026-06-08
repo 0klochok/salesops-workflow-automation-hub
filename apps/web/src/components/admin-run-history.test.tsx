@@ -218,7 +218,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByText("Pipeline Labs")).toBeInTheDocument();
     expect(screen.getByText("pipelinelabs.example")).toBeInTheDocument();
     expect(table.getByText("Maya Patel")).toBeInTheDocument();
-    expect(table.getByText("demo_form")).toBeInTheDocument();
+    expect(table.getByText("Demo form")).toBeInTheDocument();
     expect(screen.getByText("Attempt 2: failed")).toBeInTheDocument();
     expect(screen.getByText("Error type: adapter")).toBeInTheDocument();
     expect(
@@ -229,7 +229,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByText("Sofia Chen")).toBeInTheDocument();
     expect(screen.getByText("Northstar Growth")).toBeInTheDocument();
     expect(table.getByText("Avery Brooks")).toBeInTheDocument();
-    expect(table.getByText("csv_upload")).toBeInTheDocument();
+    expect(table.getByText("CSV upload")).toBeInTheDocument();
     expect(screen.getByText("run_demo_queued")).toBeInTheDocument();
     expect(screen.getByText("Noah Kim")).toBeInTheDocument();
     expect(
@@ -273,7 +273,7 @@ describe("AdminRunHistory", () => {
     for (const cellIndex of [3, 4, 5, 6, 7, 9, 10]) {
       expect(cells[cellIndex]).toHaveClass("text-center");
     }
-    expect(table.getByTitle("demo_form")).toHaveClass("truncate");
+    expect(table.getByTitle("Demo form")).toHaveClass("truncate");
     expect(table.getByTitle("Maya Patel")).toHaveClass("truncate");
     topScrollRail.scrollLeft = 240;
     fireEvent.scroll(topScrollRail);
@@ -520,6 +520,54 @@ describe("AdminRunHistory", () => {
       },
       cache: "no-store",
     });
+  });
+
+  it("continues horizontal pointer dragging if pointer capture is unavailable", async () => {
+    mockFetch(runHistoryResponse, 200);
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    const tableScroller = screen.getByTestId("run-history-table");
+    const topScrollRail = screen.getByTestId("run-history-scroll-rail");
+    const setPointerCapture = vi.fn(() => {
+      throw new DOMException("No active pointer", "NotFoundError");
+    });
+    Object.defineProperty(tableScroller, "setPointerCapture", {
+      configurable: true,
+      value: setPointerCapture,
+    });
+
+    tableScroller.scrollLeft = 120;
+    fireEvent(
+      tableScroller,
+      createPointerEvent("pointerdown", {
+        button: 0,
+        buttons: 1,
+        clientX: 300,
+        clientY: 20,
+        isPrimary: true,
+        pointerId: 12,
+        pointerType: "mouse",
+      })
+    );
+
+    expect(() =>
+      fireEvent(
+        tableScroller,
+        createPointerEvent("pointermove", {
+          buttons: 1,
+          clientX: 240,
+          clientY: 22,
+          isPrimary: true,
+          pointerId: 12,
+          pointerType: "mouse",
+        })
+      )
+    ).not.toThrow();
+    expect(setPointerCapture).toHaveBeenCalledWith(12);
+    expect(tableScroller.scrollLeft).toBe(180);
+    expect(topScrollRail.scrollLeft).toBe(180);
   });
 
   it("scrolls horizontally after a real left-mouse drag and syncs the top rail", async () => {
@@ -798,7 +846,7 @@ describe("AdminRunHistory", () => {
 
     const table = within(screen.getByTestId("run-history-table"));
     expect(table.getByText("run_demo_success")).toBeInTheDocument();
-    expect(table.getByText("csv_upload")).toBeInTheDocument();
+    expect(table.getByText("CSV upload")).toBeInTheDocument();
     expect(table.queryByText("run_demo_failed")).not.toBeInTheDocument();
     expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
   });
@@ -855,7 +903,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByLabelText("Source")).toHaveValue("demo_form");
     expect(screen.getByLabelText("Search")).toHaveValue("demo");
     const table = within(screen.getByTestId("run-history-table"));
-    expect(table.getByText("demo_form")).toBeInTheDocument();
+    expect(table.getByText("Demo form")).toBeInTheDocument();
     expect(table.queryByText("run_demo_success")).not.toBeInTheDocument();
     expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
   });
@@ -870,7 +918,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByLabelText("Source")).toHaveValue("all");
     expect(screen.getByLabelText("Search")).toHaveValue("csv_upload");
     const table = within(screen.getByTestId("run-history-table"));
-    expect(table.getByText("csv_upload")).toBeInTheDocument();
+    expect(table.getByText("CSV upload")).toBeInTheDocument();
     expect(table.queryByText("run_demo_failed")).not.toBeInTheDocument();
     expect(table.queryByText("run_demo_queued")).not.toBeInTheDocument();
   });
@@ -1003,7 +1051,7 @@ describe("AdminRunHistory", () => {
     expect(await screen.findByText("run_legacy")).toBeInTheDocument();
     const table = within(screen.getByTestId("run-history-table"));
     expect(screen.getAllByText("lead_legacy")).toHaveLength(2);
-    expect(table.getByText("manual")).toBeInTheDocument();
+    expect(table.getByText("Manual entry")).toBeInTheDocument();
   });
 
   it("loads and renders selected run details from the read-only detail endpoint", async () => {
@@ -1297,6 +1345,20 @@ function installPointerCaptureMocks(element: HTMLElement) {
   });
 
   return { hasPointerCapture, releasePointerCapture, setPointerCapture };
+}
+
+function createPointerEvent(
+  type: string,
+  properties: Record<string, boolean | number | string>
+) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  for (const [key, value] of Object.entries(properties)) {
+    Object.defineProperty(event, key, {
+      configurable: true,
+      value,
+    });
+  }
+  return event;
 }
 
 function urlFromFetchInput(input: RequestInfo | URL): string {

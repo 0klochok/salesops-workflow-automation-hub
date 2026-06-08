@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { parseLeadCsv, type CsvParseError } from "@/lib/csv";
-import { formatApiError, statusLabel } from "@/lib/format";
+import { formatApiError, leadSourceLabel, statusLabel } from "@/lib/format";
 import { submitLeadIntake } from "@/lib/intake-api";
 import { findSameSessionDuplicate } from "@/lib/session";
 import type {
@@ -304,9 +304,9 @@ function LeadForm({
             }
             value={form.source}
           >
-            <option value="demo_form">demo_form</option>
-            <option value="csv_upload">csv_upload</option>
-            <option value="manual">manual</option>
+            <option value="demo_form">{leadSourceLabel("demo_form")}</option>
+            <option value="csv_upload">{leadSourceLabel("csv_upload")}</option>
+            <option value="manual">{leadSourceLabel("manual")}</option>
           </Select>
         </Field>
         <Field label="Job title">
@@ -561,7 +561,7 @@ function SubmissionDashboard({ records }: { records: SubmissionRecord[] }) {
       },
       {
         header: "Source",
-        cell: ({ row }) => row.original.payload.source,
+        cell: ({ row }) => leadSourceLabel(row.original.payload.source),
       },
       {
         header: "Result",
@@ -618,9 +618,9 @@ function SubmissionDashboard({ records }: { records: SubmissionRecord[] }) {
               value={sourceFilter}
             >
               <option value="all">All</option>
-              <option value="demo_form">demo_form</option>
-              <option value="csv_upload">csv_upload</option>
-              <option value="manual">manual</option>
+              <option value="demo_form">{leadSourceLabel("demo_form")}</option>
+              <option value="csv_upload">{leadSourceLabel("csv_upload")}</option>
+              <option value="manual">{leadSourceLabel("manual")}</option>
             </Select>
           </Field>
           <Field label="Filter by result">
