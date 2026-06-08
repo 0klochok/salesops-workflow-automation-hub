@@ -9,11 +9,72 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final portfolio release readiness pass |
+| Current phase | Alembic mypy repair |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, Vitest, typecheck, build, browser smoke, and git diff checks passed; backend checks skipped with written frontend/docs-only reason |
-| Completion | README reviewer summary polished, admin timestamps fixed to English, browser smoke passed, and local QA evidence recorded |
+| Quality gate status | Requested backend, migration/seed, frontend release, and forbidden-pattern checks passed |
+| Completion | Alembic SQLAlchemy URL fallback is explicit, type-safe, and locally validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-08 Alembic Mypy Repair
+
+### Reviewer-found failure
+
+Manual backend validation found one mypy error:
+
+```text
+alembic\env.py:22: error: Incompatible return value type (got "str | None", expected "str")  [return-value]
+```
+
+Root cause: `get_database_url()` returned `config.get_main_option("sqlalchemy.url")` directly. Alembic types that value as `str | None`, while the function contract is `str`.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `alembic/env.py` | Added an explicit missing-URL guard before returning the Alembic SQLAlchemy URL |
+| `STATE.md` | Recorded the reviewer failure, minimal repair, validation results, skipped checks, and safety status |
+
+### Repair summary
+
+- Preserved the existing precedence: `settings.database_url` still wins when configured.
+- Captured `config.get_main_option("sqlalchemy.url")` in a local variable.
+- Added a clear `RuntimeError` when Alembic `sqlalchemy.url` is missing.
+- Returned the narrowed `str` value after the guard.
+- Did not use `or ""` and did not change database behavior beyond making the existing required config assumption explicit.
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | The workspace sandbox could not launch PowerShell (`CreateProcessAsUserW failed: 5`), so required local commands were run through approved escalated PowerShell |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.39s`; warning is the existing FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `git diff --check` | pass | Exit 0; Git reported LF-to-CRLF working-copy warnings for `STATE.md` and `alembic/env.py`, with no whitespace errors |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL migration context initialized; Alembic completed successfully |
+| `uv run python -m backend.app.leads.demo_seed` | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files passed; 43 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build compiled successfully and generated 8 routes |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Requested local validation gates | none skipped | All requested backend, migration/seed, and frontend release commands were run |
+| GitHub Actions / CI | skipped | Explicitly forbidden for this task; no workflow files were created or modified |
+| Real external provider smoke | skipped | Explicitly forbidden; no real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was made |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Forbidden-pattern checks
+
+- `.github/workflows` was not added; `Test-Path -LiteralPath '.\.github\workflows'` returned `False`.
+- `.env` was not edited or printed. `git status --short -- .env .env.example package.json pnpm-lock.yaml uv.lock pyproject.toml apps/web/package.json` returned no output.
+- No dependency or lockfile change was made; the same dependency-file status check returned no output.
+- No files were staged; `git diff --cached --name-only` returned no output.
+- Final tracked changed files are limited to `STATE.md` and `alembic/env.py`.
 
 ## Latest Update - 2026-06-08 Final Portfolio Release Readiness Pass
 
@@ -3027,4 +3088,97 @@ After user review, manually commit the admin run-history table polish if the dif
 
 ```text
 Polish admin run history table truncation
+```
+
+# Final Pre-Release Portfolio Audit - 2026-06-08
+
+## 1. Objective
+
+- Perform a final reviewer-readiness audit without changing backend behavior, dependencies, migrations, lockfiles, or GitHub Actions.
+- Verify README accuracy, mock/no-paid-API boundaries, frontend visible copy, local frontend gates, portfolio safety posture, and rendered admin/demo behavior.
+- Keep the diff small and preserve a clean unstaged/uncommitted workflow for the user.
+
+## 2. Findings And Changes
+
+| Area | Result |
+|---|---|
+| README | Reviewed as accurate for a polished local portfolio/demo project; no README edit was needed |
+| Frontend visible copy | No visible Cyrillic, debug, internal, Codex, phase, TODO, or FIXME copy found in rendered main/admin pages |
+| Frontend source scan | `rg -n "\p{Cyrillic}" apps\web` found only a test assertion guarding against Cyrillic text; internal/debug scan found local backend URLs in proxy/tests and a non-rendered sessionStorage key |
+| Safety scope | No backend code, frontend code, dependencies, lockfiles, migrations, `.env`, or GitHub Actions were changed |
+| Documentation | Updated this `STATE.md` entry to record the new audit and validation evidence |
+
+## 3. Automated Validation
+
+| Command | Result |
+|---|---|
+| `git status --short --branch` | pass before changes: `## main`; pass after temporary artifact cleanup: `## main` |
+| `git diff --check` | pass before documentation update; no output |
+| `pnpm --dir apps/web run lint` | pass; `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass; Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `14.18s` |
+| `pnpm --dir apps/web run typecheck` | pass; `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass; Next.js `15.5.18`; compiled successfully in `3.0s`; generated 8 routes including `/` and `/admin/runs` |
+| `docker compose up -d postgres` | pass; `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass; PostgreSQL Alembic context initialized and at head |
+| `uv run python -m backend.app.leads.demo_seed` | pass; seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| `pnpm --dir apps/web exec playwright --version` | expected unavailable; command failed because `playwright` is not installed; no dependency was added |
+
+## 4. Manual Browser QA
+
+Temporary local-only QA setup:
+
+- Backend: `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8856`
+- Frontend: `pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 5567`
+- Frontend env: `BACKEND_API_BASE_URL=http://127.0.0.1:8856` and `NEXT_PUBLIC_BACKEND_API_BASE_URL=http://127.0.0.1:8856`
+- Browser path: Browser plugin was not available; project Playwright was not installed; used installed Chrome `148.0.7778.217` through local DevTools Protocol with the existing Python `websockets` package and no dependency install
+
+Rendered checks:
+
+| Check | Result |
+|---|---|
+| Main page loads | pass; `http://127.0.0.1:5567/` rendered `Lead intake form` and `CSV import`; page title `SalesOps Workflow Automation Hub` |
+| Admin run history loads | pass; `http://127.0.0.1:5567/admin/runs` rendered success, failed, retried, and queued seeded runs |
+| Details opens by mouse | pass; `View details` for `run_demo_failed` updated URL to `?runId=run_demo_failed` and showed the read-only run detail panel with failure text |
+| Details opens by keyboard | pass; focused `View details for run_demo_retried`, sent browser-level Enter/Space key events, URL updated to `?runId=run_demo_retried`, and the run detail panel rendered |
+| Admin timestamps | pass; rendered English sample `Jun 8, 2026, 1:52 PM` |
+| Persisted runs horizontal scrollbar | pass; desktop table `clientWidth=1182`, `scrollWidth=1345`; top rail `clientWidth=1180`, `scrollWidth=1340` |
+| Mouse-drag horizontal scrolling | pass; drag moved table scroll from `0` to `160`, and top rail synced to `160` |
+| Mobile overflow | pass at `390x844`; page `scrollWidth=390`, body `scrollWidth=390`, table scrolled internally with `clientWidth=324`, `scrollWidth=1345` |
+| Browser console | pass; page console warning/error list was empty |
+| Visible Russian/internal/debug copy | pass; rendered main/admin/mobile scans found no Cyrillic or debug/internal/Codex/phase/TODO/FIXME copy |
+
+Temporary backend, frontend, and Chrome QA processes were stopped after verification. Temporary `.scratch` QA scripts, logs, screenshots, and Chrome profiles created by this audit were removed.
+
+## 5. Portfolio Safety Checks
+
+| Check | Result |
+|---|---|
+| `.env` tracking | pass; `git check-ignore -v .env` returned `.gitignore:2:.env .env`; contents were not printed |
+| Tracked env/lock/migration/GitHub Actions paths | pass; `git ls-files -- .env .env.example pnpm-lock.yaml uv.lock alembic .github .github\workflows` listed `.env.example`, Alembic files, `pnpm-lock.yaml`, and `uv.lock`; `.env` and GitHub Actions were not tracked |
+| GitHub Actions directory | pass; `Test-Path -LiteralPath .\.github\workflows` returned `False` |
+| Staged files | pass; `git diff --cached --name-only` returned no output |
+| Tracked live endpoint/secret pattern scan | pass; `git grep -n -I -E "api\.hubapi\.com|hooks\.slack\.com|slack\.com/api|api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|sheets\.googleapis\.com|xox[baprs]-|sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,}|ya29\.[0-9A-Za-z_-]+|SG\.[0-9A-Za-z_-]{20,}|-----BEGIN (RSA|OPENSSH|DSA|EC|PGP|PRIVATE) KEY-----|service_role" -- . ":(exclude)STATE.md"` returned no matches; exit 1 means no matches |
+
+No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was made.
+
+## 6. Skipped Or Limited Checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | skipped | This audit made no backend behavior or source-code changes; user-requested gates for this phase were frontend gates plus local migration/seed/browser smoke |
+| Playwright browser automation | skipped/fallback used | Browser plugin was absent and project Playwright was not installed; dependency installation was intentionally avoided |
+| GitHub Actions / CI | skipped | Explicitly out of scope; no workflow files exist or were added |
+| Real external API smoke | skipped | Explicitly forbidden and not required for the local mock-safe reviewer path |
+| Commit, push, or staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+## 7. Remaining Risks
+
+- Browser QA covered installed Chrome headless through CDP at desktop and mobile viewports; other browsers were not manually checked.
+- Manual QA used deterministic local seeded data only; real-provider credential handoff remains documentation-only in `HANDOFF.md`.
+- The current admin detail surface is a same-page read-only detail panel, not a modal dialog; the requested detail-opening behavior was still verified by mouse and keyboard.
+
+## 8. Suggested Commit Message
+
+```text
+Record final portfolio release audit
 ```

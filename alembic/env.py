@@ -19,7 +19,10 @@ def get_database_url() -> str:
     settings = get_settings()
     if settings.database_url is not None:
         return settings.database_url
-    return config.get_main_option("sqlalchemy.url")
+    sqlalchemy_url = config.get_main_option("sqlalchemy.url")
+    if sqlalchemy_url is None:
+        raise RuntimeError("Alembic sqlalchemy.url is not configured")
+    return sqlalchemy_url
 
 
 def run_migrations_offline() -> None:
