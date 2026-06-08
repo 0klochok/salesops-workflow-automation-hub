@@ -211,6 +211,8 @@ describe("AdminRunHistory", () => {
     render(<AdminRunHistory />);
 
     expect(await screen.findByText("run_demo_failed")).toBeInTheDocument();
+    expect(screen.getAllByText(/Jun 1, 2026/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/[А-Яа-яЁё]/)).not.toBeInTheDocument();
     const table = within(screen.getByTestId("run-history-table"));
     expect(screen.getByText("lead_demo_failed")).toBeInTheDocument();
     expect(screen.getByText("failed.demo@example.com")).toBeInTheDocument();

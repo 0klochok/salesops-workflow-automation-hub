@@ -4,6 +4,16 @@ SalesOps Workflow Automation Hub is a portfolio project for a code-first lead op
 
 Reviewer-facing handoff material, safe future credential boundaries, and a compact demo script are documented in `HANDOFF.md`.
 
+## Portfolio Reviewer Summary
+
+This project shows how a small sales team can replace manual lead copy/paste with a traceable automation workflow. A reviewer can run the app locally, submit synthetic form and CSV leads, inspect validation and dedupe outcomes, and review persisted run history without needing real CRM credentials, Slack webhooks, paid APIs, CI, or deployment access.
+
+What it demonstrates:
+
+- production-shaped backend boundaries for validation, dedupe, mock CRM/Slack adapters, persistence, audit records, failure detail, and backend-only retry;
+- a recruiter-friendly Next.js demo with a public lead form, CSV import, session dashboard, and read-only admin run-history table;
+- local-first safety defaults: synthetic data, placeholder-only `.env.example`, no live provider calls, and no required external services beyond local PostgreSQL.
+
 ## Problem
 
 A growth agency with 5 sales reps receives leads from forms and CSV uploads. The team manually copies lead details into a CRM and Slack, which creates duplicates, slows response time, misses leads, and leaves weak audit trails.
@@ -242,12 +252,12 @@ pnpm --dir apps/web dev
 
 Open `http://localhost:3000` after the frontend server starts. The read-only admin run-history UI is available at `http://localhost:3000/admin/runs` and shows persisted lead email/company identity, derived owner/error-type fields, URL-backed filters including source, and a same-page selected run detail panel. Keep the backend running at `http://127.0.0.1:8000`, or set a local ignored `.env` override for `BACKEND_API_BASE_URL`.
 
-## Local Validation
+## Tests And Quality Gates
 
 Required backend validation:
 
 ```powershell
-git status --short
+git status --short --branch
 git diff --check
 uv run --no-python-downloads --python 3.12 --frozen pytest
 uv run --no-python-downloads --python 3.12 --frozen ruff check .
@@ -262,6 +272,8 @@ pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
+
+Manual portfolio smoke is documented in `RUNBOOK.md`. The current reviewer path uses local PostgreSQL, the backend on `127.0.0.1:8028`, and the frontend on `127.0.0.1:3042` with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the local backend.
 
 ## Roadmap
 

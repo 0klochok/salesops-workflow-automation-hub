@@ -9,11 +9,91 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Portfolio release polish and final local smoke pass |
+| Current phase | Final portfolio release readiness pass |
 | Overall status | on-track |
-| Quality gate status | Frontend lint, Vitest, typecheck, build, local Chrome/CDP smoke, and final git checks passed; backend checks skipped with written frontend-only reason |
-| Completion | Main-page source labels polished, admin source labels polished, pointer-capture smoke regression hardened, and local QA passed |
+| Quality gate status | Frontend lint, Vitest, typecheck, build, browser smoke, and git diff checks passed; backend checks skipped with written frontend/docs-only reason |
+| Completion | README reviewer summary polished, admin timestamps fixed to English, browser smoke passed, and local QA evidence recorded |
 | Main blocker | none |
+
+## Latest Update - 2026-06-08 Final Portfolio Release Readiness Pass
+
+### Phase summary
+
+This was a final portfolio release-readiness pass focused on public presentation, reviewer documentation, visible app copy, local browser smoke, and release-safety checks.
+
+What changed:
+
+- `README.md` now has a concise portfolio reviewer summary and clearer tests/quality-gates wording while keeping the existing Windows/PowerShell setup path, mock-only boundaries, known limitations, and reviewer checklist intact.
+- `apps/web/src/components/admin-run-history.tsx` now formats admin timestamps with explicit `en-US` locale. Browser smoke found that the previous locale-default formatter rendered Cyrillic date text such as `8 июн. 2026 г.` in the admin table on this machine.
+- `apps/web/src/components/admin-run-history.test.tsx` now asserts English admin date text and guards against Cyrillic text in the rendered admin test fixture.
+- `STATE.md` records this phase's validation, manual QA, skipped checks, and safety status.
+
+No backend behavior, API contract, schema, migration, dependency manifest, lockfile, environment file, GitHub Actions workflow, real integration, provider call, staging action, commit, or push was changed.
+
+### Documentation and presentation review
+
+- Reviewed `README.md`, `STATE.md`, `CONTEXT.md`, `REQ.md`, `RUNBOOK.md`, `HANDOFF.md`, `DESIGN.md`, and `TDD.md`.
+- Reviewed main-page and admin-page visible copy in `apps/web/src/components/lead-demo.tsx` and `apps/web/src/components/admin-run-history.tsx`.
+- Checked tracked docs for screenshot/GIF/image references. No README/doc image asset references were stale or broken; tracked docs only mention screenshots as QA artifacts or recording guidance.
+- Checked visible app copy for Russian text, internal phase/debug labels, placeholder copy, and awkward demo-only wording. The only true blocker found was admin timestamp localization, which was fixed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Added a portfolio reviewer summary and clarified the tests/quality-gates section |
+| `apps/web/src/components/admin-run-history.tsx` | Made admin timestamp formatting explicitly English with `en-US` |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added regression coverage for English admin date text and no Cyrillic rendered copy |
+| `STATE.md` | Recorded this final release-readiness pass |
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | The workspace sandbox could not launch PowerShell (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell |
+| Starting `git status --short --branch` | pass | `## main` before edits |
+| Focused admin regression test | pass | `pnpm --dir apps/web exec vitest run admin-run-history`: 1 test file and 32 tests passed |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files and 43 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build compiled successfully and generated 8 routes including `/` and `/admin/runs` |
+| Final `git diff --check` | pass | Exit 0 after this `STATE.md` update |
+
+### Browser QA details
+
+- Local setup: `.env` already existed; PostgreSQL was already running and healthy; ports `8028` and `3042` were clear before smoke. `uv run alembic upgrade head` reached head, and `uv run python -m backend.app.leads.demo_seed` seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary smoke servers: backend ran on `127.0.0.1:8028`; frontend ran on `127.0.0.1:3042` with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the local backend.
+- Main page desktop: `/` loaded with title/H1 `SalesOps Workflow Automation Hub`; reviewer-facing source labels rendered as `Demo form`, `CSV upload`, and `Manual entry`; page-level overflow was false (`scrollWidth=1351`, viewport `1366`).
+- Main form flow: after waiting for hydration, a synthetic lead submit added the exact submitted email to the session dashboard and showed a successful latest result with backend dedupe, CRM, and Slack outcomes.
+- CSV flow: CSV textarea import submitted one synthetic row, showed `1 of 1 rows submitted locally.`, and added the exact CSV email to the session dashboard.
+- Main mobile: `390x844` viewport had no page-level horizontal overflow (`scrollWidth=375`, viewport `390`) and no visible Cyrillic/internal/debug copy.
+- Admin desktop: `/admin/runs` loaded seeded runs, read-only labels, source labels, and English dates such as `Jun 8, 2026`; raw source enum cells and Cyrillic date text were absent; page-level overflow was false (`scrollWidth=1351`, viewport `1366`).
+- Admin details: after narrowing to `q=run_demo_failed`, a visible click on `View details for run_demo_failed` opened the read-only detail panel with suggested action.
+- Admin keyboard: local headless Chrome/CDP focused the visible native `View details for run_demo_failed` button and Space activation opened the run detail panel. In-app Browser key helpers focused the button but did not synthesize native activation; CDP verified the actual keyboard path.
+- Admin horizontal scroll: top horizontal rail moved table and rail to `scrollLeft=159.2`.
+- Admin mouse-drag scroll: table drag changed horizontal scroll from `159.2` to `162.4`.
+- Admin mobile: `390x844` viewport had no page-level horizontal overflow (`scrollWidth=375`, viewport `390`); table overflow stayed contained (`clientWidth=310`, `scrollWidth=1345`); no visible Cyrillic/internal/debug copy.
+- Console capture: in-app browser warning/error logs were empty for main and admin checks.
+- Cleanup: temporary backend, frontend, and Chrome smoke processes were stopped; ports `8028`, `3042`, and `9224` were clear; temporary smoke logs/profiles were removed. PostgreSQL was left running as the existing local Docker service.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | skipped | This pass changed only README, frontend timestamp formatting/test coverage, and `STATE.md`; backend behavior, contracts, schemas, migrations, adapters, dependencies, and environment variables were intentionally untouched |
+| Real provider/API smoke | skipped | Explicitly forbidden and not relevant; all app traffic stayed local and mock-safe |
+| GitHub Actions/CI | skipped | Explicitly out of scope; no workflow files were created or modified |
+| Dependency install/update | skipped | Existing dependencies were present; no dependency was needed or introduced |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Safety status
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No dependency, lockfile, `.env`, backend schema, migration, or GitHub Actions change was made.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was made.
+- Remaining risk: browser smoke used Chrome/in-app browser on this Windows machine; other browsers were not manually checked.
 
 ## Latest Update - 2026-06-08 Portfolio Release Polish and Final Local Smoke Pass
 
