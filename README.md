@@ -6,6 +6,13 @@ The demo is built for a fake growth agency with 5 sales reps. It is intended for
 
 All demo data is synthetic. All CRM and Slack behavior is deterministic mock behavior. No paid APIs, real provider calls, live webhooks, production accounts, or real customer data are required to run or review the project locally.
 
+## 60-Second Portfolio Read
+
+- **Client problem:** a growth agency with 5 sales reps is losing time and audit clarity to manual form/CSV lead handling, duplicate checks, CRM updates, and Slack handoffs.
+- **Automated workflow:** local intake validates leads, checks duplicates by email and company domain, simulates CRM contact/deal upsert, simulates qualified-lead Slack notification, and stores run/audit evidence.
+- **Reviewer proof:** committed screenshots show the public intake page, CSV import evidence, read-only admin run history, filtered admin views, and sanitized failure detail.
+- **Safety boundary:** the project is mock-only and local-first by default; it does not require or call real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, or live webhooks.
+
 ## What It Does
 
 - Accepts synthetic leads through a FastAPI intake endpoint and a Next.js demo form.
@@ -113,7 +120,7 @@ Open:
 5. Open `run_demo_failed` and show sanitized failure detail and suggested action.
 6. Point out that the admin UI is read-only and all provider behavior is mocked locally.
 
-The concise 5-10 minute reviewer checklist is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). The portfolio case study is in [docs/CASE_STUDY.md](docs/CASE_STUDY.md). The full handoff and 3-5 minute script are in [HANDOFF.md](HANDOFF.md). Recommended screenshot, GIF, and video shots are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md). Detailed local operations are in [RUNBOOK.md](RUNBOOK.md).
+The concise local reviewer checklist is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). The portfolio case study is in [docs/CASE_STUDY.md](docs/CASE_STUDY.md). The full handoff and 3-5 minute script are in [HANDOFF.md](HANDOFF.md). Recommended screenshot, GIF, and video shots are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md). Detailed local operations are in [RUNBOOK.md](RUNBOOK.md).
 
 ## Local Validation
 
@@ -124,9 +131,9 @@ Run from the repository root:
 ```powershell
 git status --short
 git diff --check
+uv run ruff check .
 uv run mypy .
 uv run pytest
-uv run ruff check .
 pnpm --dir apps/web run lint
 pnpm --dir apps/web exec vitest run
 pnpm --dir apps/web run typecheck

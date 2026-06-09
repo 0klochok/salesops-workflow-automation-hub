@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-07 |
+| Last updated | 2026-06-09 |
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Final portfolio demo readiness pass |
+| Current phase | Public portfolio packaging pass |
 
 ## 2. Operating Rules
 

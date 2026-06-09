@@ -9,11 +9,99 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Demo Asset Capture + Public Portfolio Release Audit |
+| Current phase | Public Portfolio Packaging Pass |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Required local gates passed; browser smoke passed; broad safety scans reviewed |
-| Completion | Verified public docs, committed screenshot inventory, local browser demo flow, and release safety posture |
+| Quality gate status | Required local gates passed; targeted safety scans reviewed |
+| Completion | Public README/demo docs polished and current phase evidence recorded |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Public Portfolio Packaging Pass
+
+### Phase summary
+
+This pass polished the public portfolio presentation without adding application features. `README.md` now includes a short 60-second reviewer summary, keeps local setup and validation commands easy to find, and aligns the backend validation command order with this phase's requested gates. `docs/DEMO_ASSETS.md` now explicitly aligns its checklist with the README screenshot section and keeps GIF/video capture optional. `CONTEXT.md` and `RUNBOOK.md` phase metadata now point at the current packaging pass.
+
+No backend code, frontend code, user-facing app behavior, schemas, migrations, dependencies, lockfiles, generated screenshots, GIFs, videos, GitHub Actions, real integrations, `.env` contents, staging, commits, pushes, deployment config, or live-provider setup was changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Added a concise 60-second portfolio summary, clarified local reviewer/demo wording, and aligned local validation command order |
+| `docs/DEMO_ASSETS.md` | Added explicit README screenshot-section alignment and kept GIF/video assets optional |
+| `RUNBOOK.md` | Updated operational metadata date/current phase only |
+| `CONTEXT.md` | Updated context metadata date/current phase only |
+| `STATE.md` | Recorded this phase, validation, skipped checks, risks, and no-stage/no-commit/no-push confirmation |
+
+### Required validation
+
+Validation note: sandboxed PowerShell launch failed in this workspace with `CreateProcessAsUserW failed: 5`, so required local commands were run through approved escalated PowerShell. No external provider, paid API, or real integration command was run.
+
+| Command | Status | Result |
+|---|---|---|
+| `git status --short` | pass | `M CONTEXT.md`, `M README.md`, `M RUNBOOK.md`, `M docs/DEMO_ASSETS.md` before this `STATE.md` update |
+| `git diff --check` | pass | Exit 0; Git printed expected LF-to-CRLF working-copy warnings for edited Markdown files; no whitespace errors |
+| `Test-Path -LiteralPath ".github\workflows"` | pass | `False` |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.23s`; warning is the known FastAPI/Starlette `TestClient` deprecation warning |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `15.20s` |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully in `2.5s`; generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+
+### Forbidden-pattern checks
+
+| Check | Status | Result |
+|---|---|---|
+| Requested local absolute user-path grep | pass | No output; no tracked local absolute user path found |
+| Old public phase-label grep | safe expected matches | Matched only historical `STATE.md` notes stating that the label was removed or should be absent from the UI |
+| Credential/key wording grep | safe expected matches | Matched placeholder token names in `.env.example` and the local Docker Compose database password only; no real provider secret or API key found |
+| Workflow-path wording grep | safe expected matches | Matched only historical `STATE.md` notes documenting that workflow files are absent; `Test-Path` returned `False` |
+| Provider-boundary wording grep | safe expected matches | Matches are safety-boundary docs and historical `STATE.md` entries saying real/live/paid/production providers are absent or approval-gated |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Manual browser smoke | skipped | This phase changed public presentation docs and metadata only; no app code, UI behavior, routes, schemas, or runtime config changed |
+| Dependency install/update | skipped | Existing dependencies were sufficient for all gates; this phase forbids dependency changes unless necessary |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow directory or CI file was added |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; the project remains local-only and mock-safe |
+| GIF/video capture | skipped | Not requested for this pass; committed still screenshots remain the current proof assets |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Browser smoke was not rerun because the diff is documentation-only; manually review the existing local demo before recording or presenting.
+- Long command outputs from Vitest and pytest include local machine paths in terminal output; they were not copied verbatim into tracked docs so the tracked local-path scan remains clean.
+- The provider-boundary grep intentionally matches many safety statements and historical `STATE.md` entries; those are documentation context, not active provider integrations.
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+- GIF/video demo assets are still optional and not committed.
+
+### Manual validation recommendation
+
+Run the README Quick Start in PowerShell, then inspect:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:8028/docs`
+
+Focus on synthetic form submit, CSV import, committed screenshots, seeded admin rows, filters, failed-run detail, read-only admin posture, and local/mock-only provider boundaries.
+
+### Git safety confirmation
+
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+
+### Suggested commit message
+
+```text
+Polish public portfolio packaging docs
+```
 
 ## Latest Update - 2026-06-09 Demo Asset Capture + Public Portfolio Release Audit
 

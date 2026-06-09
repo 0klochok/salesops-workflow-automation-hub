@@ -2,6 +2,8 @@
 
 Use this checklist when capturing portfolio screenshots, GIFs, or a short video from the local-only demo. Keep all captures synthetic, mock-only, and free of `.env` values, real credentials, provider dashboards, private account data, and unrelated local files.
 
+This checklist aligns with the README screenshot section: committed still screenshots are the current portfolio proof, while GIF/video capture remains optional until the user intentionally selects final recording assets.
+
 Do not commit large binary recordings by default. Store draft exports locally, review them manually, and only track intentionally selected assets.
 
 ## Recommended Still Screenshots

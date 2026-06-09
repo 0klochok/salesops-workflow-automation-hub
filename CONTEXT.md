@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-05 |
+| Last updated | 2026-06-09 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Local-first final readiness audit after documentation polish |
+| Current phase | Public portfolio packaging pass |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `repository root` |
 | Primary runtime | Local Windows 11 / PowerShell |
