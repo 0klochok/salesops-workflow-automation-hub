@@ -9,11 +9,129 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Demo asset capture and final portfolio packaging |
+| Current phase | Final Portfolio Readiness Review |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Required local gates passed; browser smoke and screenshot capture passed; one forbidden-pattern scan skipped after approval rejection |
-| Completion | Demo asset docs polished, final still captures added, and current phase evidence recorded |
+| Quality gate status | Required local gates passed; public-doc and screenshot safety review passed; no GitHub Actions added |
+| Completion | Public portfolio docs reviewed, minimal docs cleanup applied, and final-readiness evidence recorded |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Final Portfolio Readiness Review
+
+### Phase summary
+
+This pass reviewed the public-facing portfolio presentation for the local-only SalesOps demo: `README.md`, `RUNBOOK.md`, `CONTEXT.md`, current and historical `STATE.md` context, `docs/DEMO_ASSETS.md`, `docs/assets/README.md`, and all tracked screenshots under `docs/assets/screenshots/`.
+
+The review verified that the documentation explains what the project does, how to run it locally, how to seed synthetic demo data, how to view the Next.js app, how to reach the local FastAPI Swagger docs, what is mocked/local-only, and what each included screenshot demonstrates.
+
+No backend behavior, frontend behavior, API contract, schema, migration, package manifest, lockfile, dependency, GitHub Actions workflow, real provider integration, paid API, live webhook, secret, staging action, commit, or push was introduced.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `RUNBOOK.md` | Replaced stale phase/status labels with final-readiness wording and removed old Phase 4 labels from current local database guidance |
+| `CONTEXT.md` | Replaced stale phase/status labels and old phase-specific implementation wording with current feature-status wording |
+| `docs/DEMO_ASSETS.md` | Reworded screenshot/GIF status labels so included assets read as final portfolio evidence and optional assets read as intentionally not included |
+| `STATE.md` | Recorded this final-readiness review, validation, skipped checks, risks, and suggested commit message |
+
+### Documentation review result
+
+| Area | Status | Result |
+|---|---|---|
+| What the project does | pass | `README.md` and `CONTEXT.md` describe form/CSV lead intake, validation, dedupe, mock CRM/Slack outcomes, persisted run/audit records, and read-only admin review |
+| Local run path | pass | `README.md` and `RUNBOOK.md` document dependency setup, local PostgreSQL, Alembic, seeding, backend startup, frontend startup, and reviewer URLs |
+| Demo seed path | pass | `README.md` and `RUNBOOK.md` document `uv run python -m backend.app.leads.demo_seed` and the deterministic synthetic run IDs |
+| Web app URL | pass | Docs point reviewers to the local Next.js public form and `/admin/runs` dashboard |
+| Backend Swagger/docs URL | pass | Docs explain the frontend `/docs` redirect and local FastAPI docs target |
+| Mock/local-only boundary | pass | Docs state CRM and Slack are deterministic mocks, demo data is synthetic, `.env.example` is placeholder-only, real providers are absent, and paid/live APIs are forbidden without approval |
+| Screenshot inventory | pass | `README.md`, `docs/DEMO_ASSETS.md`, and `docs/assets/README.md` list the included screenshots and what each demonstrates |
+| Stale labels/TODOs | pass after cleanup | Active public docs no longer contain `active draft`, `Phase 2`, `Phase 3`, `Phase 4`, or `Not captured yet` markers outside historical `STATE.md` |
+
+### Sensitive-data and CI checks
+
+| Check | Command | Status | Result |
+|---|---|---|---|
+| Local absolute path/private username scan | `rg` local-path/private-username patterns over reviewed public docs | pass | No matches; no local absolute paths or private Windows username leaked in reviewed docs |
+| Tracked token/live-endpoint scan outside `STATE.md` | `git grep` token/private-key/live-provider endpoint patterns over tracked files, excluding historical `STATE.md` | pass | No matches; exit 1 means no tracked live endpoint or token-shaped secret matched |
+| Screenshot binary string scan | `rg -a` local-path/secret patterns over `docs\assets\screenshots` | pass | No matches in PNG binary strings |
+| Screenshot visual inspection | Local image viewer | pass | All nine tracked screenshots matched their documented route/state and did not show provider dashboards, secrets, private files, local absolute paths, or private URLs |
+| `.env` tracking | `git ls-files -- .env` | pass | No output; local `.env` is not tracked |
+| GitHub Actions directory | `Test-Path -LiteralPath .\.github\workflows` | pass | `False`; no workflow directory exists |
+| Tracked GitHub Actions files | `git ls-files -- .github .github\workflows` | pass | No output; no tracked GitHub Actions files |
+
+The broad docs scan for words such as `secret`, `token`, and `password` produced expected safety-boundary wording and the documented local Docker demo database password in `RUNBOOK.md`; it did not identify a real provider key, token, private key, production credential, private URL, or personal secret.
+
+### Required validation
+
+Validation note: sandboxed PowerShell launch failed in this workspace with `CreateProcessAsUserW failed: 5`, so required local commands were run through approved escalated PowerShell. No paid API, live provider, real webhook, or external production service was called.
+
+| Command | Status | Result |
+|---|---|---|
+| `git diff --check` | pass | Exit 0; Git printed LF-to-CRLF working-copy warnings for edited Markdown files; no whitespace errors |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | 48 tests passed; 1 known FastAPI/Starlette TestClient deprecation warning |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully; generated 8 routes including `/`, `/admin/runs`, API proxy routes, and `/docs` |
+
+### Manual/browser smoke result
+
+No live browser/server smoke was run in this phase because the task was a final documentation and public-readiness review, and the requested validation list did not require starting local services.
+
+Manual screenshot review was completed by opening every tracked PNG in `docs/assets/screenshots/`. The screenshots were nonblank, route/state-appropriate, local-demo only, and free of visible secrets, provider dashboards, private files, local absolute paths, and private URLs.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Live backend/frontend smoke | skipped | Not required by the requested validation list; this phase focused on public docs, screenshots, safety scans, and local automated gates |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; project remains local/mock-only |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files were added or run |
+| Dependency install/update | skipped | Not needed for review; existing locked environment ran all requested gates |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Browser smoke in this pass was limited to manual inspection of committed screenshots; the live app was not started.
+- The docs still include a local Docker demo database username/password in `RUNBOOK.md` because it matches `compose.yml` and `.env.example`; it is explicitly documented as non-production local demo configuration.
+- Historical `STATE.md` entries still preserve older phase evidence and prior scan wording; the latest entry supersedes those historical notes for current readiness.
+- The backend test suite still emits the known FastAPI/Starlette TestClient deprecation warning.
+
+### Manual validation recommendation
+
+Use the README Quick Start or `RUNBOOK.md` section 10.2 for an optional live reviewer smoke:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
+
+In a second PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then open `http://127.0.0.1:3042/`, `http://127.0.0.1:3042/admin/runs`, and `http://127.0.0.1:3042/docs`.
+
+### Git safety confirmation
+
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+
+### Suggested commit message
+
+```text
+Finalize portfolio readiness docs
+```
 
 ## Latest Update - 2026-06-09 Demo Asset Capture And Final Portfolio Packaging
 

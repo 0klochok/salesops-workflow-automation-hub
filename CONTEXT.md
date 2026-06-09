@@ -6,8 +6,8 @@
 |---|---|
 | Last updated | 2026-06-09 |
 | Owner | User |
-| Status | active draft |
-| Current phase | Demo asset capture and final portfolio packaging |
+| Status | final portfolio readiness review |
+| Current phase | Final Portfolio Readiness Review |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `repository root` |
 | Primary runtime | Local Windows 11 / PowerShell |
@@ -60,8 +60,8 @@ The current portfolio-readiness state keeps the project local-only, mock-safe, G
 | Backend | FastAPI, Python 3.12+, Pydantic, SQLAlchemy, Alembic | FastAPI foundation, lead intake domain, and persistence foundation added |
 | Backend tooling | `uv`, pytest, Ruff, mypy | Configured in Phase 1 |
 | Database | PostgreSQL through Docker Compose | Local compose, migration, and intake API wiring added |
-| Frontend | Next.js App Router, TypeScript, Tailwind CSS, local shadcn-style primitives, TanStack Table | Added in Phase 3 |
-| Frontend tooling | `pnpm`, Vitest, Testing Library, ESLint, TypeScript | Added in Phase 3 |
+| Frontend | Next.js App Router, TypeScript, Tailwind CSS, local shadcn-style primitives, TanStack Table | Implemented local demo UI |
+| Frontend tooling | `pnpm`, Vitest, Testing Library, ESLint, TypeScript | Implemented local frontend validation |
 | Integrations | Mocked CRM and mocked Slack by default | Real services require explicit approval |
 | Optional integration | Google Sheets | Mocked/optional unless explicitly approved |
 | CI/CD | Not configured | Local validation first |
@@ -97,13 +97,13 @@ The current portfolio-readiness state keeps the project local-only, mock-safe, G
 
 ## 7. Core Feature Status
 
-- Lead intake API endpoint with Pydantic validation. Phase 2 local foundation implemented.
-- Public demo lead form. Phase 3 local frontend implemented.
-- CSV lead import. Phase 3 local parser/import UI implemented.
+- Lead intake API endpoint with Pydantic validation. Local foundation implemented.
+- Public demo lead form. Local frontend implemented.
+- CSV lead import. Local parser/import UI implemented.
 - Duplicate detection by email and company domain. Backend local foundation exists; frontend same-session hints added.
-- CRM upsert adapter for contact/deal create-or-update behavior. Phase 2 mock boundary implemented.
-- Slack notification adapter for qualified lead notifications. Phase 2 mock boundary implemented.
-- Automation run log with queued, success, failed, and retried statuses. Phase 2 local model and Phase 4 persistence-backed intake/retry records, run history, selected run detail, seed data, and read-only admin UI implemented.
+- CRM upsert adapter for contact/deal create-or-update behavior. Mock boundary implemented.
+- Slack notification adapter for qualified lead notifications. Mock boundary implemented.
+- Automation run log with queued, success, failed, and retried statuses. Local model, persistence-backed intake/retry records, run history, selected run detail, seed data, and read-only admin UI implemented.
 - Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; public admin UI intentionally remains read-only.
 - Error detail with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel are implemented.
 - Admin table with filters by date, source, status, lead owner, and error type. Source is also displayed and included in text search.
@@ -127,7 +127,7 @@ The current portfolio-readiness state keeps the project local-only, mock-safe, G
 |---|---|---|---|
 | Q-001 | Should the final demo use real HubSpot or only a mock CRM? | Before live integration work | Mock CRM |
 | Q-002 | Should Slack use a real webhook or a mock/log notifier? | Before live notification work | Mock/log notifier |
-| Q-003 | What rule assigns leads to the 5 sales reps? | Before lead routing implementation | Current admin demo derives a deterministic owner from `lead_id`; real routing remains TBD |
+| Q-003 | What rule assigns leads to the 5 sales reps? | Before lead routing implementation | Current admin demo derives a deterministic owner from `lead_id`; real routing remains outside current local-demo scope |
 | Q-004 | Should `lead_score >= 70` remain the qualification rule? | Before demo polish | Current backend default |
 | Q-005 | How should dedupe handle shared domains, aliases, and updated emails? | Before persistence/admin workflow | Email first, company domain second |
 | Q-006 | Should tests require PostgreSQL only, or allow SQLite unit fallback? | Before persistence work | PostgreSQL for integration, SQLite only if justified |

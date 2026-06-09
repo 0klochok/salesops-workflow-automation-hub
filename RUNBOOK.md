@@ -5,10 +5,10 @@
 | Field | Value |
 |---|---|
 | Last updated | 2026-06-09 |
-| Status | active draft |
+| Status | final portfolio readiness review |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Demo asset capture and final portfolio packaging |
+| Current phase | Final Portfolio Readiness Review |
 
 ## 2. Operating Rules
 
@@ -57,7 +57,7 @@ Recent local validation uses Python 3.12 through `uv`, pnpm `11.5.0`, and the sc
 - Frontend local proxy defaults:
   - `BACKEND_API_BASE_URL=http://127.0.0.1:8000`
   - `NEXT_PUBLIC_BACKEND_API_BASE_URL=http://127.0.0.1:8000`
-- Phase 4 local database default:
+- Local database default:
   - `DATABASE_URL=postgresql+psycopg://salesops_user:salesops_local_password@localhost:5432/salesops_local`
 
 Local intake persistence requires `DATABASE_URL`. Create a local ignored `.env` from placeholders if it does not already exist:
@@ -170,7 +170,7 @@ Expected behavior:
 
 ## 7.1 Local Database Commands
 
-The Phase 4 persistence foundation uses local PostgreSQL through Docker Compose. These commands do not call external CRM, Slack, Google Sheets, OpenAI, or paid APIs.
+The local persistence foundation uses local PostgreSQL through Docker Compose. These commands do not call external CRM, Slack, Google Sheets, OpenAI, or paid APIs.
 
 ```powershell
 docker compose config

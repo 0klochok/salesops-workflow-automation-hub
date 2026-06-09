@@ -30,18 +30,18 @@ Use local URLs only:
 
 | Suggested filename | Current status | Viewport | Screen or state | What it should show |
 |---|---|---|---|---|
-| `docs/assets/screenshots/salesops-home.png` | Captured and committed | Desktop | Public landing page with lead form and CSV import | Page heading, lead form, CSV import surface, and no provider-dashboard context |
-| `docs/assets/screenshots/salesops-form-success.png` | Not captured yet | Desktop | Synthetic form submission result | Success status plus validation, backend dedupe, mock CRM, and mock Slack outcomes |
-| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | Captured and committed | Desktop | CSV import result and session dashboard | A valid synthetic CSV import, latest result, and browser-session evidence |
-| `docs/assets/screenshots/salesops-admin-run-history.png` | Captured and committed | Desktop | Read-only admin run table with seeded rows | Seeded success, failed, queued, and retried runs with filters visible |
-| `docs/assets/screenshots/salesops-admin-failed-detail.png` | Captured and committed | Desktop | `run_demo_failed` selected detail | Sanitized intake payload, attempts, failure context, and suggested action |
-| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Captured and committed | Desktop | Filtered admin state with selected detail preserved | Filters active while selected run detail remains inspectable |
-| `docs/assets/screenshots/salesops-admin-empty-filter.png` | Captured locally in final packaging pass | Desktop | No-match filtered admin state | The filtered empty state and reset path are understandable |
-| `docs/assets/screenshots/salesops-docs-swagger.png` | Captured locally in final packaging pass | Desktop | FastAPI Swagger UI after `/docs` redirect | Local API docs title, local `127.0.0.1:8028/docs` URL, and no external provider page |
-| `docs/assets/screenshots/salesops-mobile-home.png` | Captured locally in final packaging pass | Mobile | Public page at mobile width | Form and CSV controls stack cleanly without overlap or horizontal page overflow |
-| `docs/assets/screenshots/salesops-mobile-admin-runs.png` | Captured locally in final packaging pass | Mobile | Admin page at mobile width | Filters wrap cleanly and the table scrolls inside its container |
+| `docs/assets/screenshots/salesops-home.png` | Included | Desktop | Public landing page with lead form and CSV import | Page heading, lead form, CSV import surface, and no provider-dashboard context |
+| `docs/assets/screenshots/salesops-form-success.png` | Optional, not included | Desktop | Synthetic form submission result | Success status plus validation, backend dedupe, mock CRM, and mock Slack outcomes |
+| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | Included | Desktop | CSV import result and session dashboard | A valid synthetic CSV import, latest result, and browser-session evidence |
+| `docs/assets/screenshots/salesops-admin-run-history.png` | Included | Desktop | Read-only admin run table with seeded rows | Seeded success, failed, queued, and retried runs with filters visible |
+| `docs/assets/screenshots/salesops-admin-failed-detail.png` | Included | Desktop | `run_demo_failed` selected detail | Sanitized intake payload, attempts, failure context, and suggested action |
+| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Included | Desktop | Filtered admin state with selected detail preserved | Filters active while selected run detail remains inspectable |
+| `docs/assets/screenshots/salesops-admin-empty-filter.png` | Included | Desktop | No-match filtered admin state | The filtered empty state and reset path are understandable |
+| `docs/assets/screenshots/salesops-docs-swagger.png` | Included | Desktop | FastAPI Swagger UI after `/docs` redirect | Local API docs title, local `127.0.0.1:8028/docs` URL, and no external provider page |
+| `docs/assets/screenshots/salesops-mobile-home.png` | Included | Mobile | Public page at mobile width | Form and CSV controls stack cleanly without overlap or horizontal page overflow |
+| `docs/assets/screenshots/salesops-mobile-admin-runs.png` | Included | Mobile | Admin page at mobile width | Filters wrap cleanly and the table scrolls inside its container |
 
-Existing committed screenshots cover the main page, CSV session dashboard, run history, failed detail, and filtered detail. This final packaging pass adds local draft screenshots for the empty-filter state, the `/docs` redirect target, and mobile-width public/admin layouts. The optional form-success screenshot is still not present and should only be added if it improves the final portfolio story.
+The included screenshots cover the main page, CSV session dashboard, run history, failed detail, filtered detail, empty-filter state, `/docs` redirect target, and mobile-width public/admin layouts. The optional form-success screenshot is intentionally not part of the current portfolio set and should only be added if it improves the final story.
 
 ## Release Audit Verification - 2026-06-09
 
@@ -85,11 +85,11 @@ Mobile stills to capture:
 
 | Suggested filename | Current status | Shot | What it proves |
 |---|---|---|---|
-| `docs/assets/demo/salesops-public-intake.gif` | Not captured yet | Fill a synthetic form lead, submit it, then show the latest result | The public form works end to end with mock adapters |
-| `docs/assets/demo/salesops-csv-import.gif` | Not captured yet | Paste one valid synthetic CSV row, import it, and show the dashboard row | CSV upload behavior is understandable without a live provider |
-| `docs/assets/demo/salesops-admin-filters.gif` | Not captured yet | Open `/admin/runs`, apply status/source/search/owner/error-type filters, then reset | The run dashboard supports reviewer-friendly investigation |
-| `docs/assets/demo/salesops-failure-detail.gif` | Not captured yet | Open `run_demo_failed` and show failure detail plus suggested action | Failure evidence is sanitized, actionable, and read-only |
-| `docs/assets/demo/salesops-portfolio-demo.mp4` | Not captured yet | 3-5 minute full walkthrough following `HANDOFF.md` | The whole local story is easy to evaluate without extra setup narration |
+| `docs/assets/demo/salesops-public-intake.gif` | Optional, not included | Fill a synthetic form lead, submit it, then show the latest result | The public form works end to end with mock adapters |
+| `docs/assets/demo/salesops-csv-import.gif` | Optional, not included | Paste one valid synthetic CSV row, import it, and show the dashboard row | CSV upload behavior is understandable without a live provider |
+| `docs/assets/demo/salesops-admin-filters.gif` | Optional, not included | Open `/admin/runs`, apply status/source/search/owner/error-type filters, then reset | The run dashboard supports reviewer-friendly investigation |
+| `docs/assets/demo/salesops-failure-detail.gif` | Optional, not included | Open `run_demo_failed` and show failure detail plus suggested action | Failure evidence is sanitized, actionable, and read-only |
+| `docs/assets/demo/salesops-portfolio-demo.mp4` | Optional, not included | 3-5 minute full walkthrough following `HANDOFF.md` | The whole local story is easy to evaluate without extra setup narration |
 
 No GIF or video binaries are currently committed. `docs/assets/demo/README.md` remains the placeholder location for future intentionally selected recordings.
 
