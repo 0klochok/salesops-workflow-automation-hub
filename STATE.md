@@ -4,16 +4,104 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-08 |
+| Last updated | 2026-06-09 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Portfolio demo assets and final visual release polish |
+| Current phase | Final portfolio documentation and handoff polish pass |
 | Overall status | on-track |
-| Quality gate status | Required backend, frontend, database/seed, screenshot capture, and safety checks passed |
-| Completion | Real portfolio screenshots captured, README asset references updated, and local validation passed |
+| Quality gate status | Required docs-phase backend, frontend, database/seed, screenshot-path, and safety checks passed |
+| Completion | README and handoff docs tightened for cold GitHub review; local validation passed |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Final Portfolio Documentation And Handoff Polish Pass
+
+### Phase summary
+
+This pass made the repository easier to review from GitHub without changing app behavior. It tightened the README into a concise reviewer entry point, clarified the local/mock-only safety boundary, kept screenshot references explicit, and expanded the existing handoff document with the concrete local run sequence, demo seed/reset behavior, demo walkthrough, and known local warnings.
+
+No backend code, frontend code, schemas, migrations, dependencies, lockfiles, `.env` contents, GitHub Actions, real integrations, staging, commits, or pushes were changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Reworked into a concise cold-reviewer overview with problem, features, stack, screenshots, mock-only safety note, setup/run commands, validation commands, docs map, and limitations |
+| `HANDOFF.md` | Added clearer local run sequence, demo seed/reset notes, 3-5 minute walkthrough, known local warnings, and future live-provider boundaries without real-provider setup instructions |
+| `STATE.md` | Recorded this phase, validation results, skipped checks, safety status, and remaining known issues |
+
+### Screenshot path verification
+
+| Path | Result |
+|---|---|
+| `docs/assets/screenshots/salesops-home.png` | `True` |
+| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | `True` |
+| `docs/assets/screenshots/salesops-admin-run-history.png` | `True` |
+| `docs/assets/screenshots/salesops-admin-failed-detail.png` | `True` |
+| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | `True` |
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | Workspace sandbox process launch failed with `CreateProcessAsUserW failed: 5`; commands were run through approved escalated local PowerShell |
+| Starting `git status --short` | pass | `M HANDOFF.md`, `M README.md` |
+| Final `git diff --check` | pass | Exit 0; Git printed LF-to-CRLF working-copy warnings for `HANDOFF.md`, `README.md`, and `STATE.md`, with no whitespace errors |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 3.07s`; warning is the existing FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `14.02s` |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully; generated 8 routes including `/` and `/admin/runs` |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized and completed successfully |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| Final `git status --short` | pass | `M HANDOFF.md`, `M README.md`, `M STATE.md` |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Required local validation gates | none skipped | All commands requested for this phase were run |
+| GitHub Actions / CI | skipped | Explicitly forbidden for this project phase; no workflow files were added or run |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all validation stayed local and mock-safe |
+| Manual browser smoke | skipped | This was a documentation/readiness pass with no app behavior changes; README screenshot paths, frontend tests, typecheck, and build were validated instead |
+| Dependency install/update beyond documented local commands | skipped | Existing dependencies were already present; no dependency manifest or lockfile change was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Safety status
+
+- `.github/workflows` was not added; `Test-Path -LiteralPath ".\.github\workflows"` returned `False`.
+- No files were staged; `git diff --cached --name-only` returned no output.
+- Dependency manifests and lockfiles were not changed; `git status --short -- .env .env.example package.json pnpm-workspace.yaml pnpm-lock.yaml uv.lock pyproject.toml apps/web/package.json` returned no output.
+- `.env` contents were not printed or edited.
+- No backend or frontend app-code diff exists; `git diff -- backend apps` returned no output.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was introduced or made.
+- GitHub Actions, commits, pushes, staging, and live provider setup remain absent.
+
+### Manual validation recommendation
+
+For reviewer-facing manual QA, run the documented local path from `README.md` or `HANDOFF.md`, then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:8028/docs`
+
+Confirm the public form, CSV import, seeded admin rows, filters, selected failed-run detail, and read-only admin behavior using synthetic data only.
+
+### Remaining known issues and backlog
+
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+- A demo video/GIF is not committed; `HANDOFF.md` documents the 3-5 minute recording plan.
+- Real-provider adapters, auth, deployment, production hardening, and CI remain intentionally out of scope unless explicitly approved later.
+
+### Suggested commit message
+
+```text
+Polish portfolio README and handoff docs
+```
 
 ## Latest Update - 2026-06-08 Portfolio Demo Assets and Final Visual Release Polish
 

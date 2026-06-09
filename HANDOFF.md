@@ -1,53 +1,90 @@
 # SalesOps Portfolio Handoff
 
-## 1. Purpose
+## Purpose
 
-This handoff document explains how to review the current local portfolio demo and how future real CRM or Slack credential work would be introduced safely.
+This document gives a reviewer or future maintainer the shortest safe path to run, demo, and hand off the local SalesOps Workflow Automation Hub portfolio project.
 
 The current project is local-only and mock-first. It does not require, store, print, or call real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service credentials.
 
-## 2. Current Mock Boundaries
-
-The implemented workflow keeps CRM and Slack behind adapter boundaries:
+## Current Mock Boundaries
 
 - `backend/app/leads/adapters.py` defines the `CrmAdapter` and `SlackNotifier` protocols.
 - `MockCrmAdapter` simulates contact/deal create-or-update behavior.
 - `MockSlackNotifier` simulates qualified-lead notifications.
-- `backend/app/leads/service.py` injects those adapter protocols into `LeadIntakeService`.
-- `backend/app/config.py` reads local-safe provider settings, but there is no live provider dispatch or SDK integration.
+- `backend/app/leads/service.py` injects those protocols into the lead workflow service.
+- `backend/app/config.py` reads local-safe configuration, but there is no live provider dispatch or SDK integration.
+- The public demo and `/admin/runs` dashboard use local FastAPI, local Next.js routes, and local PostgreSQL.
+- The admin screen should issue local read-only `GET` requests for persisted run history and selected run detail.
 
-The public demo and `/admin/runs` read-only dashboard use local FastAPI and Next.js routes. The admin screen should only issue local `GET` requests for persisted run history and selected run detail.
+## Local Run Sequence
 
-## 3. Credential Handling Rules
+Run from the repository root in PowerShell. Create `.env` only from placeholders and do not print local secret values.
 
-Use these rules before any future real-provider work:
+```powershell
+if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
+uv sync
+pnpm install
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+```
 
-- Keep real secrets only in ignored local `.env` files or a later approved secret manager.
-- Keep `.env.example` placeholder-only.
-- Do not place real tokens, webhook URLs, private keys, account IDs, client secrets, refresh tokens, or personal credentials in docs, tests, fixtures, screenshots, logs, prompts, or source files.
-- Do not print secrets while validating configuration.
-- Do not add GitHub Actions, deployment config, hosted automation, or production credentials unless explicitly requested.
-- Do not call real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, webhooks, or external services without explicit approval for the exact usage.
+Start the backend in one PowerShell window:
 
-The current placeholder names in `.env.example` document likely future configuration shape only. They are not active live integration settings.
+```powershell
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
 
-## 4. Future Live-Provider Implementation Path
+Start the frontend in another PowerShell window:
 
-Any real CRM or Slack implementation should be a separate, approved phase. The minimum safe path is:
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
 
-1. Confirm the provider, account, environment, allowed operations, rate limits, and test-data policy with the owner.
-2. Add provider-specific adapter classes behind the existing `CrmAdapter` and `SlackNotifier` protocols.
-3. Keep mock mode as the default and require an explicit local setting before live adapters can be selected.
-4. Validate provider settings at startup without printing secret values.
-5. Use mocked HTTP clients or fake provider servers in automated tests.
-6. Add contract tests for success, update, duplicate, failure, timeout, and retry-safe behavior.
-7. Add redaction tests for logs, audit records, API responses, and UI detail views.
-8. Run the full local quality gate before any manual review.
-9. Perform any real-provider smoke only after explicit approval and only with synthetic test leads.
+Open:
 
-Do not expose retry or mutation controls in the public admin demo unless that becomes an explicitly approved product change. The current public admin boundary is read-only by design.
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:8028/docs`
 
-## 5. Before And After Workflow
+## Demo Seed And Reset Notes
+
+The deterministic seed command is:
+
+```powershell
+uv run python -m backend.app.leads.demo_seed
+```
+
+It clears and replaces only the known deterministic records:
+
+- `run_demo_success`
+- `run_demo_failed`
+- `run_demo_retried`
+- `run_demo_queued`
+- their matching `lead_demo_*` records and related attempt/audit rows
+
+It does not wipe every locally submitted lead or every workflow run in the database. If a fully fresh local database is needed, use the repository's documented local database workflow in [RUNBOOK.md](RUNBOOK.md) and keep the operation local-only.
+
+## Suggested 3-5 Minute Demo
+
+1. Problem setup, 20 to 30 seconds: describe the growth agency, 5 sales reps, form/CSV intake, duplicate risk, slow handoffs, and weak auditability.
+2. Public intake, 45 to 60 seconds: submit one synthetic lead through the form, then import one CSV row.
+3. Automation behavior, 45 to 60 seconds: show validation, persisted dedupe evidence, mock CRM upsert, mock Slack notification, and local audit/run records.
+4. Admin inspection, 60 to 90 seconds: open `/admin/runs`, filter by status/source/date/owner/error type, search for a seeded company, open `run_demo_failed`, and show sanitized failure detail.
+5. Safety and handoff, 30 to 45 seconds: point out mock-only defaults, placeholder-only `.env.example`, no CI/deployment/live providers, and approval-gated future provider work.
+
+Expected reviewer signals:
+
+- seeded success, failed, queued, and retried runs render;
+- filters by date, source, status, owner, and error type work;
+- selected run detail shows sanitized payload and attempt history;
+- public admin interactions remain local read-only `GET` requests;
+- no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, `POST`, `PUT`, `PATCH`, or `DELETE` control is visible in the admin UI;
+- no real provider calls, secrets, deployment config, GitHub Actions, staging, commits, or pushes are required.
+
+## Before And After Workflow
 
 Before:
 
@@ -65,54 +102,25 @@ After:
 - Lead, run, attempt, and audit records are persisted locally.
 - The admin dashboard shows run status, source, owner, error type, failure detail, and retry history without exposing public mutation controls.
 
-## 6. Demo Script And Video Plan
+## Known Local Warnings
 
-Target length: 3 to 5 minutes.
+- The backend pytest suite has recently emitted one FastAPI/Starlette `TestClient` deprecation warning. It is tracked in [STATE.md](STATE.md) when present and does not fail the test gate.
+- The Next.js dev server may show a local dev indicator when using `next dev`. That is a development overlay, not app behavior or a provider integration.
+- Docker Desktop must be running for the documented local PostgreSQL demo path.
 
-1. Problem setup, 20 to 30 seconds: describe the growth agency, five sales reps, form/CSV lead intake, duplicate risk, slow handoffs, and weak auditability.
-2. Public intake, 45 to 60 seconds: submit one synthetic lead through the demo form, then import one CSV row. Show validation feedback and current-session results.
-3. Automation behavior, 45 to 60 seconds: explain persisted dedupe, mock CRM upsert, mock Slack notification, and local audit/run records.
-4. Admin inspection, 60 to 90 seconds: open `/admin/runs`, filter by status/source/owner/error type, search for a seeded company, and open `run_demo_failed` details.
-5. Safety and handoff, 30 to 45 seconds: point to this handoff doc, explain mock-only defaults, placeholder-only env handling, and the approval requirement for live providers.
+## Credential Handling Rules
 
-## 7. Reviewer Checklist
+Use these rules before any future real-provider work:
 
-From the repository root in PowerShell:
+- Keep real secrets only in ignored local `.env` files or a later approved secret manager.
+- Keep `.env.example` placeholder-only.
+- Do not place real tokens, webhook URLs, private keys, account IDs, client secrets, refresh tokens, or personal credentials in docs, tests, fixtures, screenshots, logs, prompts, or source files.
+- Do not print secrets while validating configuration.
+- Do not add GitHub Actions, deployment config, hosted automation, or production credentials unless explicitly requested.
+- Do not call real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, webhooks, or external services without explicit approval for the exact usage.
 
-```powershell
-if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
-docker compose up -d postgres
-uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
-```
+The current placeholder names in `.env.example` document likely future configuration shape only. They are not active live integration settings.
 
-Start the backend:
+## Future Live-Provider Boundary
 
-```powershell
-uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
-```
-
-Start the frontend in a second PowerShell window:
-
-```powershell
-$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
-$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8000"
-pnpm --dir apps/web dev
-```
-
-Review:
-
-- `README.md` for the portfolio overview and quick start.
-- `DESIGN.md` for the architecture flow and persistence data model diagrams.
-- `RUNBOOK.md` for the detailed local smoke workflow.
-- `REQ.md` for feature scope and local-only boundaries.
-- `http://localhost:3000` for the public form and CSV import.
-- `http://localhost:3000/admin/runs` for the read-only persisted run dashboard.
-
-Expected reviewer signals:
-
-- seeded success, failed, queued, and retried runs render;
-- filters by date, source, status, owner, and error type work;
-- selected run detail shows sanitized payload and attempt history;
-- public admin interactions remain local read-only `GET` requests;
-- no real provider calls, secrets, deployment config, GitHub Actions, staging, commits, or pushes are required.
+Any real CRM or Slack implementation should be a separate, approved phase. Keep mock mode as the default, add live adapters behind the existing protocols only after approval, test with mocked clients first, add redaction coverage, and perform any real-provider smoke only with explicit approval and synthetic test leads.
