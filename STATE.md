@@ -15,6 +15,117 @@
 | Completion | Public README/demo docs polished and current phase evidence recorded |
 | Main blocker | none |
 
+## Latest Update - 2026-06-09 Final Public Demo Polish And Release Readiness
+
+### Phase summary
+
+This pass reran the README Quick Start, browser-smoked the public demo routes, and fixed one public-demo inconsistency: `http://127.0.0.1:3042/docs` returned `404` while the reviewer smoke path expected a docs route. The frontend now exposes a local-only `/docs` route that redirects to the configured FastAPI docs endpoint, which landed on `http://127.0.0.1:8028/docs` during smoke.
+
+The README, runbook, demo asset checklist, and context docs were updated to describe the `/docs` redirect accurately. No real provider integration, paid API, secret, GitHub Actions workflow, staging, commit, push, deployment config, schema change, migration, dependency change, or public admin mutation behavior was added.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/app/docs/route.ts` | Added local Next.js `/docs` redirect to the configured FastAPI docs URL |
+| `README.md` | Updated Quick Start open list to use `http://127.0.0.1:3042/docs` as the reviewer docs entrypoint |
+| `RUNBOOK.md` | Added `/docs` to local smoke and recording checklist instructions |
+| `docs/DEMO_ASSETS.md` | Added the frontend `/docs` URL to local capture rules |
+| `CONTEXT.md` | Recorded the local `/docs` redirect in the frontend context |
+| `STATE.md` | Recorded this release-readiness pass, validation evidence, smoke result, skipped checks, risks, and suggested commit message |
+
+### README Quick Start result
+
+| Command | Status | Result |
+|---|---|---|
+| `if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }` | pass | Completed without printing local values |
+| `uv sync` | pass | `Resolved 44 packages in 3ms`; `Checked 42 packages in 301ms` |
+| `pnpm install` | pass | Workspace already up to date; pnpm `11.5.0` |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized and completed at head |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| Backend start command | pass | README backend command served local API on `127.0.0.1:8028` |
+| Frontend start command | pass after wrapper retry | README frontend command served local Next.js on `127.0.0.1:3042` with local backend env vars |
+
+Validation note: sandboxed PowerShell launch failed in this workspace with `CreateProcessAsUserW failed: 5`, so required local commands were run through approved escalated PowerShell. No external provider, paid API, or real integration command was run.
+
+### Manual browser smoke result
+
+| Route | Status | Result |
+|---|---|---|
+| `http://127.0.0.1:3042/` | pass | Rendered `SalesOps Workflow Automation Hub`, `Lead intake form`, and `CSV import`; no browser warning/error logs; no old demo-phase label visible |
+| `http://127.0.0.1:3042/admin/runs` | pass | Rendered `Admin run history`, `Read-only`, and seeded success, failed, queued, and retried runs after loading; no browser warning/error logs; no public retry/edit/delete/send/archive/rerun/resubmit control visible |
+| `http://127.0.0.1:3042/docs` | pass after fix | Redirected to `http://127.0.0.1:8028/docs`; rendered `SalesOps Workflow Automation Hub API - Swagger UI`; no browser warning/error logs |
+| HTTP smoke | pass | `/` and `/admin/runs` returned `200`; `/docs` now returned `200` after following the redirect to backend docs |
+
+### Required validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | `M CONTEXT.md`, `M README.md`, `M RUNBOOK.md`, `M docs/DEMO_ASSETS.md`, `?? apps/web/src/app/docs/` before this `STATE.md` update |
+| `git diff --check` | pass | Exit 0; Git printed expected LF-to-CRLF working-copy warnings for edited Markdown files; no whitespace errors |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+| `Test-Path -LiteralPath ".github\workflows"` | pass | `False` |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.68s`; warning is the known FastAPI/Starlette `TestClient` deprecation warning |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `21.38s` |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully; generated 8 static pages and dynamic routes including `/docs` |
+
+### Forbidden-pattern checks
+
+| Check | Status | Result |
+|---|---|---|
+| Selected-doc local absolute path scan | pass | No output for `README.md`, `docs/DEMO_ASSETS.md`, `RUNBOOK.md`, `CONTEXT.md`, or `STATE.md` |
+| Old public demo-phase label scan | pass with historical matches | Matches were limited to historical `STATE.md` entries; rendered `/`, `/admin/runs`, and `/docs` did not show the old label |
+| Broad secret-word scan | reviewed / expected matches | Matches were placeholder `.env` and `.env.example` demo values, docs safety wording, lockfile package names, historical `STATE.md` entries, and generated cache/build artifacts included by the requested broad scan. No real API key, bearer credential, private key, provider token, or personal secret was found. |
+| Workflow/CI wording scan | reviewed / expected matches | Matches were out-of-scope documentation and historical `STATE.md` entries. `Test-Path -LiteralPath ".github\workflows"` returned `False`; no workflow directory exists. |
+| Provider-boundary wording scan | reviewed / expected matches | Matches are safety-boundary wording that says real/live/paid/production providers are absent or approval-gated. No real provider call path was introduced or run. |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all smoke stayed local and mock-safe |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files were added or run |
+| Dependency changes | skipped | `uv sync` and `pnpm install` found existing dependencies sufficient; no package manifest or lockfile change was needed |
+| GIF/video capture | skipped | Not requested; committed still screenshots remain the current proof assets |
+| Temporary dev-server cleanup | pending user approval | The browser smoke servers started for this pass were still running when this entry was written because stopping local processes requires explicit user approval after safety review |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Temporary local backend/frontend smoke servers may still be listening on ports `8028` and `3042` until the user approves stopping the verified smoke processes or stops them manually.
+- Browser smoke covered the in-app browser at the default desktop viewport only; other browsers and mobile widths were not rerun in this pass.
+- The broad requested scans intentionally include ignored `.env`, generated caches, build output, and historical docs, so they produce expected wording matches that require review rather than a simple zero-match result.
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+- Demo GIF/video assets remain optional and not committed.
+
+### Manual validation recommendation
+
+Run the README Quick Start in PowerShell, then inspect:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/docs`
+
+Confirm the docs route redirects to `http://127.0.0.1:8028/docs`, admin remains read-only, seeded demo rows render, and all provider behavior remains local/mock-only.
+
+### Git safety confirmation
+
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+
+### Suggested commit message
+
+```text
+Polish public demo docs route
+```
+
 ## Latest Update - 2026-06-09 Public Portfolio Packaging Pass
 
 ### Phase summary

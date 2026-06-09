@@ -46,7 +46,7 @@ No GIF or video binaries are currently committed. `docs/assets/demo/README.md` r
 
 ## Capture Rules
 
-- Capture only local URLs such as `http://127.0.0.1:3042/`, `http://127.0.0.1:3042/admin/runs`, and `http://127.0.0.1:8028/docs`.
+- Capture only local URLs such as `http://127.0.0.1:3042/`, `http://127.0.0.1:3042/admin/runs`, `http://127.0.0.1:3042/docs`, and the redirected FastAPI docs URL `http://127.0.0.1:8028/docs`.
 - Use deterministic demo seed data or synthetic form/CSV values only.
 - Keep the admin page read-only in the recording; do not show retry, edit, delete, send, or provider-action workflows.
 - Show the mock-only boundary briefly: local FastAPI, local Next.js, local PostgreSQL, mock CRM, and mock Slack.

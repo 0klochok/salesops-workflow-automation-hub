@@ -109,7 +109,7 @@ Open:
 
 - `http://127.0.0.1:3042/` for the public lead form and CSV import.
 - `http://127.0.0.1:3042/admin/runs` for the read-only run dashboard.
-- `http://127.0.0.1:8028/docs` for local FastAPI docs.
+- `http://127.0.0.1:3042/docs` to redirect to the local FastAPI docs at `http://127.0.0.1:8028/docs`.
 
 ## Suggested Demo Walkthrough
 

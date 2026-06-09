@@ -375,6 +375,8 @@ pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 
 Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/source/search/date/owner/error-type filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
 
+Open `http://127.0.0.1:3042/docs` and confirm it redirects to the local FastAPI docs at `http://127.0.0.1:8028/docs`.
+
 ## 10.2 Final Local Portfolio Recording Checklist
 
 Use this checklist before recording the manual portfolio demo, capturing screenshots, handing the project to a reviewer, or manually preparing a commit. The demo is local-first and mock-safe: it does not require paid APIs, production credentials, real provider dashboards, webhooks, GitHub Actions, staging, commits, or pushes.
@@ -433,6 +435,7 @@ Open these local pages in the recording browser:
 
 - `http://127.0.0.1:3042/` for the public lead form and CSV import;
 - `http://127.0.0.1:3042/admin/runs` for the read-only persisted admin dashboard;
+- `http://127.0.0.1:3042/docs` for the local FastAPI docs redirect;
 - `http://127.0.0.1:3042/admin/runs?status=failed` for status filtering; expect seeded `run_demo_failed`;
 - `http://127.0.0.1:3042/admin/runs?source=csv_upload` for source filtering; expect seeded `run_demo_failed`;
 - `http://127.0.0.1:3042/admin/runs?q=atlas` for search filtering; expect seeded `run_demo_retried`;
@@ -452,6 +455,8 @@ On `/admin/runs`, verify:
 - admin interactions issue local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>` only;
 - no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered;
 - if the Next.js dev tools badge appears because the frontend is running under `next dev`, keep it closed or crop it out of final footage when desired. It is a local development indicator, not app behavior or an integration.
+
+On `/docs`, verify that the browser lands on the local FastAPI Swagger UI served by the backend and remains on `127.0.0.1`.
 
 On `/`, verify:
 
