@@ -9,11 +9,102 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Final portfolio documentation and handoff polish pass |
-| Overall status | on-track |
-| Quality gate status | Required docs-phase backend, frontend, database/seed, screenshot-path, and safety checks passed |
-| Completion | README and handoff docs tightened for cold GitHub review; local validation passed |
+| Current phase | Portfolio packaging and final public presentation polish |
+| Overall status | release-candidate accepted for local portfolio review |
+| Quality gate status | Final local packaging validation passed |
+| Completion | README and HANDOFF reviewed as portfolio-ready; STATE updated with accepted local/mock-only release-candidate status |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Portfolio Packaging And Final Public Presentation Polish
+
+### Phase summary
+
+This pass reviewed the public-facing documentation and demo asset references for final portfolio presentation readiness after the accepted release-candidate audit. `README.md` and `HANDOFF.md` already clearly describe the project purpose, business problem, local/mock-only demo posture, stack, local run path, demo seed, frontend/admin/API URLs, out-of-scope boundaries, and reviewer handoff flow, so they were left unchanged.
+
+No backend code, frontend code, application behavior, schemas, migrations, dependencies, lockfiles, `.env` contents, screenshots, GitHub Actions, real integrations, staging, commits, pushes, or live-provider setup were changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded the accepted release-candidate packaging status, documentation audit result, screenshot path verification, validation results, skipped checks, and remaining risks |
+
+### Documentation audit
+
+| Area | Result |
+|---|---|
+| `README.md` | Acceptable as the cold-reviewer entry point; covers what the project does, problem solved, local/mock-only posture, stack, setup, seed, frontend/admin/API URLs, validation commands, docs map, and limitations |
+| `HANDOFF.md` | Acceptable for reviewer/client handoff; covers mock boundaries, local run sequence, deterministic seed/reset behavior, 3-5 minute demo, before/after workflow, warnings, credential rules, and future live-provider boundary |
+| Screenshot/GIF references | Acceptable; README image references point to existing committed local-demo PNGs, and `docs/assets/demo/README.md` accurately states that no video file is committed yet |
+| Forbidden claims | No production deployment, live-provider usage, paid API usage, real customer data, or GitHub Actions/CI claim was found in the reviewed presentation docs |
+
+### Screenshot path verification
+
+| Path | Result |
+|---|---|
+| `docs/assets/screenshots/salesops-home.png` | `True` |
+| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | `True` |
+| `docs/assets/screenshots/salesops-admin-run-history.png` | `True` |
+| `docs/assets/screenshots/salesops-admin-failed-detail.png` | `True` |
+| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | `True` |
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | Workspace sandbox process launch failed with `CreateProcessAsUserW failed: 5`; commands were run through approved escalated local PowerShell |
+| Final `git status --short` | pass | `M STATE.md` |
+| Final `git diff --stat` | pass | `STATE.md | 99 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---`; 1 file changed, 95 insertions, 4 deletions; Git printed the expected LF-to-CRLF working-copy warning |
+| Final `git diff --check` | pass | Exit 0; Git printed the expected LF-to-CRLF working-copy warning and no whitespace errors |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.21s`; warning is the existing FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `14.02s` |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully; generated 8 routes including `/` and `/admin/runs` |
+| `.github/workflows` check | pass | `Test-Path -LiteralPath ".\.github\workflows"` returned `False` |
+| README image target check | pass | All five README screenshot paths returned `True` |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| GitHub Actions / CI | skipped | Explicitly forbidden for this phase; no workflow files were added or run |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all validation stayed local and mock-safe |
+| Manual browser smoke | skipped in this pass | The user-provided accepted release-candidate audit already recorded manual browser smoke as passed, and this pass changed only documentation status text |
+| Dependency install/update | skipped | Existing dependencies were already present; no dependency manifest or lockfile change was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Safety status
+
+- `.github/workflows` remains absent.
+- `.env` contents were not printed or edited.
+- README, HANDOFF, screenshot assets, backend app code, frontend app code, dependency manifests, and lockfiles were not changed.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was introduced or made.
+- GitHub Actions, commits, pushes, staging, deployment config, and live provider setup remain absent.
+
+### Manual validation recommendation
+
+For reviewer-facing manual QA, run the documented local path from `README.md` or `HANDOFF.md`, then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:8028/docs`
+
+Confirm the public form, CSV import, seeded admin rows, filters, selected failed-run detail, and read-only admin behavior using synthetic data only.
+
+### Remaining known issues and backlog
+
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+- A demo video/GIF is not committed; `HANDOFF.md` documents the 3-5 minute recording plan.
+- Real-provider adapters, auth, deployment, production hardening, and CI remain intentionally out of scope unless explicitly approved later.
+
+### Suggested commit message
+
+```text
+Record final portfolio packaging status
+```
 
 ## Latest Update - 2026-06-09 Final Portfolio Documentation And Handoff Polish Pass
 
