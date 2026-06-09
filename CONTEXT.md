@@ -7,7 +7,7 @@
 | Last updated | 2026-06-09 |
 | Owner | User |
 | Status | active draft |
-| Current phase | Public portfolio packaging pass |
+| Current phase | Demo asset capture and final portfolio packaging |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `repository root` |
 | Primary runtime | Local Windows 11 / PowerShell |

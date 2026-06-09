@@ -8,7 +8,7 @@
 | Status | active draft |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Public portfolio packaging pass |
+| Current phase | Demo asset capture and final portfolio packaging |
 
 ## 2. Operating Rules
 
@@ -444,6 +444,30 @@ Open these local pages in the recording browser:
 - `http://127.0.0.1:3042/admin/runs?from=2026-06-01&to=2026-06-01` for date filtering; expect the four seeded demo runs because the demo seed uses fixed `2026-06-01` timestamps;
 - `http://127.0.0.1:3042/admin/runs?q=no-such-run` for the filtered empty state;
 - `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed` for the selected-run-hidden detail path; expect the success row in the table plus the detail panel for `run_demo_failed`.
+
+### Screenshot And Recording Targets
+
+Use `docs/DEMO_ASSETS.md` as the source of truth for exact filenames and framing.
+
+- Store still screenshots in `docs/assets/screenshots/`.
+- Store optional GIFs and video exports in `docs/assets/demo/`; keep draft recordings untracked unless the user intentionally selects them.
+- Capture desktop screenshots at `1440x1100` when practical, or `1365x900` when a smaller local display is used.
+- Capture mobile-width stills at `390x844`.
+- Keep browser zoom at `100%`.
+- Include the local browser URL when it helps prove the route, especially for `/docs` redirect evidence.
+- Do not capture `.env`, secrets, provider dashboards, private browser tabs, personal account data, real customer data, or unrelated local files.
+
+Recommended final stills:
+
+- `salesops-home.png`: public form and CSV import entry point.
+- `salesops-csv-session-dashboard.png`: synthetic CSV import and session dashboard.
+- `salesops-admin-run-history.png`: seeded read-only run table.
+- `salesops-admin-failed-detail.png`: failed run detail with sanitized payload and suggested action.
+- `salesops-admin-filtered-detail.png`: selected run detail preserved while filters are active.
+- `salesops-admin-empty-filter.png`: optional no-match filter state.
+- `salesops-docs-swagger.png`: optional FastAPI Swagger UI after the frontend `/docs` redirect.
+- `salesops-mobile-home.png`: optional mobile public intake layout.
+- `salesops-mobile-admin-runs.png`: optional mobile admin layout.
 
 On `/admin/runs`, verify:
 

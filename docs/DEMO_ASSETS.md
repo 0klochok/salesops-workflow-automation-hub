@@ -6,19 +6,42 @@ This checklist aligns with the README screenshot section: committed still screen
 
 Do not commit large binary recordings by default. Store draft exports locally, review them manually, and only track intentionally selected assets.
 
+## Storage And Viewports
+
+Store final still screenshots in `docs/assets/screenshots/`.
+
+Store optional GIFs, screen recordings, and exported video clips in `docs/assets/demo/`. Keep draft recordings untracked unless the user intentionally selects them for the portfolio.
+
+Recommended browser settings:
+
+- Desktop screenshots: `1440x1100` preferred, `1365x900` acceptable, browser zoom `100%`.
+- Mobile screenshots: `390x844` preferred, browser zoom `100%`, device toolbar or narrow browser width.
+- GIFs: `1280x900` or `1440x900`, browser zoom `100%`, record only the app viewport.
+- Video: `1920x1080` if available, otherwise `1440x900`; keep terminal windows out of frame unless showing local commands is intentional.
+
+Use local URLs only:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/docs`
+- `http://127.0.0.1:8028/docs` after the redirect lands on FastAPI Swagger UI
+
 ## Recommended Still Screenshots
 
-| Suggested filename | Current status | Screen or state | What it proves |
-|---|---|---|---|
-| `docs/assets/screenshots/salesops-home.png` | Captured and committed | Public landing page with lead form and CSV import | The reviewer can see the core intake surfaces immediately |
-| `docs/assets/screenshots/salesops-form-success.png` | Not captured yet | Synthetic form submission result | Validation, backend dedupe, mock CRM, and mock Slack outcomes are visible |
-| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | Captured and committed | CSV import result and session dashboard | CSV rows use the same local intake path and update the browser-session evidence |
-| `docs/assets/screenshots/salesops-admin-run-history.png` | Captured and committed | Read-only admin run table with seeded rows | Persisted success, failed, queued, and retried runs are reviewable |
-| `docs/assets/screenshots/salesops-admin-failed-detail.png` | Captured and committed | `run_demo_failed` selected detail | Sanitized payload, attempts, failure context, and suggested action are visible |
-| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Captured and committed | Filtered admin state with selected detail preserved | Filters work while detail remains inspectable |
-| `docs/assets/screenshots/salesops-admin-empty-filter.png` | Not captured yet | No-match filtered admin state | Empty-state behavior is understandable and safe |
+| Suggested filename | Current status | Viewport | Screen or state | What it should show |
+|---|---|---|---|---|
+| `docs/assets/screenshots/salesops-home.png` | Captured and committed | Desktop | Public landing page with lead form and CSV import | Page heading, lead form, CSV import surface, and no provider-dashboard context |
+| `docs/assets/screenshots/salesops-form-success.png` | Not captured yet | Desktop | Synthetic form submission result | Success status plus validation, backend dedupe, mock CRM, and mock Slack outcomes |
+| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | Captured and committed | Desktop | CSV import result and session dashboard | A valid synthetic CSV import, latest result, and browser-session evidence |
+| `docs/assets/screenshots/salesops-admin-run-history.png` | Captured and committed | Desktop | Read-only admin run table with seeded rows | Seeded success, failed, queued, and retried runs with filters visible |
+| `docs/assets/screenshots/salesops-admin-failed-detail.png` | Captured and committed | Desktop | `run_demo_failed` selected detail | Sanitized intake payload, attempts, failure context, and suggested action |
+| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Captured and committed | Desktop | Filtered admin state with selected detail preserved | Filters active while selected run detail remains inspectable |
+| `docs/assets/screenshots/salesops-admin-empty-filter.png` | Captured locally in final packaging pass | Desktop | No-match filtered admin state | The filtered empty state and reset path are understandable |
+| `docs/assets/screenshots/salesops-docs-swagger.png` | Captured locally in final packaging pass | Desktop | FastAPI Swagger UI after `/docs` redirect | Local API docs title, local `127.0.0.1:8028/docs` URL, and no external provider page |
+| `docs/assets/screenshots/salesops-mobile-home.png` | Captured locally in final packaging pass | Mobile | Public page at mobile width | Form and CSV controls stack cleanly without overlap or horizontal page overflow |
+| `docs/assets/screenshots/salesops-mobile-admin-runs.png` | Captured locally in final packaging pass | Mobile | Admin page at mobile width | Filters wrap cleanly and the table scrolls inside its container |
 
-Existing committed screenshots cover the main page, CSV session dashboard, run history, failed detail, and filtered detail. The optional form-success and empty-filter screenshots are not present yet and should only be added if they are useful for the final portfolio story.
+Existing committed screenshots cover the main page, CSV session dashboard, run history, failed detail, and filtered detail. This final packaging pass adds local draft screenshots for the empty-filter state, the `/docs` redirect target, and mobile-width public/admin layouts. The optional form-success screenshot is still not present and should only be added if it improves the final portfolio story.
 
 ## Release Audit Verification - 2026-06-09
 
@@ -31,6 +54,32 @@ Committed screenshot assets were verified during the final public portfolio rele
 - `docs/assets/screenshots/salesops-admin-filtered-detail.png`
 
 No GIF or video asset was captured in this phase. Capture was skipped because the still screenshots already cover the public portfolio proof points, no paid or third-party capture tool was needed, and large binary recordings should remain optional until the user intentionally selects a final clip for the portfolio.
+
+## Manual Capture Checklist
+
+Before capture:
+
+1. Run the local setup and seed path from `README.md` or `RUNBOOK.md`.
+2. Start FastAPI on `127.0.0.1:8028`.
+3. Start Next.js on `127.0.0.1:3042` with both backend base URL environment variables pointed at `http://127.0.0.1:8028`.
+4. Open a clean browser window or profile, use browser zoom `100%`, and close unrelated tabs.
+5. Do not open `.env`, provider dashboards, personal accounts, private local files, or real customer data.
+
+Desktop stills to capture:
+
+1. `/`: capture `salesops-home.png` before submitting if the page needs a fresh hero/intake view.
+2. `/`: submit one synthetic form lead and capture `salesops-form-success.png` only if that result improves the story.
+3. `/`: import one valid synthetic CSV row and capture `salesops-csv-session-dashboard.png` if refreshing the committed asset.
+4. `/admin/runs`: capture `salesops-admin-run-history.png` with seeded success, failed, queued, and retried rows visible.
+5. `/admin/runs?runId=run_demo_failed`: capture `salesops-admin-failed-detail.png` with sanitized failure detail visible.
+6. `/admin/runs?status=success&runId=run_demo_failed`: capture `salesops-admin-filtered-detail.png` with the selected-run-hidden notice and detail visible.
+7. `/admin/runs?q=no-such-run`: capture `salesops-admin-empty-filter.png` if an empty-state asset is wanted.
+8. `/docs`: follow the redirect and capture `salesops-docs-swagger.png` after the browser lands on `http://127.0.0.1:8028/docs`.
+
+Mobile stills to capture:
+
+1. `/`: capture `salesops-mobile-home.png` at `390x844` after confirming the public form and CSV controls stack cleanly.
+2. `/admin/runs`: capture `salesops-mobile-admin-runs.png` at `390x844` after confirming filters wrap and the table scrolls inside its container.
 
 ## Recommended GIF Or Video Shots
 

@@ -9,11 +9,130 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Public Portfolio Packaging Pass |
+| Current phase | Demo asset capture and final portfolio packaging |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Required local gates passed; targeted safety scans reviewed |
-| Completion | Public README/demo docs polished and current phase evidence recorded |
+| Quality gate status | Required local gates passed; browser smoke and screenshot capture passed; one forbidden-pattern scan skipped after approval rejection |
+| Completion | Demo asset docs polished, final still captures added, and current phase evidence recorded |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Demo Asset Capture And Final Portfolio Packaging
+
+### Phase summary
+
+This pass reviewed the current README, RUNBOOK, `docs/DEMO_ASSETS.md`, CONTEXT, and STATE docs; verified the documented local demo route set; added exact screenshot/GIF capture guidance; captured four additional local still screenshots without adding dependencies; and updated portfolio documentation to make storage locations, suggested filenames, and viewport recommendations explicit.
+
+No backend behavior, frontend behavior, API contract, schema, migration, package manifest, lockfile, GitHub Actions workflow, real provider integration, paid API, live webhook, secret, staging action, commit, or push was introduced.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Added a short pointer to final screenshot/GIF storage and viewport guidance |
+| `RUNBOOK.md` | Updated current phase metadata and added screenshot/recording target guidance |
+| `CONTEXT.md` | Updated current phase metadata |
+| `docs/DEMO_ASSETS.md` | Added exact capture checklist, filenames, asset storage locations, and viewport recommendations |
+| `docs/assets/README.md` | Added the new route/mobile screenshot assets to the inventory |
+| `docs/assets/screenshots/salesops-admin-empty-filter.png` | Added no-match admin filter state screenshot |
+| `docs/assets/screenshots/salesops-docs-swagger.png` | Added FastAPI Swagger UI screenshot after frontend `/docs` redirect |
+| `docs/assets/screenshots/salesops-mobile-home.png` | Added mobile-width public intake screenshot |
+| `docs/assets/screenshots/salesops-mobile-admin-runs.png` | Added mobile-width admin screenshot |
+| `STATE.md` | Recorded this phase, validation, smoke evidence, skipped checks, risks, and suggested commit message |
+
+### Required validation
+
+Validation note: sandboxed PowerShell launch failed earlier in this workspace with `CreateProcessAsUserW failed: 5`, so required local commands were run through approved escalated PowerShell. No external provider, paid API, live webhook, or real integration command was run.
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | Before this STATE update: `M CONTEXT.md`, `M README.md`, `M RUNBOOK.md`, `M docs/DEMO_ASSETS.md`, `M docs/assets/README.md`, plus four untracked screenshots under `docs/assets/screenshots/` |
+| `git diff --check` | pass | Exit 0; Git printed expected LF-to-CRLF working-copy warnings for edited Markdown files; no whitespace errors |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+| `Test-Path -LiteralPath ".github\workflows"` | pass | `False` |
+| `uv sync` | pass | `Resolved 44 packages in 2ms`; `Checked 42 packages in 290ms` |
+| `pnpm install` | pass | Workspace already up to date; `Done in 84ms using pnpm v11.5.0` |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized; no pending migration output after head check |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.27s`; warning is the known FastAPI/Starlette TestClient deprecation warning |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `15.11s` |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully; generated 8 routes including `/`, `/admin/runs`, API proxy routes, and `/docs` |
+
+### Manual/browser smoke result
+
+Browser smoke used installed Chrome `149.0.7827.55` headless through the local DevTools Protocol and Node `24.16.0` built-in WebSocket support. No Playwright, Puppeteer, browser plugin, or new dependency was added.
+
+| Check | Status | Result |
+|---|---|---|
+| Backend route precheck | pass | Existing local backend on `http://127.0.0.1:8028/health` returned HTTP `200`; Codex did not stop this pre-existing backend |
+| Frontend startup | pass after retry | First temporary start had a quoting issue and returned `/` HTTP `500`; Codex stopped only that temporary process tree, restarted with encoded PowerShell env setup, and `/` returned HTTP `200` |
+| `/` desktop render | pass | Rendered title `SalesOps Workflow Automation Hub`, `Lead intake form`, and `CSV import`; old `Phase 3 Local Demo` label absent; browser error list empty |
+| `/admin/runs` desktop render | pass | Rendered `Admin run history`, `Read-only`, and seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`; visible controls were reset/view-detail controls only; browser error list empty |
+| `/admin/runs?q=no-such-run` | pass | Rendered no-match filtered empty state and reset path; screenshot saved as `salesops-admin-empty-filter.png` |
+| `/docs` redirect | pass | Browser requested `http://127.0.0.1:3042/docs`, landed on `http://127.0.0.1:8028/docs`, and rendered `SalesOps Workflow Automation Hub API - Swagger UI`; screenshot saved as `salesops-docs-swagger.png` |
+| Backend Swagger docs | pass | Swagger UI rendered from the local backend and requested local `http://127.0.0.1:8028/openapi.json` only |
+| Mobile home smoke | pass | `390x844` viewport rendered public form and CSV import with page scroll width equal to viewport width; screenshot saved as `salesops-mobile-home.png` |
+| Mobile admin smoke | pass | `390x844` viewport rendered admin filters and seeded run evidence with page scroll width equal to viewport width; screenshot saved as `salesops-mobile-admin-runs.png` |
+| Console/runtime errors | pass | DevTools smoke reported no `Runtime.exceptionThrown`, console error, or log error events for the verified pages |
+| Screenshot visual inspection | pass | New screenshot files were opened locally and visually checked for nonblank content, correct route/state, English browser locale text, and no Next dev overlay |
+| Temporary process cleanup | pass | Codex stopped only the temporary Chrome/frontend process trees it started and removed ignored smoke logs/profile files; the pre-existing backend and Docker PostgreSQL were not stopped |
+
+### Forbidden-check results
+
+| Check | Status | Result |
+|---|---|---|
+| Local absolute path / username scan | pass | Filename-only scan for local absolute path and Windows username patterns returned `no-local-path-matches` |
+| Stale demo/phase label scan outside historical `STATE.md` | pass | `rg -l -e 'Phase 3 Local Demo|Public portfolio packaging pass|Public Portfolio Packaging Pass' --glob '!STATE.md' .` returned `no-stale-phase-label-matches-outside-state` |
+| `.github\workflows` absence | pass | `Test-Path -LiteralPath ".github\workflows"` returned `False` |
+| Broad real/live/paid provider wording scan | reviewed / expected matches | Filename-only scan matched source docs that explicitly document local-only/no-paid/no-real-provider safety boundaries |
+| Concrete live-provider endpoint scan | pass | No matches for HubSpot, Slack webhook/API, OpenAI, Anthropic, Gemini, or Google Sheets API endpoint strings |
+| Secret-looking value scan | skipped after approval rejection | The requested repo-wide secret-pattern scan was rejected by the approval reviewer as conflicting with the "forbidden checks" wording. Codex did not retry, bypass, or work around the rejected action. |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all verification stayed local/mock-only |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files were added or run |
+| GIF/video capture | skipped | Still screenshots were captured; large binary recordings remain optional until the user intentionally selects final clips |
+| Form-success screenshot | skipped | Existing screenshots plus the new empty-filter/docs/mobile stills cover the final portfolio story; docs keep `salesops-form-success.png` optional |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- The requested secret-looking value scan could not be run because the approval reviewer rejected the action; no workaround was attempted.
+- Browser smoke covered installed Chrome headless at desktop and mobile widths; other browsers were not checked in this pass.
+- Local PostgreSQL remains running because `docker compose up -d postgres` was a required validation command and Codex did not stop it.
+- The backend on `127.0.0.1:8028` was already running before browser smoke and was left untouched.
+- New screenshot files are untracked until the user manually stages them.
+- The backend test suite still emits the known FastAPI/Starlette TestClient deprecation warning.
+
+### Manual validation recommendation
+
+Run the README Quick Start from PowerShell, then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/docs`
+- `http://127.0.0.1:8028/docs`
+
+Confirm the public demo renders, seeded admin rows are visible and read-only, `/docs` redirects to local Swagger UI, mobile-width controls do not overlap, and all provider behavior remains local/mock-only.
+
+### Git safety confirmation
+
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, destructive checkout, or destructive cleanup was run.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+
+### Suggested commit message
+
+```text
+Package final demo assets
+```
 
 ## Latest Update - 2026-06-09 Final Public Demo Polish And Release Readiness
 
