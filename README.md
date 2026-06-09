@@ -51,7 +51,7 @@ Portfolio-ready screenshots are stored under `docs/assets/screenshots/` and use 
 
 ![SalesOps filtered admin view with selected run detail preserved](docs/assets/screenshots/salesops-admin-filtered-detail.png)
 
-Asset notes are in [docs/assets/README.md](docs/assets/README.md).
+Asset notes are in [docs/assets/README.md](docs/assets/README.md), and the optional capture checklist is in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md).
 
 ## Quick Start
 
@@ -102,7 +102,7 @@ Open:
 5. Open `run_demo_failed` and show sanitized failure detail and suggested action.
 6. Point out that the admin UI is read-only and all provider behavior is mocked locally.
 
-The full handoff and 3-5 minute script are in [HANDOFF.md](HANDOFF.md). Detailed local operations are in [RUNBOOK.md](RUNBOOK.md).
+The concise 5-10 minute reviewer checklist is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). The full handoff and 3-5 minute script are in [HANDOFF.md](HANDOFF.md). Recommended screenshot, GIF, and video shots are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md). Detailed local operations are in [RUNBOOK.md](RUNBOOK.md).
 
 ## Validation Commands
 
@@ -133,6 +133,8 @@ uv run python -m backend.app.leads.demo_seed
 - [REQ.md](REQ.md): requirements, acceptance criteria, and out-of-scope items.
 - [DESIGN.md](DESIGN.md): architecture, data model, and local integration boundaries.
 - [RUNBOOK.md](RUNBOOK.md): setup, local smoke checks, troubleshooting, and manual QA.
+- [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): concise local reviewer checklist and asset inventory.
+- [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md): optional screenshot, GIF, and video capture checklist.
 - [TDD.md](TDD.md): test strategy and coverage matrix.
 - [HANDOFF.md](HANDOFF.md): reviewer demo sequence and future credential boundary notes.
 - [STATE.md](STATE.md): current phase status, latest validation, skipped checks, and known issues.

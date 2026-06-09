@@ -7,13 +7,222 @@
 | Last updated | 2026-06-09 |
 | Owner | User |
 | Contributors | Codex |
-| Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
+| Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Portfolio packaging and final public presentation polish |
-| Overall status | release-candidate accepted for local portfolio review |
-| Quality gate status | Final local packaging validation passed |
-| Completion | README and HANDOFF reviewed as portfolio-ready; STATE updated with accepted local/mock-only release-candidate status |
+| Current phase | Demo Smoke and Portfolio Handoff Polish |
+| Overall status | acceptable for local portfolio review |
+| Quality gate status | Required local gates and manual browser smoke passed |
+| Completion | Added demo asset checklist, browser-smoked the local mock demo path, and recorded validation evidence |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Demo Smoke and Portfolio Handoff Polish
+
+### Phase summary
+
+This pass reviewed the demo documentation, added a small optional asset checklist, browser-smoked the documented local demo path with synthetic data only, and reran the required local quality gates.
+
+The local/mock-only boundary remains explicit. No app behavior, schemas, migrations, dependencies, lockfiles, `.env` contents, screenshots, binary media, GitHub Actions, real integrations, staging, commits, pushes, deployment config, or live-provider setup were changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `docs/DEMO_ASSETS.md` | Added recommended screenshot, GIF, and video shots, suggested filenames, capture rules, and reviewer proof points |
+| `docs/DEMO_SCRIPT.md` | Linked the asset checklist and clarified that video/GIF export remains optional and uncommitted |
+| `README.md` | Linked the new asset checklist from the screenshots/demo walkthrough and documentation map |
+| `HANDOFF.md` | Linked the asset checklist from the reviewer handoff introduction |
+| `STATE.md` | Removed absolute local user paths from status history and recorded this phase's smoke and validation evidence |
+
+### Documentation consistency review
+
+| Area | Result |
+|---|---|
+| Mock-only boundaries | pass; README, HANDOFF, DEMO_SCRIPT, and DEMO_ASSETS keep real providers and paid APIs out of scope |
+| Real-provider call implication | pass; docs state CRM/Slack behavior is deterministic mock behavior and future live-provider work is approval-gated |
+| Local install/run commands | pass; README, HANDOFF, and DEMO_SCRIPT agree on local PostgreSQL, backend `127.0.0.1:8028`, and frontend `127.0.0.1:3042` |
+| Reviewer path | pass; DEMO_SCRIPT remains a 5-10 minute reviewer checklist and HANDOFF keeps the 3-5 minute narration |
+| Links | pass; README/HANDOFF links to `docs/DEMO_SCRIPT.md`, `docs/DEMO_ASSETS.md`, and asset docs resolve to repository-relative paths |
+| Absolute local Windows paths | pass after edit; focused scan over changed docs returned no local user-profile path matches |
+| Large binary media | pass; no screenshots, videos, or GIFs were generated or tracked in this phase |
+
+### Manual browser smoke
+
+Validation note: sandboxed PowerShell launch failed in this workspace with `CreateProcessAsUserW failed: 5`, so local-only commands were run through approved escalated PowerShell. No external provider commands were run.
+
+| Check | Status | Result |
+|---|---|---|
+| Port precheck | pass | Ports `8028` and `3042` were free before smoke |
+| `.env` presence | pass | Local `.env` existed; contents were not printed or edited |
+| `docker compose up -d postgres` | pass | `salesops-postgres` was running |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized and completed at head |
+| `uv run python -m backend.app.leads.demo_seed` | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Backend dev server | pass | `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028` served local API smoke |
+| Frontend dev server | pass | Documented Next.js command served `http://127.0.0.1:3042`; `Start-Process` required the Windows `pnpm.cmd` shim, but normal PowerShell `pnpm` usage remains accurate |
+| Backend health | pass | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health" -Method Get` returned `status=ok` |
+| FastAPI docs | pass | `Invoke-WebRequest -Uri "http://127.0.0.1:8028/docs" -UseBasicParsing` returned HTTP `200 OK` |
+| Frontend home | pass | `Invoke-WebRequest -Uri "http://127.0.0.1:3042/" -UseBasicParsing` returned HTTP `200 OK` |
+| Browser home page | pass | Title was `SalesOps Workflow Automation Hub`; `Lead intake form` and `CSV import` rendered |
+| Synthetic form submit | pass | Submitted `codex.smoke.form@example.test`; UI showed success plus dedupe, CRM, and Slack outcomes |
+| Synthetic CSV import | pass | Imported `codex.smoke.csv@example.test`; UI showed latest result, `CSV upload` source label, and session dashboard update |
+| Admin run history | pass | `/admin/runs` rendered read-only admin state and seeded success, failed, queued, and retried runs |
+| Admin filters | pass | Direct filter URLs for status, source, search, owner, error type, and date showed the expected seeded rows |
+| Empty state | pass | `?q=no-such-run` displayed `No runs match these filters.` |
+| Failed run detail | pass | Opening `run_demo_failed` showed failure status, suggested action, sanitized payload, attempts, and read-only detail |
+| Admin mutation controls | pass | Visible buttons were reset/details only; no retry, edit, delete, resubmit, rerun, send, or archive controls appeared |
+| Browser console | pass | No warning or error entries were reported by the browser log check |
+| Cleanup | pass | Temporary backend/frontend smoke processes were stopped; ports `8028` and `3042` were clear afterward |
+
+### Required validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | `M HANDOFF.md`, `M README.md`, `M STATE.md`, `?? docs/DEMO_ASSETS.md`, `?? docs/DEMO_SCRIPT.md` |
+| `git diff --check` | pass | Exit 0; Git printed expected LF-to-CRLF working-copy warnings for edited Markdown files; no whitespace errors |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.18s`; warning is the existing FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `13.59s` |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully in `2.6s`; generated 8 routes including `/` and `/admin/runs` |
+| `Test-Path -LiteralPath ..github\workflows` | pass | `False` |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+### Docs safety search
+
+| Check | Status | Result |
+|---|---|---|
+| Prompt-provided `Select-String` pattern | expected command issue | The unescaped local user-profile regex form fails in PowerShell with an invalid escape sequence before scanning |
+| Corrected changed-doc safety search | pass | Equivalent escaped pattern was run across README, HANDOFF, STATE, DEMO_SCRIPT, and DEMO_ASSETS; matches were expected safety-boundary or historical-validation wording only |
+| Focused absolute local path search | pass | No output for `README.md`, `HANDOFF.md`, `STATE.md`, `docs/DEMO_SCRIPT.md`, or `docs/DEMO_ASSETS.md` |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files were added or run |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all smoke stayed local and mock-safe |
+| Demo video/GIF generation | skipped | This phase added a checklist only; no large binary media files were generated or tracked |
+| Dependency install/update | skipped | Existing dependencies were present; no dependency manifest or lockfile change was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Safety status
+
+- `.env` contents were not printed or edited.
+- `.github/workflows` remains absent.
+- No files were staged.
+- No backend or frontend app behavior was changed.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was introduced or made.
+- No binary screenshots, GIFs, or videos were generated in this phase.
+
+### Remaining risks
+
+- Browser smoke covered the local Windows browser path and documented demo ports only; other browsers were not manually checked.
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+- A polished demo video/GIF is still not committed; `docs/DEMO_ASSETS.md` now documents the recommended capture plan.
+
+### Next suggested step
+
+Review `docs/DEMO_ASSETS.md`, `docs/DEMO_SCRIPT.md`, `README.md`, `HANDOFF.md`, and `STATE.md` in VS Code. If the documentation diff and smoke evidence are acceptable, the user can manually stage, commit, and push.
+
+### Suggested commit message
+
+```text
+Add demo asset checklist and smoke evidence
+```
+
+## Latest Update - 2026-06-09 Local Demo Checklist Evidence Pass
+
+### Phase summary
+
+This pass added a concise portfolio reviewer checklist so the local mock demo can be inspected in 5-10 minutes without reading the full handoff first. The checklist keeps the local/mock-only boundary explicit, lists install/run commands, identifies the UI areas and committed screenshot assets to inspect, and documents intentionally out-of-scope items.
+
+No backend code, frontend code, application behavior, schemas, migrations, dependencies, lockfiles, `.env` contents, screenshots, GitHub Actions, real integrations, staging, commits, pushes, deployment config, or live-provider setup were changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `docs/DEMO_SCRIPT.md` | Added the concise local demo checklist, 5-10 minute reviewer path, UI inspection list, screenshot inventory, safety boundary, and out-of-scope list |
+| `README.md` | Linked the new checklist from the suggested demo walkthrough and documentation map |
+| `HANDOFF.md` | Linked the new checklist while leaving the fuller handoff and future-provider guidance in place |
+| `STATE.md` | Recorded this documentation evidence pass, validation results, skipped checks, remaining risks, and next suggested step |
+
+### Documentation coverage
+
+| Required item | Location |
+|---|---|
+| Local/mock-only boundary | `docs/DEMO_SCRIPT.md`, `README.md`, `HANDOFF.md` |
+| No paid API usage | `docs/DEMO_SCRIPT.md`, `README.md`, `HANDOFF.md` |
+| No real-provider calls | `docs/DEMO_SCRIPT.md`, `README.md`, `HANDOFF.md` |
+| Install/run commands | `docs/DEMO_SCRIPT.md`, `README.md`, `HANDOFF.md`, `RUNBOOK.md` |
+| UI areas to inspect | `docs/DEMO_SCRIPT.md` |
+| Screenshots/assets inventory | `docs/DEMO_SCRIPT.md`, `docs/assets/README.md`, `README.md` |
+| Intentionally out of scope | `docs/DEMO_SCRIPT.md`, `README.md` |
+| 5-10 minute portfolio reviewer path | `docs/DEMO_SCRIPT.md` |
+
+### Validation
+
+Validation note: sandboxed PowerShell launch failed earlier in this workspace with `CreateProcessAsUserW failed: 5`, so the local-only commands were run through approved escalated PowerShell. No external provider commands were run.
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | `M HANDOFF.md`, `M README.md`, `M STATE.md`, `?? docs/DEMO_SCRIPT.md` |
+| `git diff --stat` | pass | `HANDOFF.md | 2 ++`; `README.md | 3 +-`; `STATE.md | 101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---`; `3 files changed, 101 insertions(+), 5 deletions(-)`; Git printed expected LF-to-CRLF working-copy warnings; untracked `docs/DEMO_SCRIPT.md` is not included by `git diff --stat` until staged |
+| `git diff --check` | pass | Exit 0; Git printed expected LF-to-CRLF working-copy warnings for `HANDOFF.md`, `README.md`, and `STATE.md`; no whitespace errors |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 1.86s`; warning is the existing FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `13.66s` |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully in `2.3s`; generated 8 routes including `/` and `/admin/runs` |
+| `Test-Path -LiteralPath .\.github\workflows` | pass | `False` |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| GitHub Actions / CI | skipped | Explicitly forbidden for this project phase; no workflow files were added or run |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all validation stayed local and mock-safe |
+| Manual browser smoke | skipped | This was a documentation-only checklist/linking pass with no app behavior changes; frontend tests, typecheck, and build passed |
+| Dependency install/update | skipped | Existing dependencies were already present; no dependency manifest or lockfile change was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Safety status
+
+- `.github/workflows` remains absent.
+- `.env` contents were not printed or edited.
+- No files were staged.
+- No backend or frontend app behavior was changed.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was introduced or made.
+
+### Manual validation recommendation
+
+Use [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) for the shortest reviewer path. After starting the documented local backend and frontend, open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:8028/docs`
+
+Confirm the public form, CSV import, seeded admin rows, filters, selected failed-run detail, read-only admin posture, and synthetic/mock-only boundary.
+
+### Remaining risks
+
+- This pass did not rerun manual browser smoke because no app behavior changed.
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+- A demo video/GIF is still not committed; the repository documents still screenshots and a manual recording path only.
+
+### Next suggested step
+
+Manually inspect `docs/DEMO_SCRIPT.md`, `README.md`, `HANDOFF.md`, and `STATE.md` in VS Code. If the documentation diff is acceptable, the user can manually stage, commit, and push.
+
+### Suggested commit message
+
+```text
+Add local portfolio demo checklist
+```
 
 ## Latest Update - 2026-06-09 Portfolio Packaging And Final Public Presentation Polish
 
@@ -2819,7 +3028,7 @@ No backend code, frontend code, public API, schema, route, UI behavior, dependen
 | `pnpm --dir apps/web test -- --run` | pass | `Test Files 4 passed (4)`; `Tests 27 passed (27)`; duration `14.27s` |
 | `pnpm --dir apps/web typecheck` | pass | `$ tsc --noEmit`; exit 0 |
 | `pnpm --dir apps/web build` | pass | Next.js `15.5.18`; compiled successfully in `2.7s`; generated `/`, `/admin/runs`, and local API proxy routes |
-| `uv python list 3.12 --only-installed --no-python-downloads` | pass | Found local `cpython-3.12.13-windows-x86_64-none` at `C:\Users\Санька\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\python.exe` |
+| `uv python list 3.12 --only-installed --no-python-downloads` | pass | Found local `cpython-3.12.13-windows-x86_64-none` in the user uv Python cache; absolute local path omitted |
 | `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass | `48 passed`, `1 warning`; platform Python `3.12.13`; uv rebuilt the ignored local `.venv` for Python 3.12 and installed locked packages |
 | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
 | `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 26 source files` |
@@ -2863,7 +3072,7 @@ No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook
 - Visible admin controls were `Lead demo`, `Reset filters`, and `View details`; no retry, edit, delete, submit, resubmit, rerun, send, archive, or worker controls were visible.
 - Frontend and backend logs showed local `GET` requests only for the admin browser/proxy path; no admin `POST`, `PUT`, `PATCH`, or `DELETE` request appeared.
 - Temporary backend and frontend processes were stopped after smoke; ports `8765` and `5499` were clear afterward.
-- Smoke screenshot was saved outside the repository at `C:\Users\Санька\AppData\Local\Temp\salesops-admin-smoke-hidden-selected.png`.
+- Smoke screenshot was saved outside the repository in the local temp directory; absolute local path omitted.
 
 ### Skipped or limited checks
 

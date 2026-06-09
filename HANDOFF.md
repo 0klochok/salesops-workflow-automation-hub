@@ -6,6 +6,8 @@ This document gives a reviewer or future maintainer the shortest safe path to ru
 
 The current project is local-only and mock-first. It does not require, store, print, or call real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-service credentials.
 
+For a concise 5-10 minute portfolio reviewer path, use [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). For optional screenshot, GIF, or video planning, use [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md). This handoff keeps the fuller operating notes, credential boundary, and future live-provider guidance.
+
 ## Current Mock Boundaries
 
 - `backend/app/leads/adapters.py` defines the `CrmAdapter` and `SlackNotifier` protocols.
