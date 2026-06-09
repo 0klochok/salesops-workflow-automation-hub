@@ -23,7 +23,7 @@
 ## 3. Enter The Repository
 
 ```powershell
-Set-Location -LiteralPath "C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh"
+Set-Location -LiteralPath "repository root"
 ```
 
 ## 4. Check Git Status

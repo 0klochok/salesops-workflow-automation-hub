@@ -18,6 +18,18 @@ Do not commit large binary recordings by default. Store draft exports locally, r
 
 Existing committed screenshots cover the main page, CSV session dashboard, run history, failed detail, and filtered detail. The optional form-success and empty-filter screenshots are not present yet and should only be added if they are useful for the final portfolio story.
 
+## Release Audit Verification - 2026-06-09
+
+Committed screenshot assets were verified during the final public portfolio release audit:
+
+- `docs/assets/screenshots/salesops-home.png`
+- `docs/assets/screenshots/salesops-csv-session-dashboard.png`
+- `docs/assets/screenshots/salesops-admin-run-history.png`
+- `docs/assets/screenshots/salesops-admin-failed-detail.png`
+- `docs/assets/screenshots/salesops-admin-filtered-detail.png`
+
+No GIF or video asset was captured in this phase. Capture was skipped because the still screenshots already cover the public portfolio proof points, no paid or third-party capture tool was needed, and large binary recordings should remain optional until the user intentionally selects a final clip for the portfolio.
+
 ## Recommended GIF Or Video Shots
 
 | Suggested filename | Current status | Shot | What it proves |

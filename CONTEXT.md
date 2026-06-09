@@ -9,7 +9,7 @@
 | Status | active draft |
 | Current phase | Local-first final readiness audit after documentation polish |
 | Repository | salesops-workflow-automation-hub-fresh |
-| Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
+| Repository path | `repository root` |
 | Primary runtime | Local Windows 11 / PowerShell |
 | Git state | `main`; local validation first; Codex must not commit or push; check `git status --short` for current worktree state |
 

@@ -9,11 +9,142 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Public Portfolio Packaging |
-| Overall status | acceptable for local portfolio review |
-| Quality gate status | Required local gates passed; browser smoke skipped with reason |
-| Completion | Strengthened public docs, added case study, clarified demo asset status, and recorded validation evidence |
+| Current phase | Demo Asset Capture + Public Portfolio Release Audit |
+| Overall status | acceptable for public local portfolio review |
+| Quality gate status | Required local gates passed; browser smoke passed; broad safety scans reviewed |
+| Completion | Verified public docs, committed screenshot inventory, local browser demo flow, and release safety posture |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Demo Asset Capture + Public Portfolio Release Audit
+
+### Phase summary
+
+This pass completed the final public portfolio release audit and demo asset verification. The primary public docs were reviewed for overclaims, local path leakage, private usernames, secret material, real-provider claims, production-readiness exaggeration, GIF/video claims, and GitHub Actions/CI claims. The README Quick Start local demo path was browser-smoked with synthetic data only.
+
+No backend behavior, frontend behavior, schemas, migrations, dependencies, lockfiles, generated screenshots, GIFs, videos, GitHub Actions, real integrations, staging, commits, pushes, deployment config, `.env` contents, or live-provider setup was changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `docs/DEMO_ASSETS.md` | Added release-audit verification of committed screenshots and the reason GIF/video capture remains optional and skipped |
+| `CONTEXT.md` | Replaced a local absolute repository path with neutral `repository root` wording |
+| `RUNBOOK.md` | Replaced a local absolute `Set-Location` example with neutral `repository root` wording |
+| `.codex-prompts/phase-0.md` | Sanitized ignored local prompt text so broad local path scans no longer match the private repo path |
+| `STATE.md` | Recorded this release audit, validation evidence, asset result, skipped checks, risks, and suggested commit message |
+
+### Public documentation review
+
+| Document | Result |
+|---|---|
+| `README.md` | Pass; states local-only, synthetic data, mock CRM/Slack, no paid/live-provider calls, no GitHub Actions/deployment config, and no committed GIF/video |
+| `HANDOFF.md` | Pass; keeps real-provider credentials and future live integrations approval-gated |
+| `docs/CASE_STUDY.md` | Pass; describes the project as a local portfolio demo with mock adapters and synthetic data |
+| `docs/DEMO_ASSETS.md` | Pass after update; lists committed screenshots, optional missing screenshots, no committed GIF/video, and skipped capture reason |
+| `STATE.md` | Updated with this audit; local absolute path references found elsewhere were sanitized |
+
+### Browser smoke result
+
+Validation note: sandboxed PowerShell launch failed in this workspace with `CreateProcessAsUserW failed: 5`, so local-only commands were run through approved escalated PowerShell. No external provider commands were run.
+
+| Check | Status | Exact result |
+|---|---|---|
+| Port precheck | pass | Ports `8028` and `3042` were free before smoke |
+| Dependency install commands | skipped | `.venv` and `apps/web/node_modules` already existed; `uv --version` returned `uv 0.11.16`; `pnpm --version` returned `11.5.0`; install/sync was skipped to avoid dependency changes |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `docker compose ps` | pass | `salesops-postgres` was `Up` and `healthy` on port `5432` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized and completed at head |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+| Backend dev server | pass | README command served local API on `127.0.0.1:8028` |
+| Frontend dev server | pass | README command served local Next.js on `127.0.0.1:3042` with local backend env vars |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health" -Method Get` | pass | Returned `status=ok` and service name |
+| Home HTTP smoke | pass | `http://127.0.0.1:3042/` returned HTTP `200`; contained `Lead intake form` and `CSV import` |
+| Admin HTTP smoke | pass | `http://127.0.0.1:3042/admin/runs` returned HTTP `200`; contained `Admin run history` and `Read-only` |
+| Headless Chrome diagnostic | pass after retry | First launch failed because the temporary profile path was not quoted; quoted retry exposed Chrome DevTools successfully using installed Chrome `149.0.7827.55` |
+| Rendered home page | pass | Title `SalesOps Workflow Automation Hub`; lead form, CSV import, and latest-result area rendered |
+| Upload control | pass | Custom `Choose CSV file` text rendered; file input had `opacity: 0`; no visible browser-native localized upload button text; no Cyrillic text found |
+| Removed phase label | pass | `Phase 3 Local Demo` was not present on home or admin |
+| Synthetic form submit | pass | Submitted a synthetic `demo_form` lead; UI showed email plus success, dedupe, CRM, and Slack outcomes |
+| Synthetic CSV import | pass | Imported one synthetic CSV row; UI showed `1 of 1 rows submitted locally.`, `CSV upload`, and `Session dashboard` |
+| Admin run history | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` rendered |
+| Failed run detail | pass | `run_demo_failed` detail showed read-only state, suggested action, safe intake payload, and attempts |
+| Filtered admin state | pass | `?status=failed` preserved failed row and selected status value; `?q=no-such-run` showed `No runs match these filters.` |
+| Browser console | pass | Final rendered smoke reported no warnings or errors |
+| Cleanup | pass | Temporary backend/frontend smoke processes were stopped; ports `8028` and `3042` were clear afterward |
+
+### Demo assets
+
+| Asset area | Result |
+|---|---|
+| Tracked screenshot assets | pass; `git ls-files -- "docs/assets/screenshots" "docs/assets/demo"` lists five screenshots plus `docs/assets/demo/README.md` |
+| Committed screenshots | `salesops-home.png`, `salesops-csv-session-dashboard.png`, `salesops-admin-run-history.png`, `salesops-admin-failed-detail.png`, `salesops-admin-filtered-detail.png` |
+| Optional screenshots not captured | `salesops-form-success.png`, `salesops-admin-empty-filter.png` |
+| GIF/video assets | not captured; no GIF/video binaries are committed |
+| Skipped capture reason | Still screenshots already cover the public proof points, no paid or third-party capture tool was needed, and large binary recordings should remain optional until the user intentionally selects a final clip |
+
+### Required validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | `M CONTEXT.md`, `M RUNBOOK.md`, `M STATE.md`, `M docs/DEMO_ASSETS.md` |
+| `git diff --check` | pass | Exit 0; Git printed expected LF-to-CRLF working-copy warnings for edited Markdown files; no whitespace errors |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.34s`; warning is the known FastAPI/Starlette `TestClient` deprecation warning |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `14.29s` |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully in `2.6s`; generated 8 routes including `/`, `/admin/runs`, and local API proxy routes |
+| `Test-Path -LiteralPath ".github\workflows"` | pass | `False` |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+### Forbidden-pattern checks
+
+The scan file list used a PowerShell-safe escaped directory exclusion equivalent for generated directories: `.git`, `.venv`, `node_modules`, `.next`, `dist`, `build`, and `coverage`.
+
+| Check | Status | Result |
+|---|---|---|
+| Local path and private username scan | pass after docs sanitization | `MatchCount = 0` for the local user-path prefix and local username pattern |
+| Credential/key wording pattern | reviewed / expected matches | 152 matches. Matches are safety-boundary docs, placeholder `.env.example` and Docker Compose local demo password text, redaction tests using sentinel strings such as `plain-text-secret`, a redaction regex, lockfile package text, and historical `STATE.md` entries. No real secret values, bearer credentials, private keys, provider tokens, or API keys were found. |
+| GitHub Actions / workflow wording pattern | reviewed / expected matches | 156 matches. Matches are explicit out-of-scope documentation and historical `STATE.md` entries. `Test-Path -LiteralPath ".github\workflows"` returned `False`; no workflow directory exists. |
+| Provider/action wording pattern | reviewed / expected matches | 122 matches. Matches are safety-boundary wording that says real providers, paid APIs, production APIs, live APIs, and provider actions are absent or approval-gated. No real provider call path was introduced or run. |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| `uv sync` | skipped | Existing `.venv` was present and backend gates ran; this phase forbids dependency changes unless necessary |
+| `pnpm install` | skipped | Existing `apps/web/node_modules` was present and frontend gates ran; this phase forbids dependency changes unless necessary |
+| Playwright CLI wrapper | skipped | Using it would fetch a package because Playwright is not a project dependency; installed Chrome DevTools Protocol was used instead without adding dependencies |
+| GIF/video capture | skipped | Still screenshots are already committed; no paid or third-party capture tool was needed; large video/GIF assets remain optional |
+| Optional screenshots | skipped | Form-success and empty-filter screenshots remain optional and not committed |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files were added or run |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all smoke stayed local and mock-safe |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- The browser smoke used installed Chrome headless at a desktop viewport only; other browsers were not manually checked.
+- The smoke submitted two synthetic local records to the local database; deterministic seed rows remain available, but the seed script intentionally does not wipe every locally submitted lead.
+- Broad forbidden-pattern scans include documentation and tests, so they intentionally match safety wording, redaction sentinel strings, and historical `STATE.md` entries.
+- Demo GIF/video assets are still not captured or committed.
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+
+### Manual validation recommendation
+
+Run the documented local flow in PowerShell and inspect:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:8028/docs`
+
+Focus on synthetic form submit, CSV import, committed screenshots, seeded admin rows, filters, failed-run detail, read-only admin posture, and local/mock-only provider boundaries.
+
+### Suggested commit message
+
+```text
+Finalize public portfolio release audit
+```
 
 ## Latest Update - 2026-06-09 Public Portfolio Packaging
 
