@@ -90,6 +90,22 @@ Reviewer demo checklist:
 4. Open `/admin/runs`, confirm seeded success, failed, queued, and retried runs render, then exercise status/source/search/date/owner/error-type filters.
 5. Open a run detail such as `run_demo_failed` and confirm the page stays read-only with sanitized failure detail only.
 
+## Screenshots And Demo Assets
+
+Portfolio-ready screenshots live under `docs/assets/screenshots/`. They were captured from the local mock-safe reviewer path with synthetic data only.
+
+![SalesOps public lead form and CSV import](docs/assets/screenshots/salesops-home.png)
+
+![SalesOps CSV import latest result and session dashboard](docs/assets/screenshots/salesops-csv-session-dashboard.png)
+
+![SalesOps read-only admin run-history table](docs/assets/screenshots/salesops-admin-run-history.png)
+
+![SalesOps failed run detail with sanitized retry guidance](docs/assets/screenshots/salesops-admin-failed-detail.png)
+
+![SalesOps filtered admin view with selected run detail preserved](docs/assets/screenshots/salesops-admin-filtered-detail.png)
+
+Asset provenance and capture notes are in `docs/assets/README.md`. The 3-5 minute demo script and before/after workflow explanation live in `HANDOFF.md`.
+
 ## Current Status
 
 The current local demo includes:
@@ -254,23 +270,26 @@ Open `http://localhost:3000` after the frontend server starts. The read-only adm
 
 ## Tests And Quality Gates
 
-Required backend validation:
+Current release-readiness validation from the repository root:
 
 ```powershell
-git status --short --branch
+git status --short
+uv run mypy .
+uv run pytest
+uv run ruff check .
 git diff --check
-uv run --no-python-downloads --python 3.12 --frozen pytest
-uv run --no-python-downloads --python 3.12 --frozen ruff check .
-uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
 ```
 
-Required frontend validation:
+Current frontend validation:
 
 ```powershell
-pnpm --dir apps/web lint
-pnpm --dir apps/web test -- --run
-pnpm --dir apps/web typecheck
-pnpm --dir apps/web build
+pnpm --dir apps/web run lint
+pnpm --dir apps/web exec vitest run
+pnpm --dir apps/web run typecheck
+pnpm --dir apps/web run build
 ```
 
 Manual portfolio smoke is documented in `RUNBOOK.md`. The current reviewer path uses local PostgreSQL, the backend on `127.0.0.1:8028`, and the frontend on `127.0.0.1:3042` with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` pointed at the local backend.

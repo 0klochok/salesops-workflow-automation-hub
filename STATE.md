@@ -9,11 +9,159 @@
 | Contributors | Codex |
 | Repository path | `C:\Users\Санька\Documents\Coding Projects\Portfolio Projects\salesops-workflow-automation-hub-fresh` |
 | Current branch | `main` |
-| Current phase | Alembic mypy repair |
+| Current phase | Portfolio demo assets and final visual release polish |
 | Overall status | on-track |
-| Quality gate status | Requested backend, migration/seed, frontend release, and forbidden-pattern checks passed |
-| Completion | Alembic SQLAlchemy URL fallback is explicit, type-safe, and locally validated |
+| Quality gate status | Required backend, frontend, database/seed, screenshot capture, and safety checks passed |
+| Completion | Real portfolio screenshots captured, README asset references updated, and local validation passed |
 | Main blocker | none |
+
+## Latest Update - 2026-06-08 Portfolio Demo Assets and Final Visual Release Polish
+
+### Phase summary
+
+This pass replaced the README screenshot placeholder with real local-demo screenshot references and added a small `docs/assets/` structure for portfolio review assets. It stayed documentation/demo-asset focused and did not change app behavior, tests, dependencies, lockfiles, environment files, GitHub Actions, backend APIs, frontend routes, schemas, migrations, real integrations, staging, commits, or pushes.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Replaced the screenshot placeholder with real Markdown references to committed local-demo PNG screenshots |
+| `docs/assets/README.md` | Documented screenshot provenance, local-only capture boundaries, and current asset inventory |
+| `docs/assets/demo/README.md` | Reserved a clean location for future local-only video/GIF/demo recording exports |
+| `docs/assets/screenshots/*.png` | Added five portfolio screenshots captured from local synthetic data |
+| `STATE.md` | Recorded this phase, validation, skipped checks, and safety status |
+
+### Demo assets added
+
+| Asset | Screen covered |
+|---|---|
+| `docs/assets/screenshots/salesops-home.png` | Main SalesOps Workflow Automation Hub page with public lead form and CSV import |
+| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | Synthetic form and CSV submissions, latest result, and session dashboard |
+| `docs/assets/screenshots/salesops-admin-run-history.png` | Read-only admin run-history table and filters |
+| `docs/assets/screenshots/salesops-admin-failed-detail.png` | Selected failed run detail with sanitized failure information and suggested action |
+| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Filtered admin view with selected run detail preserved outside the filtered list |
+
+Capture notes:
+
+- The first local capture verified the documented reviewer path on `127.0.0.1:8028` and `127.0.0.1:3042`.
+- The final PNGs were recaptured from a production `next start` server to avoid the Next.js dev indicator in portfolio screenshots.
+- During the production recapture, preferred ports `8028` and `3042` were busy from capture child processes, so alternate local ports `23812` and `23814` were used. Those repo-local child processes were identified by command line, stopped, and final listener checks for `8028` and `3042` returned no output.
+- Mobile viewport checks for `/` and `/admin/runs` reported `bodyScrollWidth=390`, `viewport=390`, and no page-level horizontal overflow.
+- The admin screenshots reflect the current local PostgreSQL state, which includes deterministic seeded demo runs plus prior synthetic local smoke/capture submissions. No real customer data or provider data was used.
+
+### Validation
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | Workspace sandbox process launch still failed with `CreateProcessAsUserW failed: 5`; commands were run through approved escalated local PowerShell |
+| `git status --short` | pass | `M README.md`, `M STATE.md`, and untracked `docs/` before this `STATE.md` update |
+| `git diff --check` | pass | Exit 0; Git printed LF-to-CRLF working-copy warnings for `README.md` and `STATE.md`, with no whitespace errors |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.84s`; warning is the existing FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files passed; 43 tests passed; duration `20.29s` |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build compiled successfully and generated 8 routes |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized and completed successfully |
+| `uv run python -m backend.app.leads.demo_seed` | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Screenshot capture | pass | Captured five PNGs under `docs/assets/screenshots/` using installed Chrome/CDP and no new dependencies |
+| README asset target check | pass | All five README screenshot paths returned `True` with `Test-Path` |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| GitHub Actions / CI | skipped | Explicitly forbidden for this phase; no workflow files were added or run |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all validation stayed local and mock-safe |
+| Dependency install/update | skipped | Existing dependencies were sufficient; no dependency manifest or lockfile change was needed |
+| Video/GIF recording | skipped | This phase captured still PNG screenshots; `HANDOFF.md` remains the source for the 3-5 minute demo script/video plan |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Safety status
+
+- `.github/workflows` was not added; `Test-Path -LiteralPath .\.github\workflows` returned `False`.
+- No files were staged; `git diff --cached --name-only` returned no output.
+- `.env` was not edited or printed.
+- Dependency manifests and lockfiles were not changed; `git status --short -- .env .env.example package.json pnpm-workspace.yaml pnpm-lock.yaml uv.lock pyproject.toml apps/web/package.json` returned no output.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was made.
+- Browser activity for screenshot capture used local FastAPI, local Next.js, and local Chrome DevTools Protocol only.
+- Temporary capture scripts and Chrome profiles were removed after screenshot generation.
+
+### Known remaining release items
+
+- Optional video/GIF capture remains a manual follow-up using the existing `HANDOFF.md` script.
+- Other browsers were not manually checked; visual QA used installed Chrome/CDP at desktop and mobile viewport sizes.
+
+### Suggested commit message
+
+```text
+Add portfolio demo screenshots
+```
+
+## Latest Update - 2026-06-08 Portfolio Release Readiness Documentation Hardening
+
+### Phase summary
+
+This pass is focused on portfolio-ready local release documentation, run instructions, demo flow clarity, mock/no-paid-API boundaries, and final local validation. It intentionally avoids new features, broad refactors, dependency changes, lockfile changes, GitHub Actions, staging, commits, pushes, real secrets, and real provider calls.
+
+### Documentation review
+
+- Reviewed `README.md`, `STATE.md`, `REQ.md`, `DESIGN.md`, `TDD.md`, `RUNBOOK.md`, `CONTEXT.md`, and `AGENTS.md`.
+- Confirmed the docs continue to describe the app as local-first and mock-safe.
+- Confirmed docs do not claim implemented CI, production deployment, paid-provider integration, or real provider calls.
+- Confirmed the previous completed repair was the Alembic mypy fix in `alembic/env.py`, which made the SQLAlchemy URL fallback explicit and type-safe.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Added an explicit screenshots/demo-assets placeholder and aligned release-readiness validation commands with the current final local hardening gate |
+| `STATE.md` | Updated current phase metadata and recorded this documentation/readiness pass |
+
+### Current validation status
+
+| Check | Status | Result |
+|---|---|---|
+| Sandboxed PowerShell | blocked/recovered | The workspace sandbox could not launch PowerShell (`CreateProcessAsUserW failed: 5`), so local commands were run through approved escalated PowerShell |
+| Starting `git status --short` | pass | Modified files were limited to `README.md` and `STATE.md` |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.75s`; warning is the existing FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `git diff --check` | pass | Exit 0; Git reported LF-to-CRLF working-copy warnings for `README.md` and `STATE.md`, with no whitespace errors |
+| `pnpm --dir apps/web run lint` | pass | ESLint exited 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | 4 test files passed; 43 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js 15.5.18 production build compiled successfully and generated 8 routes |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL migration context initialized and Alembic completed successfully |
+| `uv run python -m backend.app.leads.demo_seed` | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+
+Known non-blocking pytest warning: the backend test suite emitted the existing FastAPI/Starlette `TestClient` deprecation warning. It did not fail the gate.
+
+### Forbidden-pattern checks
+
+| Check | Status | Result |
+|---|---|---|
+| `.github/workflows` directory | pass | `Test-Path -LiteralPath ".\.github\workflows"` returned `False` |
+| Staged files | pass | `git diff --cached --name-only` returned no output |
+| `.env`, manifests, and lockfiles | pass | `git status --short -- .env .env.example package.json pnpm-workspace.yaml pnpm-lock.yaml uv.lock pyproject.toml apps/web/package.json` returned no output |
+| Diff scope | pass | `git diff --name-only` listed only `README.md` and `STATE.md` |
+| Real provider/API/webhook calls | pass | No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call was made |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| GitHub Actions / CI | skipped | Explicitly forbidden for this phase; no workflow files are being added or run |
+| Production deployment or staging smoke | skipped | Explicitly out of scope for local portfolio release readiness |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider smoke | skipped | Explicitly forbidden; the project remains local-only and mock-safe |
+| Commit, push, and staging | skipped | Explicitly forbidden; Codex must not run `git add`, `git commit`, or `git push` |
+
+### Next recommended phase
+
+After this local validation pass, the next recommended phase is user manual review: inspect the focused documentation diff, run or record the documented local demo path, then manually stage/commit/push only if the reviewer-ready diff is acceptable.
 
 ## Latest Update - 2026-06-08 Alembic Mypy Repair
 
