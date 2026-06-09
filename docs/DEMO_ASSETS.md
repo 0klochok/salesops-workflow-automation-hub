@@ -6,27 +6,29 @@ Do not commit large binary recordings by default. Store draft exports locally, r
 
 ## Recommended Still Screenshots
 
-| Suggested filename | Screen or state | What it proves |
-|---|---|---|
-| `docs/assets/screenshots/salesops-home.png` | Public landing page with lead form and CSV import | The reviewer can see the core intake surfaces immediately |
-| `docs/assets/screenshots/salesops-form-success.png` | Synthetic form submission result | Validation, backend dedupe, mock CRM, and mock Slack outcomes are visible |
-| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | CSV import result and session dashboard | CSV rows use the same local intake path and update the browser-session evidence |
-| `docs/assets/screenshots/salesops-admin-run-history.png` | Read-only admin run table with seeded rows | Persisted success, failed, queued, and retried runs are reviewable |
-| `docs/assets/screenshots/salesops-admin-failed-detail.png` | `run_demo_failed` selected detail | Sanitized payload, attempts, failure context, and suggested action are visible |
-| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Filtered admin state with selected detail preserved | Filters work while detail remains inspectable |
-| `docs/assets/screenshots/salesops-admin-empty-filter.png` | No-match filtered admin state | Empty-state behavior is understandable and safe |
+| Suggested filename | Current status | Screen or state | What it proves |
+|---|---|---|---|
+| `docs/assets/screenshots/salesops-home.png` | Captured and committed | Public landing page with lead form and CSV import | The reviewer can see the core intake surfaces immediately |
+| `docs/assets/screenshots/salesops-form-success.png` | Not captured yet | Synthetic form submission result | Validation, backend dedupe, mock CRM, and mock Slack outcomes are visible |
+| `docs/assets/screenshots/salesops-csv-session-dashboard.png` | Captured and committed | CSV import result and session dashboard | CSV rows use the same local intake path and update the browser-session evidence |
+| `docs/assets/screenshots/salesops-admin-run-history.png` | Captured and committed | Read-only admin run table with seeded rows | Persisted success, failed, queued, and retried runs are reviewable |
+| `docs/assets/screenshots/salesops-admin-failed-detail.png` | Captured and committed | `run_demo_failed` selected detail | Sanitized payload, attempts, failure context, and suggested action are visible |
+| `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Captured and committed | Filtered admin state with selected detail preserved | Filters work while detail remains inspectable |
+| `docs/assets/screenshots/salesops-admin-empty-filter.png` | Not captured yet | No-match filtered admin state | Empty-state behavior is understandable and safe |
 
-Existing committed screenshots cover the main page, CSV session dashboard, run history, failed detail, and filtered detail. Add the optional form-success and empty-filter screenshots only if they are useful for the final portfolio story.
+Existing committed screenshots cover the main page, CSV session dashboard, run history, failed detail, and filtered detail. The optional form-success and empty-filter screenshots are not present yet and should only be added if they are useful for the final portfolio story.
 
 ## Recommended GIF Or Video Shots
 
-| Suggested filename | Shot | What it proves |
-|---|---|---|
-| `docs/assets/demo/salesops-public-intake.gif` | Fill a synthetic form lead, submit it, then show the latest result | The public form works end to end with mock adapters |
-| `docs/assets/demo/salesops-csv-import.gif` | Paste one valid synthetic CSV row, import it, and show the dashboard row | CSV upload behavior is understandable without a live provider |
-| `docs/assets/demo/salesops-admin-filters.gif` | Open `/admin/runs`, apply status/source/search/owner/error-type filters, then reset | The run dashboard supports reviewer-friendly investigation |
-| `docs/assets/demo/salesops-failure-detail.gif` | Open `run_demo_failed` and show failure detail plus suggested action | Failure evidence is sanitized, actionable, and read-only |
-| `docs/assets/demo/salesops-portfolio-demo.mp4` | 3-5 minute full walkthrough following `HANDOFF.md` | The whole local story is easy to evaluate without extra setup narration |
+| Suggested filename | Current status | Shot | What it proves |
+|---|---|---|---|
+| `docs/assets/demo/salesops-public-intake.gif` | Not captured yet | Fill a synthetic form lead, submit it, then show the latest result | The public form works end to end with mock adapters |
+| `docs/assets/demo/salesops-csv-import.gif` | Not captured yet | Paste one valid synthetic CSV row, import it, and show the dashboard row | CSV upload behavior is understandable without a live provider |
+| `docs/assets/demo/salesops-admin-filters.gif` | Not captured yet | Open `/admin/runs`, apply status/source/search/owner/error-type filters, then reset | The run dashboard supports reviewer-friendly investigation |
+| `docs/assets/demo/salesops-failure-detail.gif` | Not captured yet | Open `run_demo_failed` and show failure detail plus suggested action | Failure evidence is sanitized, actionable, and read-only |
+| `docs/assets/demo/salesops-portfolio-demo.mp4` | Not captured yet | 3-5 minute full walkthrough following `HANDOFF.md` | The whole local story is easy to evaluate without extra setup narration |
+
+No GIF or video binaries are currently committed. `docs/assets/demo/README.md` remains the placeholder location for future intentionally selected recordings.
 
 ## Capture Rules
 

@@ -1,8 +1,10 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a local-first portfolio demo for automating lead intake, validation, deduplication, mock CRM upsert, mock Slack notification, audit records, and admin run review.
+SalesOps Workflow Automation Hub is a local-first portfolio demo for automating a growth agency's lead intake workflow. It accepts leads from a public form and CSV upload, validates and deduplicates them, simulates CRM contact/deal upsert behavior, simulates qualified-lead Slack notification, persists audit/run records, and gives reviewers a read-only admin dashboard for run history and failure detail.
 
-The project is built for a fake growth agency with 5 sales reps. Leads arrive from forms and CSV uploads; manual CRM and Slack handoffs create duplicates, slow response, missed follow-up, and weak auditability. This repo shows a code-first workflow that makes those steps traceable in a local mock-safe environment.
+The demo is built for a fake growth agency with 5 sales reps. It is intended for sales operations, revenue operations, and agency teams that need faster lead handoff, fewer duplicates, and clearer auditability without depending on spreadsheets or manual CRM/Slack updates.
+
+All demo data is synthetic. All CRM and Slack behavior is deterministic mock behavior. No paid APIs, real provider calls, live webhooks, production accounts, or real customer data are required to run or review the project locally.
 
 ## What It Does
 
@@ -17,6 +19,14 @@ The project is built for a fake growth agency with 5 sales reps. Leads arrive fr
 - Shows selected run details with sanitized payload, validation/failure context, attempts, and suggested action.
 - Keeps manual retry as a backend-only local endpoint; the public admin demo stays read-only.
 
+## Demo Proof Points
+
+- Form and CSV leads use the same local intake path.
+- Invalid or duplicate-prone leads produce inspectable validation, dedupe, and failure evidence.
+- Qualified synthetic leads show mock CRM and mock Slack outcomes without leaving the local environment.
+- Seeded success, failed, queued, and retried runs make the admin dashboard useful immediately after setup.
+- Reviewers can filter run history by date, source, status, owner, error type, and search text, then inspect sanitized failure detail.
+
 ## Tech Stack
 
 | Area | Technology |
@@ -28,13 +38,14 @@ The project is built for a fake growth agency with 5 sales reps. Leads arrive fr
 | Frontend tooling | pnpm, Vitest, Testing Library |
 | Integrations | Mock CRM and mock Slack adapters only |
 
-## Local And Mock-Only Safety
+## Safety Boundaries
 
 This repository is intentionally local-only by default.
 
-- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider call is required for the demo.
-- `.env.example` contains placeholders only. Keep local values in ignored `.env` files and do not commit secrets.
-- No GitHub Actions, deployment config, production credentials, or live provider setup is included.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider call is required or made by the demo.
+- `.env.example` contains placeholders only. Keep local values in ignored `.env` files and do not commit credential values.
+- No GitHub Actions, deployment config, production credentials, or live-provider setup is included.
+- The public admin dashboard is read-only; backend retry behavior remains local-only and is not exposed as a public admin action.
 - Future real-provider work requires a separate approved phase; see [HANDOFF.md](HANDOFF.md) for safe boundaries.
 
 ## Screenshots
@@ -102,9 +113,11 @@ Open:
 5. Open `run_demo_failed` and show sanitized failure detail and suggested action.
 6. Point out that the admin UI is read-only and all provider behavior is mocked locally.
 
-The concise 5-10 minute reviewer checklist is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). The full handoff and 3-5 minute script are in [HANDOFF.md](HANDOFF.md). Recommended screenshot, GIF, and video shots are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md). Detailed local operations are in [RUNBOOK.md](RUNBOOK.md).
+The concise 5-10 minute reviewer checklist is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). The portfolio case study is in [docs/CASE_STUDY.md](docs/CASE_STUDY.md). The full handoff and 3-5 minute script are in [HANDOFF.md](HANDOFF.md). Recommended screenshot, GIF, and video shots are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md). Detailed local operations are in [RUNBOOK.md](RUNBOOK.md).
 
-## Validation Commands
+## Local Validation
+
+These checks are intended to run locally from PowerShell before treating the portfolio demo as ready for review. They do not require paid APIs or real provider calls.
 
 Run from the repository root:
 
@@ -135,6 +148,7 @@ uv run python -m backend.app.leads.demo_seed
 - [RUNBOOK.md](RUNBOOK.md): setup, local smoke checks, troubleshooting, and manual QA.
 - [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): concise local reviewer checklist and asset inventory.
 - [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md): optional screenshot, GIF, and video capture checklist.
+- [docs/CASE_STUDY.md](docs/CASE_STUDY.md): concise portfolio case study for reviewers and clients.
 - [TDD.md](TDD.md): test strategy and coverage matrix.
 - [HANDOFF.md](HANDOFF.md): reviewer demo sequence and future credential boundary notes.
 - [STATE.md](STATE.md): current phase status, latest validation, skipped checks, and known issues.

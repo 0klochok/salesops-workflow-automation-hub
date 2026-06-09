@@ -9,11 +9,112 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Demo Smoke and Portfolio Handoff Polish |
+| Current phase | Public Portfolio Packaging |
 | Overall status | acceptable for local portfolio review |
-| Quality gate status | Required local gates and manual browser smoke passed |
-| Completion | Added demo asset checklist, browser-smoked the local mock demo path, and recorded validation evidence |
+| Quality gate status | Required local gates passed; browser smoke skipped with reason |
+| Completion | Strengthened public docs, added case study, clarified demo asset status, and recorded validation evidence |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Public Portfolio Packaging
+
+### Phase summary
+
+This pass finalized public portfolio packaging for reviewer clarity. The README now opens with a stronger description of what the app does, who it is for, the workflow it automates, and the local mock/synthetic-data boundary. A concise case-study document was added and linked from README and HANDOFF. Demo asset documentation now distinguishes committed screenshots from shots that are not captured yet.
+
+No product behavior, backend code, frontend code, user-facing app text, schemas, migrations, dependencies, lockfiles, generated assets, screenshots, videos, GIFs, `.env` contents, GitHub Actions, real integrations, staging, commits, pushes, deployment config, or live-provider setup was changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Strengthened the portfolio landing-page opening, demo proof points, safety boundaries, local validation wording, and case-study links |
+| `HANDOFF.md` | Linked the new case study from the reviewer handoff |
+| `docs/CASE_STUDY.md` | Added concise client/reviewer case-study content covering problem, solution, workflow, stack, validation, mock boundary, and adaptation opportunities |
+| `docs/DEMO_ASSETS.md` | Added explicit captured/not-captured status for still screenshots, GIFs, and video recommendations |
+| `STATE.md` | Recorded this packaging phase, validation evidence, skipped checks, remaining risks, and manual follow-up |
+
+### Required validation
+
+Validation note: sandboxed PowerShell launch failed in this workspace with `CreateProcessAsUserW failed: 5`, so local-only commands were run through approved escalated PowerShell. No external provider commands were run.
+
+| Command | Status | Exact result |
+|---|---|---|
+| `git status --short` | pass | `M HANDOFF.md`, `M README.md`, `M STATE.md`, `M docs/DEMO_ASSETS.md`, `?? docs/CASE_STUDY.md` |
+| `git diff --check` | pass | Exit 0; Git printed expected LF-to-CRLF working-copy warnings for edited Markdown files; no whitespace errors |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | `48 passed, 1 warning in 2.84s`; warning is the known FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `pnpm --dir apps/web run lint` | pass | `$ eslint .`; exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed; duration `14.74s` |
+| `pnpm --dir apps/web run typecheck` | pass | `$ tsc --noEmit`; exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully in `2.8s`; generated 8 static pages and expected routes including `/`, `/admin/runs`, and local API proxy routes |
+| `Test-Path -LiteralPath ..github\workflows` | pass | `False` |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+
+Optional safety check:
+
+| Command | Status | Exact result |
+|---|---|---|
+| `Test-Path -LiteralPath .\.github\workflows` | pass | `False` |
+
+### Forbidden-pattern checks
+
+| Check | Status | Result |
+|---|---|---|
+| Requested local user-path pattern | expected command issue | The user-provided unescaped Windows user-profile regex failed before scanning because PowerShell/.NET regex treats that escape sequence as invalid |
+| Corrected local user-path pattern | pass | The escaped equivalent returned no output |
+| Credential/key wording pattern | pass/expected documentation matches | Matches are safety-boundary wording in HANDOFF/DEMO_SCRIPT/DEMO_ASSETS and historical STATE entries; no actual credential values, keys, bearer strings, passwords, or provider tokens were found |
+| Action-word pattern | pass/expected documentation matches | Matches are read-only boundary wording, backend-only retry documentation, and historical STATE entries; no public admin mutation behavior or provider-send workflow was introduced |
+
+### Documentation consistency review
+
+| Area | Result |
+|---|---|
+| README public landing-page clarity | pass; top section now covers app purpose, audience, automated workflow, synthetic/mock data, and no paid/live-provider requirement |
+| Case study | pass; `docs/CASE_STUDY.md` exists and is linked from README and HANDOFF |
+| Handoff | pass; reviewers are pointed to demo script, case study, demo assets, and future live-provider boundary |
+| Demo assets | pass; committed screenshots are labeled captured, optional screenshots/GIFs/video are labeled not captured yet, and no broken placeholder image links were added |
+| Safety boundaries | pass; docs keep real provider calls, paid APIs, production accounts, live webhooks, and real customer data out of scope |
+| GitHub Actions / CI | pass; no workflow directory exists and no CI file was added |
+| Staging/commit/push | pass; no files staged, no commit created, no push run |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Manual browser smoke | skipped | This phase changed documentation only and did not change app code or user-facing app text; backend/frontend tests, typecheck, lint, and build passed |
+| GitHub Actions / CI | skipped | Explicitly forbidden for this project phase; no workflow files were added or run |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; all validation stayed local and mock-safe |
+| Demo video/GIF generation | skipped | Explicitly out of scope for this phase; `docs/DEMO_ASSETS.md` now marks video/GIF files as not captured yet |
+| Dependency install/update | skipped | Existing dependencies were already present; no dependency manifest or lockfile change was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Manual validation recommendation
+
+Use the documented PowerShell flow in `README.md`, then review these local URLs with synthetic data only:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:8028/docs`
+
+Focus on the public lead form, CSV import, seeded admin rows, filters, failed-run detail, read-only admin posture, and mock/synthetic-data boundary.
+
+### Remaining risks
+
+- Browser smoke was intentionally skipped for this documentation-only phase; the rendered app should still be manually checked before recording or presenting.
+- The focused credential/action-word scans match intentional safety-boundary wording and historical `STATE.md` entries, so reviewers should read those matches as documentation context rather than active credential or mutation findings.
+- Demo GIF/video files are still not captured or committed; only the still screenshots listed as captured in `docs/DEMO_ASSETS.md` currently exist.
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+
+### Next suggested step
+
+Review `README.md`, `HANDOFF.md`, `docs/CASE_STUDY.md`, `docs/DEMO_ASSETS.md`, and `STATE.md` in VS Code. If the documentation diff is acceptable, the user can manually stage, commit, and push.
+
+### Suggested commit message
+
+```text
+Finalize portfolio packaging docs
+```
 
 ## Latest Update - 2026-06-09 Demo Smoke and Portfolio Handoff Polish
 
