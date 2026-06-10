@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-09 |
+| Last updated | 2026-06-10 |
 | Status | final portfolio readiness review |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Final Portfolio Readiness Review |
+| Current phase | Backend/admin run-history and retry hardening |
 
 ## 2. Operating Rules
 
@@ -151,6 +151,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/$runId/retry" -Method P
 Expected behavior:
 
 - unknown run IDs return `404`;
+- unsafe non-local or non-mock provider settings return `403` before mutating persisted run records;
 - successful or already-retried runs return `409`;
 - failed or queued runs append a local `retried` attempt, update the run status to `retried`, and write a `manual_retry` audit record;
 - retry is local persistence only and does not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.

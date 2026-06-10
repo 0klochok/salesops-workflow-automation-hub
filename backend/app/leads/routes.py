@@ -3,9 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from backend.app.config import Settings, get_settings
 from backend.app.db import get_db_session
 from backend.app.leads.persistence import LeadPersistenceRepository
-from backend.app.leads.retry import RetryPolicy
+from backend.app.leads.retry import RetryPolicy, RetrySafetyError, validate_retry_safety
 from backend.app.leads.schemas import (
     FailureDetailResponse,
     LeadIntakeRequest,
@@ -112,8 +113,17 @@ def get_run_failure_detail(
 )
 def retry_run(
     run_id: str,
+    settings: Annotated[Settings, Depends(get_settings)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> RetryRunResponse:
+    try:
+        validate_retry_safety(settings)
+    except RetrySafetyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
     repository = LeadPersistenceRepository(session)
     run = repository.get_run(run_id)
     if run is None:

@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
+from backend.app.config import Settings, get_settings
 from backend.app.db import Base, get_db_session
 from backend.app.leads.adapters import MockCrmAdapter
 from backend.app.leads.demo_seed import DEMO_RUN_IDS, seed_demo_data
@@ -41,6 +42,19 @@ def qualified_payload(
     }
 
 
+def safe_api_settings(**overrides: object) -> Settings:
+    values: dict[str, object] = {
+        "APP_ENV": "test",
+        "MOCK_MODE": True,
+        "CRM_PROVIDER": "mock",
+        "SLACK_PROVIDER": "mock",
+        "GOOGLE_SHEETS_PROVIDER": "disabled",
+        "DATABASE_URL": "sqlite+pysqlite:///:memory:",
+    }
+    values.update(overrides)
+    return Settings.model_validate(values)
+
+
 @pytest.fixture
 def api_context() -> Iterator[tuple[TestClient, Session]]:
     engine = create_engine(
@@ -50,6 +64,7 @@ def api_context() -> Iterator[tuple[TestClient, Session]]:
     )
     Base.metadata.create_all(engine)
     previous_override = app.dependency_overrides.get(get_db_session)
+    previous_settings_override = app.dependency_overrides.get(get_settings)
 
     try:
         with Session(engine) as session:
@@ -62,7 +77,11 @@ def api_context() -> Iterator[tuple[TestClient, Session]]:
                     session.rollback()
                     raise
 
+            def override_settings() -> Settings:
+                return safe_api_settings()
+
             app.dependency_overrides[get_db_session] = override_db_session
+            app.dependency_overrides[get_settings] = override_settings
             with TestClient(app) as client:
                 yield client, session
     finally:
@@ -70,6 +89,10 @@ def api_context() -> Iterator[tuple[TestClient, Session]]:
             app.dependency_overrides.pop(get_db_session, None)
         else:
             app.dependency_overrides[get_db_session] = previous_override
+        if previous_settings_override is None:
+            app.dependency_overrides.pop(get_settings, None)
+        else:
+            app.dependency_overrides[get_settings] = previous_settings_override
         Base.metadata.drop_all(engine)
         engine.dispose()
 
@@ -298,6 +321,17 @@ def test_post_lead_intake_returns_422_for_invalid_payload(
     assert "detail" in response.json()
 
 
+def test_get_run_history_returns_empty_list_when_no_runs_exist(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, _session = api_context
+
+    response = client.get("/leads/runs")
+
+    assert response.status_code == 200
+    assert response.json() == {"runs": []}
+
+
 def test_get_run_history_returns_persisted_records_sorted_and_sanitized(
     api_context: tuple[TestClient, Session],
 ) -> None:
@@ -477,6 +511,7 @@ def test_get_run_detail_rejects_unknown_run(api_context: tuple[TestClient, Sessi
     response = client.get("/leads/runs/run_missing")
 
     assert response.status_code == 404
+    assert response.json() == {"detail": "Automation run not found"}
 
 
 def test_get_run_failure_returns_persisted_detail_and_sanitized_payload(
@@ -495,6 +530,16 @@ def test_get_run_failure_returns_persisted_detail_and_sanitized_payload(
 
     assert response.status_code == 200
     data = response.json()
+    assert set(data) == {
+        "run_id",
+        "lead_id",
+        "run_status",
+        "failed_attempt_number",
+        "error_type",
+        "error_message",
+        "suggested_action",
+        "payload",
+    }
     assert data["run_id"] == "run_failed"
     assert data["lead_id"] == "lead_failed"
     assert data["run_status"] == "failed"
@@ -502,6 +547,16 @@ def test_get_run_failure_returns_persisted_detail_and_sanitized_payload(
     assert data["error_type"] == "adapter"
     assert data["error_message"] == "Mock CRM adapter failed token=[redacted]"
     assert data["suggested_action"] == "Retry after reviewing the mock adapter payload."
+    assert set(data["payload"]) == {
+        "email",
+        "first_name",
+        "last_name",
+        "company_name",
+        "company_domain",
+        "source",
+        "job_title",
+        "lead_score",
+    }
     assert data["payload"]["email"] == "failure@example.com"
     assert data["payload"]["company_domain"] == "example.com"
     assert "phone" not in data["payload"]
@@ -514,6 +569,7 @@ def test_get_run_failure_rejects_unknown_run(api_context: tuple[TestClient, Sess
     response = client.get("/leads/runs/run_missing/failure")
 
     assert response.status_code == 404
+    assert response.json() == {"detail": "Automation run not found"}
 
 
 def test_get_run_failure_rejects_run_without_failed_attempt(
@@ -531,6 +587,7 @@ def test_get_run_failure_rejects_run_without_failed_attempt(
     response = client.get(f"/leads/runs/{run_id}/failure")
 
     assert response.status_code == 409
+    assert response.json() == {"detail": "Automation run has no persisted failed attempt"}
 
 
 def test_post_retry_failed_run_appends_retried_attempt(
@@ -563,6 +620,14 @@ def test_post_retry_failed_run_appends_retried_attempt(
     )
 
     assert data["run_status"] == "retried"
+    assert set(data) == {
+        "run_id",
+        "lead_id",
+        "run_status",
+        "attempt_count",
+        "latest_attempt_number",
+        "latest_attempt_status",
+    }
     assert data["attempt_count"] == 3
     assert data["latest_attempt_number"] == 3
     assert data["latest_attempt_status"] == "retried"
@@ -575,6 +640,118 @@ def test_post_retry_failed_run_appends_retried_attempt(
     ]
     assert manual_retry is not None
     assert manual_retry.payload["attempt_number"] == 3
+
+
+def test_post_retry_rejects_non_mock_provider_configuration_without_mutating_run(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    run_id = persist_workflow_run(
+        session,
+        run_id="run_retry_unsafe_provider",
+        lead_id="lead_retry_unsafe_provider",
+        status=RunStatus.FAILED,
+        email="retry.unsafe@example.com",
+    )
+
+    def unsafe_settings() -> Settings:
+        return safe_api_settings(CRM_PROVIDER="hubspot")
+
+    app.dependency_overrides[get_settings] = unsafe_settings
+
+    response = client.post(f"/leads/runs/{run_id}/retry")
+
+    stored_run = session.get(AutomationRunRecord, run_id)
+    attempts = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    manual_retry = session.scalar(
+        select(AuditRecord).where(
+            AuditRecord.run_id == run_id,
+            AuditRecord.event_type == "manual_retry",
+        )
+    )
+    assert response.status_code == 403
+    assert response.json() == {"detail": "CRM_PROVIDER must be mock for manual retry."}
+    assert stored_run is not None
+    assert stored_run.status is RunStatus.FAILED
+    assert [attempt.status for attempt in attempts] == [RunStatus.QUEUED, RunStatus.FAILED]
+    assert manual_retry is None
+
+
+def test_post_retry_failed_run_does_not_mutate_unrelated_leads_or_runs(
+    api_context: tuple[TestClient, Session],
+) -> None:
+    client, session = api_context
+    target_run_id = persist_workflow_run(
+        session,
+        run_id="run_retry_target",
+        lead_id="lead_retry_target",
+        status=RunStatus.FAILED,
+        email="retry.target@example.com",
+        company_domain="target.example",
+    )
+    unrelated_run_id = persist_workflow_run(
+        session,
+        run_id="run_retry_unrelated",
+        lead_id="lead_retry_unrelated",
+        status=RunStatus.SUCCESS,
+        email="retry.unrelated@example.com",
+        company_domain="unrelated.example",
+    )
+    unrelated_lead_before = session.get(LeadRecord, "lead_retry_unrelated")
+    assert unrelated_lead_before is not None
+    unrelated_lead_snapshot = (
+        unrelated_lead_before.email,
+        unrelated_lead_before.company_domain,
+        unrelated_lead_before.source,
+        unrelated_lead_before.lead_score,
+    )
+    unrelated_attempts_before = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == unrelated_run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+
+    response = client.post(f"/leads/runs/{target_run_id}/retry")
+
+    unrelated_lead_after = session.get(LeadRecord, "lead_retry_unrelated")
+    unrelated_run_after = session.get(AutomationRunRecord, unrelated_run_id)
+    unrelated_attempts_after = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == unrelated_run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    manual_retry_run_ids = session.scalars(
+        select(AuditRecord.run_id).where(AuditRecord.event_type == "manual_retry")
+    ).all()
+    target_attempts = session.scalars(
+        select(RunAttemptRecord)
+        .where(RunAttemptRecord.run_id == target_run_id)
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+
+    assert response.status_code == 200
+    assert unrelated_lead_after is not None
+    assert (
+        unrelated_lead_after.email,
+        unrelated_lead_after.company_domain,
+        unrelated_lead_after.source,
+        unrelated_lead_after.lead_score,
+    ) == unrelated_lead_snapshot
+    assert unrelated_run_after is not None
+    assert unrelated_run_after.status is RunStatus.SUCCESS
+    assert [attempt.status for attempt in unrelated_attempts_after] == [
+        attempt.status for attempt in unrelated_attempts_before
+    ]
+    assert [attempt.status for attempt in target_attempts] == [
+        RunStatus.QUEUED,
+        RunStatus.FAILED,
+        RunStatus.RETRIED,
+    ]
+    assert manual_retry_run_ids == [target_run_id]
 
 
 def test_post_retry_queued_run_appends_retried_attempt(

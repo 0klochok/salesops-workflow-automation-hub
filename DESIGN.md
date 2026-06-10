@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-05 |
+| Last updated | 2026-06-10 |
 | Status | final portfolio readiness review |
 | Scope | Architecture for greenfield portfolio demo |
-| Current phase | Local-first final readiness audit after documentation polish |
+| Current phase | Backend/admin run-history and retry hardening |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective
@@ -127,7 +127,7 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 
 `GET /leads/runs/{run_id}/failure` returns persisted failure detail for a run with a failed attempt. Unknown run IDs return `404`; runs without failed attempts return `409`.
 
-`POST /leads/runs/{run_id}/retry` accepts `failed` and `queued` runs, appends a `retried` attempt, updates the run status to `retried`, and writes a `manual_retry` audit event. Unknown run IDs return `404`; `success` and already-`retried` runs return `409`.
+`POST /leads/runs/{run_id}/retry` is backend-only and requires local/mock-safe settings: `APP_ENV` must be local/demo/test/development, `MOCK_MODE` must be true, CRM and Slack providers must be `mock`, and Google Sheets must be disabled or mock. Unsafe retry settings return `403` without mutating the run. Safe retry requests accept `failed` and `queued` runs, append a `retried` attempt, update the run status to `retried`, and write a `manual_retry` audit event. Unknown run IDs return `404`; `success` and already-`retried` runs return `409`.
 
 `GET /leads/runs` returns persisted run history sorted by `automation_runs.created_at` descending and `automation_runs.run_id` ascending for timestamp ties. Each item includes `run_id`, `lead_id`, persisted lead `email`, `company_name`, `company_domain`, a deterministic demo `owner` derived from `lead_id`, `source`, `run_status`, run-level `error_type` derived from the latest non-null persisted attempt error type, `created_at`, `updated_at`, `attempt_count`, `failure_detail_available`, and a sanitized `latest_attempt` summary. It does not expose raw audit payloads, phone, message, or unrestricted error detail.
 
@@ -142,7 +142,7 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - SQLAlchemy tables now store leads, automation runs, run attempts, and audit records from `POST /leads/intake`.
 - Local demo reset identity is explicit on persisted lead and run records through `leads.is_demo` and `automation_runs.is_demo`; attempts and audit records are reset through their marked parent run/lead relationships.
 - Failure detail responses use a safe allowlist from the stored intake audit payload and omit high-risk freeform fields such as `phone` and `message`.
-- Manual retry records update only local persistence; they do not call CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
+- Manual retry records update only local persistence, require local/mock provider settings, and do not call CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
 - Run-history responses are built from persisted runs, leads, and attempts and expose only a safe summary contract with stored email and company identity.
 - Run-detail responses are built from existing persisted run, lead, attempt, and audit records with allowlisted/sanitized payload fields only.
 - The read-only frontend admin run-history UI consumes the persisted run list and selected run detail through local Next.js GET proxies, displays stored lead/run/audit summaries, supports URL-backed status/source/search/date/owner/error-type filters client-side, and exposes no retry or mutation action.

@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-05 |
+| Last updated | 2026-06-10 |
 | Status | final portfolio readiness review |
 | Applies to | salesops workflow automation hub |
-| Current phase | Local-first final readiness audit after documentation polish |
+| Current phase | Backend/admin run-history and retry hardening |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -51,6 +51,9 @@ Current backend intake API tests cover:
 - persisted failure detail lookup, including unknown IDs and no-failure conflict handling;
 - manual retry for failed and queued runs;
 - rejection of unknown, successful, and already-retried runs without mutating attempts.
+- refusal of unsafe non-local or non-mock retry settings without mutating attempts.
+- retry isolation so unrelated leads and runs are not mutated.
+- empty run-history responses.
 - persisted run-history records sorted by created timestamp and run ID tie-breaker;
 - success, failed, queued, and retried run-history examples from deterministic seed data;
 - correct failure-detail availability for failed and retried runs;

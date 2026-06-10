@@ -53,6 +53,7 @@ This repository is intentionally local-only by default.
 - `.env.example` contains placeholders only. Keep local values in ignored `.env` files and do not commit credential values.
 - No GitHub Actions, deployment config, production credentials, or live-provider setup is included.
 - The public admin dashboard is read-only; backend retry behavior remains local-only and is not exposed as a public admin action.
+- Backend retry refuses unsafe non-local or non-mock provider settings before mutating local run records.
 - Future real-provider work requires a separate approved phase; see [HANDOFF.md](HANDOFF.md) for safe boundaries.
 
 ## Screenshots

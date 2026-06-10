@@ -9,11 +9,99 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Explicit Demo Data Markers |
+| Current phase | Backend/admin run-history and retry hardening |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Backend lint, typecheck, tests, Alembic migration, guarded reset sequence, and local backend/admin HTTP smoke passed; frontend/browser checks skipped because frontend source did not change |
-| Completion | Explicit demo markers implemented, migrated, tested, documented, and smoke-validated |
+| Quality gate status | Required backend tests, lint, typecheck, diff whitespace gate, guarded reset sequence, and local backend/admin HTTP smoke passed; frontend/browser checks skipped because frontend source did not change |
+| Completion | Backend/admin run-history and retry hardening implemented, tested, documented, and smoke-validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-10 Backend/Admin Run History And Retry Hardening
+
+### Phase summary
+
+Hardened the backend/admin run-history, run-detail, failure-detail, and retry surfaces after the explicit demo-marker reset work. Manual retry now refuses unsafe non-local or non-mock provider settings with `403` before mutating a run. Existing `404` missing-run behavior and `409` no-failed-attempt/non-retryable-run behavior are preserved.
+
+No frontend feature, frontend reset control, reset endpoint, GitHub Actions workflow, real provider call, paid API call, staging action, commit, or push was added or performed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `backend/app/leads/retry.py` | Added local/mock retry safety validation and error type |
+| `backend/app/leads/routes.py` | Applied retry safety precondition and stable `403` response for unsafe retry settings |
+| `tests/test_lead_intake_api.py` | Added API coverage for empty history, exact missing-run/failure errors, failed-detail shape, unsafe retry refusal, and unrelated-row isolation |
+| `README.md` | Documented backend retry refusal for unsafe non-local/non-mock settings |
+| `RUNBOOK.md` | Updated manual retry smoke expectations with the `403` unsafe-settings case |
+| `DESIGN.md` | Updated the retry API contract and local/mock retry boundary |
+| `TDD.md` | Updated current backend API coverage notes |
+| `STATE.md` | Recorded this phase, validation, smoke results, skipped checks, risks, and git status |
+
+### Safety guardrails preserved
+
+- No API or frontend reset endpoint was added.
+- No frontend retry/reset button or mutation control was added.
+- Manual retry remains backend-only.
+- Retry is allowed only when `APP_ENV` is local/demo/test/development, `MOCK_MODE=true`, `CRM_PROVIDER=mock`, `SLACK_PROVIDER=mock`, and `GOOGLE_SHEETS_PROVIDER` is disabled or mock.
+- Retry still records local persistence only; it does not call CRM, Slack, Google Sheets, OpenAI, paid APIs, webhooks, or external services.
+- The guarded demo reset command remains dry-run-by-default and marker-first.
+
+### Automated validation
+
+| Command | Status | Result |
+|---|---|---|
+| `uv run pytest tests\test_lead_intake_api.py -q` | pass | `22 passed, 1 warning in 2.27s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run pytest tests/test_demo_reset.py -q` | pass | `15 passed in 0.85s` |
+| `uv run pytest -q` | pass with existing warning | `66 passed, 1 warning in 2.39s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 31 source files` |
+| `git diff --check` | pass with Git line-ending notices | Exit 0; Git reported LF-to-CRLF working-copy notices, with no whitespace errors |
+
+### Local backend smoke
+
+Temporary backend smoke server:
+
+```powershell
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8131 --log-level info
+```
+
+| Check | Status | Result |
+|---|---|---|
+| `.env` existence | pass | `.env` exists; contents were not printed |
+| Port check | pass | No listener was present on `127.0.0.1:8131` before startup |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized and was at head |
+| Pre-smoke `uv run python -m backend.app.leads.demo_reset --apply` | pass | Deleted `4 runs`, `4 leads`, `8 attempts`, and `18 audit records`; seeded the four canonical demo runs |
+| `GET /health` | pass | Returned `status=ok` and service name |
+| `GET /leads/runs` | pass | Returned exactly four seeded runs: queued, retried, failed, and success |
+| `GET /leads/runs/run_demo_failed` | pass | Returned failed status, 2 attempts, failure detail available, and sanitized intake payload keys |
+| `GET /leads/runs/run_demo_failed/failure` | pass | Returned failed attempt 2, error type `adapter`, suggested action, and sanitized payload keys |
+| `POST /leads/runs/run_demo_failed/retry` | pass | Returned `run_status=retried`, `attempt_count=3`, and latest attempt `retried` |
+| Post-retry detail lookup | pass | Showed `queued`, `failed`, and `retried` attempts plus `manual_retry` audit event |
+| Post-smoke reset restore | pass | Deleted `4 runs`, `4 leads`, `9 attempts`, and `19 audit records`; reseeded the four canonical demo runs |
+| Final restored detail lookup | pass | `run_demo_failed` returned to `failed` with `queued` and `failed` attempts |
+| Temporary process cleanup | pass | Stopped the smoke Uvicorn listener; final port check returned no listener on `127.0.0.1:8131` |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Frontend lint/tests/typecheck/build | skipped | No frontend source or frontend API proxy contract changed |
+| Browser UI smoke | skipped | No frontend source changed; local backend/admin API smoke verified run history, detail, failure detail, and retry behavior |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; project remains local/mock-only |
+| GitHub Actions / CI | skipped | Explicitly forbidden |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+- Frontend rendering was not rechecked because no frontend source changed; the read-only admin UI consumes the same GET contracts.
+- Local PostgreSQL was left running because it is part of the documented local demo path.
+
+### Suggested commit message
+
+```text
+Harden admin run history and retry API behavior
+```
 
 ## Latest Update - 2026-06-10 Explicit Demo Data Markers For Reset
 
