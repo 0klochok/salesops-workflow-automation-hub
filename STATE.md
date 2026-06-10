@@ -4,16 +4,158 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-09 |
+| Last updated | 2026-06-10 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final Portfolio Readiness Review |
+| Current phase | Deterministic Demo Reset And Final Public Packaging Pass |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Required local gates, live local smoke, public-doc review, and sensitive scans passed; no GitHub Actions added |
-| Completion | Final local live smoke and release-readiness verification recorded; stale public-doc status rows corrected |
+| Quality gate status | Required local gates, local smoke, retry smoke, public-doc review, and sensitive scans passed; no GitHub Actions added |
+| Completion | Deterministic seed/retry/smoke packaging pass recorded; stale public-doc wording corrected |
 | Main blocker | none |
+
+## Latest Update - 2026-06-10 Deterministic Demo Reset And Final Public Packaging Pass
+
+### Phase summary
+
+This pass verified the current source-of-truth docs, repeated the documented local PostgreSQL/Alembic/demo-seed path, started the backend and frontend with the documented command shapes, completed local API/proxy/rendered-route smoke checks, performed a safe live retry endpoint smoke, restored the seeded demo records afterward, ran the full requested quality gate, and scanned for public-readiness issues.
+
+No dependency install/update, GitHub Actions workflow, real provider call, paid API call, webhook call, staging action, commit, push, or destructive git command was performed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `REQ.md` | Replaced one stale public-doc `TBD` wording with `future work` and updated the doc date |
+| `STATE.md` | Recorded this reset, smoke, retry, quality-gate, and public-readiness pass |
+
+### Initial inspection
+
+| Check | Status | Result |
+|---|---|---|
+| Source docs read | pass | Reviewed `README.md`, `REQ.md`, `DESIGN.md`, `TDD.md`, `STATE.md`, `CONTEXT.md`, `RUNBOOK.md`, `AGENTS.md`, repo command files, `compose.yml`, and demo seed implementation |
+| Repository file inventory | pass | `rg --files` showed the expected backend, frontend, Alembic, docs, tests, screenshots, lockfiles, and config files |
+| Starting worktree | pass | `git status --short` returned no output |
+| Starting whitespace check | pass | `git diff --check` returned no output |
+| Working-tree scope | pass | Initial tree was clean; later tracked changes were limited to `REQ.md` and `STATE.md` |
+
+### Demo data reset and seed evidence
+
+| Command | Status | Result |
+|---|---|---|
+| `Test-Path -LiteralPath ".env"` | pass | `True`; contents were not printed |
+| `docker compose ps` | pass | `salesops-postgres` was already `Up` and `healthy` on local port `5432` |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized; transactional DDL assumed |
+| `uv run python -m backend.app.leads.demo_seed` | pass | `Seeded 4 demo runs: run_demo_success, run_demo_failed, run_demo_retried, run_demo_queued` |
+
+Full database wipe/reset was skipped because `RUNBOOK.md` documents the deterministic seed command, and `backend/app/leads/demo_seed.py` intentionally clears and rewrites only the known `run_demo_*` and `lead_demo_*` records. No documented full reset exists, and inventing one would be destructive. The local database still contains older synthetic smoke rows; the seeded demo records themselves were restored deterministically.
+
+### Documented command and port verification
+
+| Check | Status | Result |
+|---|---|---|
+| README/RUNBOOK startup commands | pass | Docs contain local PostgreSQL, Alembic, seed, backend, frontend, `/`, `/admin/runs`, `/docs`, and filter-route guidance |
+| Backend default port | fallback used | `127.0.0.1:8028` was already occupied by a pre-existing local listener and was left untouched |
+| Backend smoke port | pass | Used `127.0.0.1:8128` |
+| Frontend smoke port | pass | Used documented `127.0.0.1:3042` |
+| Backend command | pass | `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8128 --log-level info` |
+| Frontend command | pass | Set both backend base URL env vars to `http://127.0.0.1:8128`, then ran `pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042` |
+| Temporary process cleanup | pass | Stopped only the smoke Uvicorn and Next.js processes started in this pass; `8028` and PostgreSQL were left untouched |
+
+### Live local smoke evidence
+
+| Surface | Status | Result |
+|---|---|---|
+| Backend health | pass | `GET /health` returned `status=ok` and service name |
+| Backend docs/OpenAPI | pass | `GET /docs` returned HTTP 200 with Swagger UI; `GET /openapi.json` returned title `SalesOps Workflow Automation Hub API` and 6 paths |
+| Backend intake | pass | Synthetic local `POST /leads/intake` returned `success`, dedupe `unique`, CRM action `created`, and Slack delivered `true` |
+| Backend run history | pass | `GET /leads/runs` returned seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`; older synthetic smoke rows were also present |
+| Backend run detail | pass | `GET /leads/runs/run_demo_failed` returned failed status, 2 attempts, failure detail available, and sanitized payload without `phone` |
+| Backend failure detail | pass | `GET /leads/runs/run_demo_failed/failure` returned failed attempt 2, error type `adapter`, suggested action, and sanitized payload without `phone` |
+| Frontend root | pass | `GET /` returned HTTP 200 and contained `SalesOps Workflow Automation Hub` and `CSV import` |
+| Frontend admin | pass | `GET /admin/runs` returned HTTP 200 and contained `Admin run history` and `Read-only` |
+| Frontend proxy intake | pass | Synthetic local `POST /api/leads/intake` returned `success` and Slack delivered `true` |
+| Frontend proxy run history | pass | `GET /api/leads/runs` returned seeded data including `run_demo_failed` |
+| Frontend proxy run detail | pass | `GET /api/leads/runs/run_demo_failed` returned 2 attempts |
+| Frontend docs redirect | pass | `GET /docs` returned `307` to `http://127.0.0.1:8128/docs` |
+
+Rendered browser smoke used the in-app Browser plugin. Root, admin, status/source/search/owner/error-type/date filter URLs, empty state, selected-hidden detail URL, and `/docs` redirect rendered meaningful content with no framework overlay and no console warning/error entries. The detail button for `run_demo_failed` resolved to one button, opened `?runId=run_demo_failed`, displayed the failed mock CRM message and suggested action, and exposed no retry/resubmit/rerun control.
+
+The first date-filter browser check was too early; after a 2.5 second wait it rendered all four seeded runs for `from=2026-06-01&to=2026-06-01`. Browser resource observations for checked Next.js routes found no non-local resource URLs. A detailed HAR/network trace was not captured because no existing project tooling exposed one without adding dependencies.
+
+### Retry endpoint live smoke
+
+| Command | Status | Result |
+|---|---|---|
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8128/leads/runs/run_demo_failed/retry" -Method Post` | pass | Local retry changed `run_demo_failed` to `retried`; detail lookup showed 3 attempts and latest status `retried` |
+| `uv run python -m backend.app.leads.demo_seed` | pass | Reseeded the four deterministic demo runs after retry smoke |
+| Final seeded status check | pass | `run_demo_failed=failed/2`, `run_demo_queued=queued/1`, `run_demo_retried=retried/3`, `run_demo_success=success/2` |
+
+Retry smoke was safe because it used a documented local synthetic failed run, performed no real external calls, and was followed by deterministic reseeding.
+
+### Required automated validation
+
+Validation note: sandboxed PowerShell process creation failed in this workspace with `CreateProcessAsUserW failed: 5`, so local commands were run through approved escalated PowerShell. No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, or webhook was called.
+
+| Command | Status | Result |
+|---|---|---|
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | 48 tests passed; 1 Starlette/FastAPI `TestClient` deprecation warning |
+| `pnpm --dir apps/web run lint` | pass | ESLint completed with exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` completed with exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully and generated 8 routes |
+| `git diff --check` | pass | Exit 0 before docs edits and after docs edits; final run printed LF-to-CRLF working-copy warnings for `REQ.md` and `STATE.md` but no whitespace errors |
+| `git status --short` | pass | No output before docs edits; final output was `M REQ.md` and `M STATE.md` |
+| `git diff --cached --name-only` | pass | No output; no files staged |
+| `git diff --stat` | pass | `REQ.md` and `STATE.md` only; 148 insertions and 6 deletions |
+
+### Sensitive and public-readiness scans
+
+| Check | Status | Result |
+|---|---|---|
+| Tracked `.env` files | pass | `git ls-files -- .env` returned no output; `git ls-files -- .env .env.*` returned `.env.example` only |
+| GitHub Actions workflows | pass | `Test-Path -LiteralPath ".github\workflows"` returned `False`; `git ls-files -- .github .github\workflows` returned no workflow files |
+| Private Windows paths/usernames | pass | No tracked matches for local user/path patterns |
+| Provider/API key and live endpoint patterns | pass after refinement | Broad scan matched historical regex command text in `STATE.md` only; refined scan excluding `STATE.md` returned no matches |
+| Public stale wording | pass after cleanup | Initial scan found `TBD` in `REQ.md`; changed it to `future work` |
+| Screenshot binary strings | pass | `rg -a` over `docs/assets/screenshots` returned no local-path, username, token, private-key, provider endpoint, `DATABASE_URL`, local DB password, or service-role matches |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Full destructive database wipe | skipped | Not documented; seed command intentionally resets only known demo records |
+| Real provider, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; project remains local/mock-only |
+| Dependency install/update | skipped | Existing locked local environment passed all gates |
+| GitHub Actions / CI | skipped | Explicitly forbidden; absence was checked |
+| Detailed browser network trace/HAR | limited | Browser console/resource checks and local HTTP/proxy checks passed; no dependency was added for HAR capture |
+| Commit, push, and staging | skipped | Explicitly forbidden |
+
+### Remaining risks
+
+- The local database still contains older synthetic smoke rows because no documented full reset exists. Rerun the seed command before recording to restore the four deterministic `run_demo_*` rows, and use documented filter URLs when you need deterministic screenshots.
+- Port `8028` remains occupied by a pre-existing local listener that Codex did not stop.
+- Local PostgreSQL was left running because it is part of the documented local demo path.
+- Browser validation covered the in-app Browser/Chromium path only; no other browser was checked.
+- Backend pytest still emits the known Starlette/FastAPI `TestClient` deprecation warning.
+
+### Git safety confirmation
+
+- No files were staged.
+- `git diff --cached --name-only` returned no output.
+- No commits were created.
+- No pushes were made.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, or destructive checkout was run.
+
+### Suggested commit message
+
+```text
+Record final demo reset and packaging pass
+```
 
 ## Latest Update - 2026-06-09 Final Local Live Smoke And Release-Readiness Verification
 

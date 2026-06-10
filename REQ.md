@@ -4,7 +4,7 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-05 |
+| Last updated | 2026-06-10 |
 | Status | final portfolio readiness review |
 | Project type | portfolio/demo automation |
 | Current phase | Local-first final readiness audit after documentation polish |
@@ -114,7 +114,7 @@ The current portfolio-readiness state keeps the demo local-first, deterministic,
 |---|---|---|---|
 | Q-001 | Real HubSpot vs mock CRM? | Live integration scope and security posture | Mock CRM |
 | Q-002 | Real Slack webhook vs mock/log notifier? | Notification adapter behavior | Mock/log notifier |
-| Q-003 | Owner assignment rule? | Lead routing and admin filters | Current admin demo derives owner from `lead_id`; real routing remains TBD |
+| Q-003 | Owner assignment rule? | Lead routing and admin filters | Current admin demo derives owner from `lead_id`; real routing remains future work |
 | Q-004 | Qualification rule? | CRM/Slack trigger behavior | Phase 2 default: `lead_score >= 70` |
 | Q-005 | Dedupe edge cases? | False positives/negatives | Email first, domain second |
 | Q-006 | PostgreSQL-only tests vs SQLite unit fallback? | Test speed and fidelity | PostgreSQL integration, SQLite only if justified |
