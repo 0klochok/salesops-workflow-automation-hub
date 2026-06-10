@@ -9,11 +9,137 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Deterministic Demo Reset And Final Public Packaging Pass |
+| Current phase | Safe Local Demo Reset Command |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Required local gates, local smoke, retry smoke, public-doc review, and sensitive scans passed; no GitHub Actions added |
-| Completion | Deterministic seed/retry/smoke packaging pass recorded; stale public-doc wording corrected |
+| Quality gate status | Backend lint, typecheck, tests, guarded reset smoke, local backend smoke, and local frontend HTTP smoke passed; browser console check limited |
+| Completion | Guarded demo reset command implemented, tested, documented, and smoke-validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-10 Safe Local Demo Reset Command
+
+### Phase summary
+
+Implemented a CLI-only local/demo reset path so the portfolio database can be returned to deterministic seeded state without older reserved-domain synthetic smoke rows appearing in visible demo/admin views.
+
+No migration, frontend source change, dependency install/update, GitHub Actions workflow, real provider call, paid API call, staging action, commit, or push was performed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `backend/app/leads/demo_reset.py` | Added dry-run-by-default guarded reset CLI and reset helper logic |
+| `tests/test_demo_reset.py` | Added tests for dry run, guarded safety checks, synthetic cleanup, preservation of non-synthetic rows, and reseeding |
+| `README.md` | Documented `uv run python -m backend.app.leads.demo_reset --apply` in local demo setup/validation |
+| `RUNBOOK.md` | Updated operational demo setup, recording, and troubleshooting paths to use the guarded reset command |
+| `STATE.md` | Recorded this implementation, validation, skipped checks, and remaining risks |
+
+### Reset behavior
+
+`uv run python -m backend.app.leads.demo_reset` is a dry run. It reports matched reset candidates and does not mutate the database.
+
+`uv run python -m backend.app.leads.demo_reset --apply`:
+
+- refuses unless `APP_ENV` is local/demo/test/development;
+- refuses unless `MOCK_MODE=true`, `CRM_PROVIDER=mock`, `SLACK_PROVIDER=mock`, and Google Sheets is disabled or mock;
+- refuses PostgreSQL URLs unless the host is local and the database name is `salesops_local`, `salesops_demo`, or `salesops_test`;
+- allows SQLite only for local/test use;
+- deletes only deterministic seed IDs and rows whose lead email or company domain uses reserved synthetic example/test domains;
+- reseeds exactly `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`;
+- does not expose a backend API endpoint or frontend UI control.
+
+### Implementation notes
+
+The existing schema has no explicit `is_demo` marker. The safe deletion boundary therefore uses current repository evidence: known `run_demo_*`/`lead_demo_*` seed IDs plus reserved synthetic domains such as `example.com`, `.example`, `.example.test`, and `.test`. Generic `lead_<hash>` or `run_<hash>` prefixes are not deleted by themselves because real local submissions and synthetic smoke submissions share that identifier shape.
+
+### Automated validation
+
+| Command | Status | Result |
+|---|---|---|
+| `uv run pytest tests\test_demo_reset.py` | failed then passed | Initial run found a missing SQLAlchemy `delete` import; after the fix, `5 passed` |
+| `uv run ruff check .` | failed then passed | Initial run found import ordering; Ruff mechanical fix applied; final result `All checks passed!` |
+| `uv run mypy .` | failed then passed | Initial run found SQLAlchemy result typing and settings alias construction issues; final result `Success: no issues found in 30 source files` |
+| `uv run pytest` | pass | `53 passed, 1 warning`; warning is existing FastAPI/Starlette `TestClient` deprecation |
+
+### Local reset and backend smoke
+
+| Command or check | Status | Result |
+|---|---|---|
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | PostgreSQL Alembic context initialized and at head |
+| `uv run python -m backend.app.leads.demo_reset` | pass | Dry run matched 36 synthetic/demo runs and 36 synthetic/demo leads |
+| `uv run python -m backend.app.leads.demo_reset --apply` | pass | Deleted 36 runs, 36 leads, 72 attempts, and 178 audit records; seeded 4 demo runs |
+| Post-reset DB metadata check | pass | Local DB had exactly 4 runs: queued, retried, failed, success seeded demo rows |
+| Temporary backend | pass | Started on `http://127.0.0.1:8130` |
+| Backend health | pass | `GET /health` returned `status=ok` |
+| Backend docs/OpenAPI | pass | `GET /docs` returned HTTP 200; OpenAPI title was `SalesOps Workflow Automation Hub API` |
+| Backend run history | pass | `GET /leads/runs` returned exactly 4 seeded runs |
+| Backend run detail | pass | `GET /leads/runs/run_demo_failed` returned failed status and 2 attempts |
+| Backend failure detail | pass | `GET /leads/runs/run_demo_failed/failure` returned adapter error detail and sanitized payload without `phone` |
+| Backend retry smoke | pass | `POST /leads/runs/run_demo_failed/retry` changed the run to `retried` with 3 attempts |
+| Post-retry reset | pass | Reset restored `run_demo_failed=failed/2`, `run_demo_queued=queued/1`, `run_demo_retried=retried/3`, and `run_demo_success=success/2` |
+
+### Local frontend smoke
+
+| Check | Status | Result |
+|---|---|---|
+| Temporary frontend | pass | Started on `http://127.0.0.1:3042` pointed at backend `8130` |
+| Frontend root | pass | `GET /` returned HTTP 200 and contained `SalesOps Workflow Automation Hub` |
+| Frontend admin | pass | `GET /admin/runs` returned HTTP 200 and contained `Admin run history` |
+| Frontend docs redirect | pass with PowerShell redirect warning | `GET /docs` returned HTTP 307 to `http://127.0.0.1:8130/docs`; `Invoke-WebRequest` also printed the expected max-redirection warning because redirects were intentionally disabled |
+| Frontend run-history proxy | pass | `GET /api/leads/runs` returned exactly 4 seeded runs |
+| Frontend run-detail proxy | pass | `GET /api/leads/runs/run_demo_failed` returned failed status and 2 attempts |
+| Frontend dev-server logs | pass | Next.js compiled `/`, `/admin/runs`, `/docs`, `/api/leads/runs`, and `/api/leads/runs/[runId]`; stderr log was empty |
+| Temporary process cleanup | pass | Stopped only the backend/frontend smoke process trees started in this pass; PostgreSQL was left running |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Frontend lint/tests/typecheck/build | skipped | No frontend source files changed; only README/RUNBOOK docs referenced the reset command |
+| Browser console check | limited/skipped | In-app Browser tool was not exposed by tool discovery; project Playwright was not installed; temporary `npx --package @playwright/cli` fallback was rejected because it would download and execute third-party npm code |
+| Real provider, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; project remains local/mock-only |
+| Migration generation | skipped | No schema change was needed |
+| GitHub Actions / CI | skipped | Explicitly forbidden |
+| Commit, push, and staging | skipped | Explicitly forbidden |
+
+### Remaining risks
+
+- The reset identifies synthetic rows through seed IDs and reserved example/test domains because the schema has no durable `is_demo` marker. Future non-example synthetic rows will not be deleted unless their predicates are added deliberately.
+- Browser console errors were not verified with a real browser automation tool in this pass for the reasons above; HTTP/proxy checks and dev-server logs passed.
+- Local PostgreSQL remains running because it is part of the documented local demo path.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+
+### Manual validation commands
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8130 --log-level info
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8130"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8130"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/docs`
+
+### Git safety confirmation
+
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No `git add`, `git commit`, `git push`, `git reset`, `git rebase`, `git stash`, branch deletion, or destructive checkout was run.
+
+### Suggested commit message
+
+```text
+Add guarded local demo reset command
+```
 
 ## Latest Update - 2026-06-10 Deterministic Demo Reset And Final Public Packaging Pass
 

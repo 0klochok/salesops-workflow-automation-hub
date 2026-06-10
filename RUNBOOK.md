@@ -75,7 +75,7 @@ uv run ruff check .
 uv run mypy backend tests
 docker compose up -d postgres
 uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 uv run uvicorn backend.app.main:app --reload
 ```
 
@@ -155,18 +155,23 @@ Expected behavior:
 - failed or queued runs append a local `retried` attempt, update the run status to `retried`, and write a `manual_retry` audit record;
 - retry is local persistence only and does not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
 
-Seed deterministic local demo runs:
+Reset and seed deterministic local demo runs:
 
 ```powershell
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 ```
 
 Expected behavior:
 
+- refuses to run unless `APP_ENV` is local/demo/test/development, mock providers are enabled, and the database URL points to local SQLite or a local `salesops_*` demo/test PostgreSQL database;
+- dry-runs without `--apply` and reports matched rows without mutating the database;
+- deletes only deterministic seed records and reserved example/test-domain synthetic smoke records;
 - writes exactly four synthetic demo runs: success, failed, queued, and retried;
-- replaces only the known `run_demo_*` and `lead_demo_*` seed records on repeat runs;
 - uses fixed timestamps and local SQLAlchemy persistence only;
 - does not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, webhooks, or external services.
+
+If you only need to refresh the four known seed records without removing old synthetic
+smoke rows, run `uv run python -m backend.app.leads.demo_seed`.
 
 ## 7.1 Local Database Commands
 
@@ -204,12 +209,12 @@ if ($databaseUrl -notmatch "^postgresql\+psycopg://[^@]+@(localhost|127\.0\.0\.1
 "DATABASE_URL is present and points at local development PostgreSQL; value not printed."
 ```
 
-Start PostgreSQL, apply migrations, and seed deterministic demo run data:
+Start PostgreSQL, apply migrations, and reset deterministic demo run data:
 
 ```powershell
 docker compose up -d postgres
 uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 ```
 
 Start the backend API:
@@ -295,7 +300,7 @@ grace@example.com,Grace,Hopper,Example Co,example.com,88,Director
 
 Test read-only persisted admin run history:
 
-1. Seed local demo data with `uv run python -m backend.app.leads.demo_seed` after PostgreSQL is running and migrations are applied.
+1. Reset local demo data with `uv run python -m backend.app.leads.demo_reset --apply` after PostgreSQL is running and migrations are applied.
 2. Open `http://localhost:3000/admin/runs`.
 3. Confirm the page shows persisted seeded runs such as `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
 4. Confirm the page shows persisted lead email/name/company identity, derived demo owner, run status, source, run-level error type, timestamps, attempt count, latest attempt summary, and failure-detail availability.
@@ -361,7 +366,7 @@ For a local portfolio demo smoke with temporary ports:
 ```powershell
 docker compose up -d postgres
 uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level info
 ```
 
@@ -405,12 +410,12 @@ pnpm install --frozen-lockfile
 if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
 ```
 
-4. Start local PostgreSQL, apply migrations, and seed synthetic demo data:
+4. Start local PostgreSQL, apply migrations, and reset synthetic demo data:
 
 ```powershell
 docker compose up -d postgres
 uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 ```
 
 5. Start the backend on a free local-only port. Port `8028` is the known-good recording example; choose another free local port if it is busy:
@@ -598,7 +603,7 @@ docker compose stop postgres
 | Lead intake returns a database configuration error | `DATABASE_URL` is missing or PostgreSQL is not available | Create local `.env`, start Docker PostgreSQL, and run Alembic migrations |
 | Failure detail returns 404 | The run ID does not exist in the configured local database | Check the run ID and `DATABASE_URL` |
 | Failure detail returns 409 | The run exists but has no failed attempt | Use a failed run ID; successful intake runs are not failure records |
-| Run history is empty | The configured local database has no persisted run records | Submit leads locally or run `uv run python -m backend.app.leads.demo_seed` |
+| Run history is empty | The configured local database has no persisted run records | Submit leads locally or run `uv run python -m backend.app.leads.demo_reset --apply` |
 | Retry returns 409 | The run is already `success` or `retried` | Retry only `failed` or `queued` local runs |
 | Frontend cannot submit | Backend is not running or base URL is wrong | Start backend or set `BACKEND_API_BASE_URL` in local ignored `.env` |
 | CSV row is not submitted | Client-side CSV validation failed | Check required headers and row-level validation messages |

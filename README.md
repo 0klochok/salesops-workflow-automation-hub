@@ -92,8 +92,13 @@ uv sync
 pnpm install
 docker compose up -d postgres
 uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 ```
+
+The reset command is local/demo-only and dry-runs unless `--apply` is provided. With
+`--apply`, it refuses non-local/mock settings, removes only deterministic seed records
+and reserved example/test-domain synthetic smoke records, then reseeds the four
+portfolio demo runs.
 
 Start the backend in one PowerShell window:
 
@@ -149,7 +154,7 @@ If Docker Desktop is available, also validate the documented local database demo
 ```powershell
 docker compose up -d postgres
 uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 ```
 
 ## Documentation Map
