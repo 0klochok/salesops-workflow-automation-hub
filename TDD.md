@@ -7,7 +7,7 @@
 | Last updated | 2026-06-10 |
 | Status | final portfolio readiness review |
 | Applies to | salesops workflow automation hub |
-| Current phase | Backend/admin run-history and retry hardening |
+| Current phase | RC final documentation and release-readiness audit |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -23,6 +23,18 @@
 ## 3. Current Test Status
 
 The current local demo has backend validation, dedupe, mock adapter, persistence, failure-detail, retry, seed-data, and frontend admin coverage. The `/admin/runs` page remains local-only, exposes manual retry only for failed or queued selected runs, and does not add reset controls, real integrations, auth, deployment, GitHub Actions, or database migrations.
+
+Latest RC audit gate status on 2026-06-10:
+
+- `pnpm --dir apps/web lint`: pass.
+- `pnpm --dir apps/web test -- --run`: pass, 5 files and 54 tests.
+- `pnpm --dir apps/web typecheck`: pass.
+- `pnpm --dir apps/web build`: pass, Next.js production build completed with the expected local API/admin routes.
+- `uv run --no-python-downloads --python 3.12 --frozen pytest`: pass, 66 tests with the existing FastAPI/Starlette `TestClient` deprecation warning.
+- `uv run --no-python-downloads --python 3.12 --frozen ruff check .`: pass.
+- `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests`: pass, 28 source files.
+- `git diff --check`: pass after final documentation edits.
+- Local smoke: pass after starting local PostgreSQL, applying migrations, running guarded demo reset, starting backend/frontend on `127.0.0.1`, loading `/` and `/admin/runs`, clicking the local `Retry run` action for `run_demo_failed`, confirming attempt 3/retried, confirming no failed browser requests or console/runtime errors, restoring canonical demo data, and stopping temporary smoke processes.
 
 Current backend commands:
 

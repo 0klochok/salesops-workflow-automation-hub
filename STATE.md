@@ -9,11 +9,106 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Admin retry proxy/UI release-candidate cleanup |
+| Current phase | RC final documentation and release-readiness audit |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Required frontend/backend gates, safety scans, rendered admin retry smoke, docs updates, and diff whitespace gate passed |
-| Completion | Admin retry proxy/UI release-candidate cleanup implemented, tested, documented, and smoke-validated |
+| Quality gate status | Required frontend/backend gates, local smoke, documentation updates, and diff whitespace gate passed |
+| Completion | RC final documentation and release-readiness audit completed without runtime behavior changes |
 | Main blocker | none |
+
+## Latest Update - 2026-06-10 RC Final Documentation And Release-Readiness Audit
+
+### Phase summary
+
+Audited the local reviewer/client handoff path and tightened stale documentation wording only. No runtime product behavior, API route, UI feature, backend logic, migration, dependency, GitHub Actions workflow, provider integration, deployment, staging action, commit, push, or git staging was added or performed.
+
+The documented demo path remains local-first and mock-only: PostgreSQL runs through Docker Compose, backend commands use `uv`, frontend commands use `pnpm`, CRM and Slack behavior remains deterministic mock behavior, and no real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external provider call is required.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Aligned local validation commands with the strict RC gate commands |
+| `RUNBOOK.md` | Updated the current phase label and local validation command order |
+| `TDD.md` | Recorded final RC gate and smoke status |
+| `STATE.md` | Recorded this release-readiness audit, validation, smoke result, limitations, and risks |
+
+### Scope confirmation
+
+- Documentation-only phase.
+- No product feature expansion.
+- No real provider/API calls.
+- No paid API usage.
+- No dependency additions, removals, or upgrades.
+- No GitHub Actions or CI files.
+- No commit, push, staging, branch operation, deployment, or hosted automation.
+- No secrets were printed, stored, logged, or added to source files.
+
+### Automated validation
+
+| Command | Status | Result |
+|---|---|---|
+| `pnpm --dir apps/web lint` | pass | `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | pass | `5` test files passed, `54` tests passed |
+| `pnpm --dir apps/web typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18` production build completed; route list included `/`, `/admin/runs`, local API proxies, retry proxy, and `/docs` |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass with existing warning | `66 passed, 1 warning in 2.46s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 28 source files` |
+| Tracked live-endpoint and secret-pattern scan excluding `STATE.md` | pass | No matches for live provider endpoints, token-shaped secrets, service-role strings, or private-key markers |
+| GitHub Actions workflow check | pass | `.github/workflows` is absent |
+| `git diff --check` | pass | Exit 0 after final documentation edits |
+
+### Local smoke result
+
+Smoke followed the documented local path after documentation updates:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level warning
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+| Check | Status | Result |
+|---|---|---|
+| Local PostgreSQL | pass | `salesops-postgres` was already running and healthy; it was left running intentionally |
+| Alembic migration | pass | Local PostgreSQL migration check reached head |
+| Guarded demo reset | pass | Reset applied against local synthetic demo data and seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Backend health | pass | `GET http://127.0.0.1:8028/health` returned `status=ok` |
+| Frontend admin route | pass | `GET http://127.0.0.1:3042/admin/runs` returned HTTP 200 |
+| Frontend run-history proxy | pass | `GET http://127.0.0.1:3042/api/leads/runs` returned the seeded local run data |
+| Browser home/admin render | pass | Headless Chrome loaded `/` with `Lead intake form` and `CSV import`, then loaded `/admin/runs` with seeded `run_demo_failed` detail and retry action |
+| Browser retry behavior | pass | Clicked `Retry run` for `run_demo_failed`; page showed `Retry recorded for run_demo_failed` and `Attempt 3` |
+| Direct retry-state check | pass | Local detail response showed three attempts and latest attempt status `retried` |
+| Browser network locality | pass | No remote HTTP or WebSocket requests, no failed requests, no console warnings/errors, and no runtime exceptions; one inline `data:` SVG URL was observed and did not leave the browser |
+| Demo restore | pass | `uv run python -m backend.app.leads.demo_reset --apply` restored canonical seeded data after the retry mutation |
+| Temporary process cleanup | pass | Temporary backend, frontend, and headless Chrome listeners on ports `8028`, `3042`, and `9234` were stopped; final port checks returned no listeners |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; the project remains local/mock-only |
+| GitHub Actions / CI | skipped | Explicitly forbidden for this phase |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+| In-app Browser plugin path | limited | Browser skill was loaded, but tool discovery returned no callable `node_repl js` browser-control tool in this thread |
+| Playwright path | skipped | The project does not include Playwright, and no dependency was added |
+
+### Remaining risks
+
+- Browser smoke used installed local headless Chrome through DevTools because the in-app Browser control tool was unavailable.
+- The first temporary frontend smoke process was started without the backend env inherited and correctly failed against the default local `127.0.0.1:8000`; it was stopped and restarted with the documented env before the passing smoke.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+- PostgreSQL was left running because it is the documented local demo service and was already healthy before this audit.
+
+### Suggested commit message
+
+```text
+Finalize local handoff documentation
+```
 
 ## Latest Update - 2026-06-10 Admin Retry Proxy/UI Release-Candidate Cleanup
 

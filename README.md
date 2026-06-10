@@ -141,14 +141,14 @@ Run from the repository root:
 
 ```powershell
 git status --short
+pnpm --dir apps/web lint
+pnpm --dir apps/web test -- --run
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
+uv run --no-python-downloads --python 3.12 --frozen pytest
+uv run --no-python-downloads --python 3.12 --frozen ruff check .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 git diff --check
-uv run ruff check .
-uv run mypy .
-uv run pytest
-pnpm --dir apps/web run lint
-pnpm --dir apps/web exec vitest run
-pnpm --dir apps/web run typecheck
-pnpm --dir apps/web run build
 ```
 
 If Docker Desktop is available, also validate the documented local database demo path:

@@ -8,7 +8,7 @@
 | Status | final portfolio readiness review |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | Backend/admin run-history and retry hardening |
+| Current phase | RC final documentation and release-readiness audit |
 
 ## 2. Operating Rules
 
@@ -326,14 +326,14 @@ Test local-only persisted admin run history and retry:
 
 ```powershell
 git status --short
-git diff --check
-uv run --no-python-downloads --python 3.12 --frozen pytest
-uv run --no-python-downloads --python 3.12 --frozen ruff check .
-uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 pnpm --dir apps/web lint
 pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
+uv run --no-python-downloads --python 3.12 --frozen pytest
+uv run --no-python-downloads --python 3.12 --frozen ruff check .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
+git diff --check
 git ls-files -- .github
 ```
 
