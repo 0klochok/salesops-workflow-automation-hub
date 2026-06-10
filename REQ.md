@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Last updated | 2026-06-05 |
-| Status | active draft |
+| Status | final portfolio readiness review |
 | Project type | portfolio/demo automation |
 | Current phase | Local-first final readiness audit after documentation polish |
 | Related docs | `CONTEXT.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |

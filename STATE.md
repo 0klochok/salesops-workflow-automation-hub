@@ -11,9 +11,151 @@
 | Current branch | `main` |
 | Current phase | Final Portfolio Readiness Review |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Required local gates passed; public-doc and screenshot safety review passed; no GitHub Actions added |
-| Completion | Public portfolio docs reviewed, minimal docs cleanup applied, and final-readiness evidence recorded |
+| Quality gate status | Required local gates, live local smoke, public-doc review, and sensitive scans passed; no GitHub Actions added |
+| Completion | Final local live smoke and release-readiness verification recorded; stale public-doc status rows corrected |
 | Main blocker | none |
+
+## Latest Update - 2026-06-09 Final Local Live Smoke And Release-Readiness Verification
+
+### Phase summary
+
+This pass verified the documented local backend/frontend commands in `README.md` and `RUNBOOK.md`, ran the full requested automated validation gate, ran a live local smoke with PostgreSQL, FastAPI, Next.js, frontend proxy APIs, and rendered demo routes, checked CI/env tracking and sensitive-data patterns, and corrected stale `active draft` status rows in public source-of-truth docs.
+
+No feature work, dependency install/update, GitHub Actions workflow, real provider call, paid API call, webhook call, staging action, commit, or push was performed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `DESIGN.md` | Changed stale `Status` row from `active draft` to `final portfolio readiness review` |
+| `REQ.md` | Changed stale `Status` row from `active draft` to `final portfolio readiness review` |
+| `TDD.md` | Changed stale `Status` row from `active draft` to `final portfolio readiness review` |
+| `STATE.md` | Recorded final live smoke, release-readiness checks, skipped checks, risks, and suggested commit message |
+
+### Documented command verification
+
+| Source | Status | Evidence |
+|---|---|---|
+| `README.md` Quick Start | pass | Documents backend `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028` and frontend env plus `pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042` |
+| `RUNBOOK.md` final demo path | pass | Documents local PostgreSQL, Alembic, demo seed, backend `8028`, frontend `3042`, `/`, `/admin/runs`, `/docs`, and admin filter URLs |
+| Generic dev commands | pass | `pyproject.toml`, root `package.json`, and `apps/web/package.json` contain the documented backend and frontend lint/test/typecheck/build/dev commands |
+| Port fallback | pass | `127.0.0.1:8028` was already occupied by an existing local listener, so the runbook's documented "choose another free local port if it is busy" fallback was used with backend port `8128`; frontend port `3042` was free |
+
+### Required automated validation
+
+Validation note: sandboxed PowerShell failed to launch in this workspace with `CreateProcessAsUserW failed: 5`, so local commands were run through approved escalated PowerShell. No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, or webhook was called.
+
+| Command | Status | Result |
+|---|---|---|
+| `git status --short` | pass | No output at start of validation |
+| `git diff --check` | pass | Exit 0 before edits; exit 0 after docs edits with expected LF-to-CRLF working-copy warnings for edited Markdown files |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 28 source files` |
+| `uv run pytest` | pass with known warning | 48 tests passed; 1 known FastAPI/Starlette `TestClient` deprecation warning |
+| `pnpm --dir apps/web run lint` | pass | ESLint completed with exit 0 |
+| `pnpm --dir apps/web exec vitest run` | pass | Vitest `v3.2.4`; 4 test files passed; 43 tests passed |
+| `pnpm --dir apps/web run typecheck` | pass | `tsc --noEmit` completed with exit 0 |
+| `pnpm --dir apps/web run build` | pass | Next.js `15.5.18`; compiled successfully and generated 8 routes including `/`, `/admin/runs`, proxy API routes, and `/docs` |
+
+### Live local smoke evidence
+
+Setup and server commands used:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_seed
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8128 --log-level info
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8128"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8128"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Backend `8128` was used only because `8028` was already occupied. The frontend was launched on the documented `3042` port and pointed to `8128`.
+
+| Check | Status | Result |
+|---|---|---|
+| `.env` handling | pass | Local `.env` already existed; contents were not printed |
+| PostgreSQL | pass | `docker compose up -d postgres` reported `Container salesops-postgres Running` |
+| Alembic | pass | PostgreSQL migration context initialized and reached head |
+| Demo seed | pass | Seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Backend health | pass | `GET http://127.0.0.1:8128/health` returned `status=ok` and service name |
+| Backend docs/OpenAPI | pass | `GET /docs` returned HTTP 200 with Swagger UI; `GET /openapi.json` returned title `SalesOps Workflow Automation Hub API` |
+| Backend intake API | pass | Synthetic local lead `POST /leads/intake` returned `success`, dedupe `unique`, CRM action `created`, Slack delivered `True` |
+| Backend run history | pass | `GET /leads/runs` returned local persisted runs including all four seeded `run_demo_*` records |
+| Backend run detail | pass | `GET /leads/runs/run_demo_failed` returned failed run detail with 2 attempts, sanitized intake payload, and audit events |
+| Backend failure detail | pass | `GET /leads/runs/run_demo_failed/failure` returned failed attempt 2, error type `adapter`, suggested action, and sanitized payload |
+| Frontend home | pass | `GET http://127.0.0.1:3042/` returned HTTP 200 and contained `SalesOps Workflow Automation Hub`, `Lead intake form`, and `CSV import` |
+| Frontend proxy intake | pass | Synthetic local `POST /api/leads/intake` returned `success`, dedupe `unique`, CRM action `created`, Slack delivered `True` |
+| Frontend proxy run history | pass | `GET /api/leads/runs` returned seeded run data including `run_demo_failed` |
+| Frontend proxy run detail | pass | `GET /api/leads/runs/run_demo_failed` returned failed run detail with 2 attempts |
+| Frontend `/docs` redirect | pass | HTTP redirect status `307`; `Location` was `http://127.0.0.1:8128/docs` |
+
+Rendered route smoke used installed local Chrome through `Start-Process -FilePath $chrome ... --headless=new --dump-dom <url>` with a temporary profile under `$env:TEMP`; no Playwright, Puppeteer, browser dependency, screenshot artifact, or committed test artifact was added.
+
+| Rendered route | Status | Evidence |
+|---|---|---|
+| `/` | pass | Rendered expected home title, lead form, and CSV import text; old `Phase 3 Local Demo` label absent |
+| `/admin/runs` | pass | Rendered `Admin run history`, `Read-only`, and seeded success, failed, queued, and retried rows; no retry/edit/delete/resubmit/rerun/archive controls matched |
+| `/admin/runs?status=failed` | pass | Rendered `run_demo_failed`; success and queued rows absent |
+| `/admin/runs?source=csv_upload` | pass | Rendered `run_demo_failed`; success and queued rows absent |
+| `/admin/runs?q=atlas` | pass | Rendered `run_demo_retried`; success and failed rows absent |
+| `/admin/runs?owner=Maya%20Patel` | pass | Rendered `run_demo_failed` and `run_demo_queued`; success and retried rows absent |
+| `/admin/runs?errorType=adapter` | pass | Rendered `run_demo_failed` and `run_demo_retried`; success and queued rows absent |
+| `/admin/runs?from=2026-06-01&to=2026-06-01` | pass | Rendered all four seeded demo runs |
+| `/admin/runs?q=no-such-run` | pass | Rendered `No runs match these filters.` and `Reset filters`; seeded rows absent |
+| `/admin/runs?status=success&runId=run_demo_failed` | pass | Rendered `run_demo_failed` detail and the selected-run-hidden notice |
+| `/docs` | pass | Followed local redirect and rendered Swagger UI for `SalesOps Workflow Automation Hub API` |
+
+Temporary smoke backend/frontend listeners on `8128` and `3042` were stopped after verification. The pre-existing listener on `8028` and local PostgreSQL were left untouched.
+
+### CI, env, and sensitive-data checks
+
+| Command or check | Status | Result |
+|---|---|---|
+| `Test-Path -LiteralPath "..github\workflows"` | pass | `False` for the exact user-provided path |
+| `Test-Path -LiteralPath ".github\workflows"` | pass | `False` for the corrected GitHub Actions workflow path |
+| `git ls-files -- .github .github\workflows` | pass | No tracked CI/workflow files |
+| `git ls-files -- .env` | pass | No tracked `.env` file |
+| Tracked local absolute path/private username scan | pass | No matches |
+| Tracked secret/private-key/live-provider scan | pass with expected self-match | Broad scan matched `STATE.md` only because historical entries record regex command text; the same scan excluding `STATE.md` returned no matches |
+| Tracked production-provider URL scan | pass | No matches, including the refined scan excluding `STATE.md` |
+| Screenshot binary sensitive-string scan | pass | `rg -a` over `docs/assets/screenshots` returned no local-path, username, token, private-key, Slack webhook, OpenAI, HubSpot, Google Sheets, or service-role matches |
+| Public-doc stale wording scan | pass after docs cleanup | `active draft` was corrected in `DESIGN.md`, `REQ.md`, and `TDD.md`; rescan for `active draft`, `old phase`, `not captured yet`, and `contradictory readiness` returned no matches |
+| Public-doc placeholder/phase wording review | pass | Remaining `placeholder` wording is safety guidance about `.env.example`; remaining phase wording is historical plan/implementation context, not contradictory readiness status |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden; verification stayed local/mock-only |
+| Dependency install/update | skipped | Not needed; existing locked local environment passed all gates |
+| GitHub Actions / CI | skipped | Explicitly forbidden; absence was checked instead |
+| Manual retry endpoint live mutation | skipped | Automated tests cover retry behavior; live smoke avoided mutating seeded failed/queued demo run state |
+| Browser plugin / Playwright workflow | skipped/fallback used | Browser plugin was not available, and no Playwright dependency was installed; local headless Chrome DOM checks were used instead |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- The local database now contains additional synthetic smoke leads created by backend and frontend intake smoke. Rerun `uv run python -m backend.app.leads.demo_seed` to refresh the deterministic `run_demo_*` records before a manual recording.
+- Port `8028` was already occupied by a pre-existing local listener and was left untouched; this pass used backend port `8128`.
+- Chrome headless DOM checks covered the documented routes, but browser console logs, detailed network traces, and other browsers were not captured in this pass.
+- Local PostgreSQL was left running because it was already available for the documented smoke path and was not stopped by Codex.
+- The backend test suite still emits the known FastAPI/Starlette `TestClient` deprecation warning.
+
+### Git safety confirmation
+
+- `git diff --cached --name-only` returned no output.
+- No files were staged.
+- No commits were created.
+- No pushes were made.
+- No destructive git commands were run.
+
+### Suggested commit message
+
+```text
+Record final local smoke readiness
+```
 
 ## Latest Update - 2026-06-09 Final Portfolio Readiness Review
 

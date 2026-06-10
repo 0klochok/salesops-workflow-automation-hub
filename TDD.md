@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Last updated | 2026-06-05 |
-| Status | active draft |
+| Status | final portfolio readiness review |
 | Applies to | salesops workflow automation hub |
 | Current phase | Local-first final readiness audit after documentation polish |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |

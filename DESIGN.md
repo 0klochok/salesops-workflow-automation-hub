@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Last updated | 2026-06-05 |
-| Status | active draft |
+| Status | final portfolio readiness review |
 | Scope | Architecture for greenfield portfolio demo |
 | Current phase | Local-first final readiness audit after documentation polish |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
