@@ -9,11 +9,130 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | RC Repair - Clarify Admin Run Retry Outcome |
-| Overall status | repair complete; local gates passed |
-| Quality gate status | Full requested frontend/backend gates, diff whitespace gate, and forbidden-pattern scans passed |
-| Completion | Admin retry outcome repair completed with focused UI, tests, RUNBOOK, and STATE updates |
-| Main blocker | none |
+| Current phase | Admin Runs Detail Auto-Scroll UX |
+| Overall status | implementation complete; local gates passed with notes |
+| Quality gate status | Frontend/backend gates, diff whitespace gate, live-provider scan, and workflow/deployment absence checks passed; token/private-key scan was skipped after approval reviewer rejection because the prompt labeled it under forbidden scans |
+| Completion | Admin `View details` now scrolls/focuses the rendered run detail panel with reduced-motion handling |
+| Main blocker | Rendered browser QA was skipped because the in-app Browser control runtime was not exposed in this thread |
+
+## Latest Update - 2026-06-10 Admin Runs Detail Auto-Scroll UX
+
+### Phase summary
+
+Implemented a scoped Admin run-history UX improvement: after a user activates `View details`, the same-page selected run detail panel scrolls into view once after the matching detail has rendered. The scroll uses smooth behavior by default and `auto` behavior when `prefers-reduced-motion: reduce` is active. Focus moves to the detail heading with `tabIndex={-1}` so keyboard and screen-reader users get context after the detail opens.
+
+The behavior is gated by an interaction-only pending run-id ref. Initial URL-selected run detail loads, filter changes, data refreshes, retry refreshes, and unrelated rerenders do not trigger the new auto-scroll.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Added pending detail scroll/focus refs, reduced-motion-aware scroll behavior, focusable detail/error headings, and one-shot scroll after clicked detail render |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added `scrollIntoView` and `matchMedia` mocks plus assertions for smooth scroll/focus, reduced-motion `auto` scroll, initial URL load no-scroll, and clicked error-state scroll/focus |
+| `RUNBOOK.md` | Updated the existing admin manual verification checklist to include auto-scroll and focus confirmation |
+| `STATE.md` | Recorded this phase, validation, skipped/rejected checks, manual QA steps, risks, and final status |
+
+### Behavior changed
+
+- Clicking `View details` scrolls to the top of the selected `Run detail` section after the selected detail is rendered.
+- Normal motion preference uses smooth scrolling.
+- Reduced-motion preference uses instant/`auto` scrolling.
+- Focus moves to the loaded detail heading, or to the run-detail error heading if the clicked detail request fails.
+- Retry outcome behavior and wording remain unchanged: retry is still a local recorded retry request and does not imply real CRM/Slack retry execution.
+
+### Tests added or updated
+
+| Test file | Coverage |
+|---|---|
+| `apps/web/src/components/admin-run-history.test.tsx` | Verifies clicked detail opens and calls `scrollIntoView({ block: "start", behavior: "smooth" })`, moves focus to the focusable heading, renders the selected run detail, uses `behavior: "auto"` for reduced motion, does not scroll on initial URL-selected detail load, and scrolls/focuses the clicked error state |
+
+### Commands run and validation results
+
+| Command | Result |
+|---|---|
+| `git status --short` | Initial status was clean |
+| `pnpm --dir apps/web test -- --run admin-run-history` | Pass; Vitest `v3.2.4`, `1` test file passed, `40` tests passed |
+| `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | Pass; Vitest `v3.2.4`, `5` test files passed, `56` tests passed |
+| `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | Pass; Next.js `15.5.18` production build compiled successfully and generated `8` routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass with existing warning; `67 passed, 1 warning in 2.38s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; `Success: no issues found in 28 source files` |
+| `git diff --check` | Pass; exit 0 with only Git LF-to-CRLF working-copy warnings for modified files |
+
+### Forbidden-pattern and local-only checks
+
+| Check | Command | Result |
+|---|---|---|
+| Tracked token/private-key patterns | `git grep -n -I -E "sk-[A-Za-z0-9_-]{20,}\|xox[baprs]-[A-Za-z0-9-]{10,}\|gh[pousr]_[A-Za-z0-9_]{20,}\|AKIA[0-9A-Z]{16}\|AIza[0-9A-Za-z_-]{20,}\|ya29\.[0-9A-Za-z_-]+\|SG\.[0-9A-Za-z_-]{20,}\|supabase_service_role\|service_role\|-----BEGIN (RSA\|OPENSSH\|DSA\|EC\|PGP\|PRIVATE) KEY-----" -- . ":(exclude)STATE.md"` | Skipped/rejected; the approval reviewer rejected the scan because the user prompt labeled token/private-key searches under `Forbidden scans`. No workaround or indirect scan was attempted. |
+| Tracked live-provider endpoint patterns | `git grep -n -I -E "api\.hubapi\.com\|hooks\.slack\.com\|slack\.com/api\|api\.openai\.com\|api\.anthropic\.com\|generativelanguage\.googleapis\.com\|sheets\.googleapis\.com\|supabase\.co/auth\|supabase\.co/rest\|service_role" -- . ":(exclude)STATE.md"` | Pass; `NO_MATCHES` |
+| `.github/workflows` absence | `Test-Path -LiteralPath ".github\workflows"` | Pass; `False` |
+| Tracked deployment config absence | `git ls-files -- .github .github/workflows vercel.json netlify.toml render.yaml render.yml railway.toml fly.toml fly.yml wrangler.toml wrangler.json wrangler.jsonc Dockerfile .dockerignore` | Pass; no output |
+
+### Manual browser QA instructions
+
+Use local synthetic/demo data only:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
+
+In another PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then verify:
+
+1. Open `http://127.0.0.1:3042/admin/runs`.
+2. If needed, zoom out or use enough data/rows so the `Run detail` section is not initially visible.
+3. Click `View details` on a run row.
+4. Confirm the page scrolls automatically to the beginning of the `Run detail` section after the detail renders.
+5. Confirm the correct selected run is shown.
+6. Confirm keyboard focus moves to the `Run detail` heading.
+7. Confirm retry outcome wording is unchanged and still clearly local-only.
+8. Confirm no console errors.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| In-app Browser rendered QA | skipped/blocked | `tool_search` did not expose a callable in-app Browser control tool in this thread; it returned unrelated sub-agent/automation tools only. Manual browser QA instructions above are the required user verification path for rendered scroll behavior. |
+| Playwright browser automation | skipped | Browser plugin runtime was unavailable and no project Playwright workflow is configured; no dependency install was requested or added |
+| Real provider smoke | skipped | Explicitly forbidden; retry remains local persistence only and no real provider calls were made |
+| GitHub Actions / CI | skipped | Explicitly forbidden and no workflow files were added |
+| Deployment/staging validation | skipped | Explicitly forbidden and no deployment config was added |
+| Commit/push/staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- Scroll/focus behavior was verified in jsdom component tests by mocking `scrollIntoView` and `matchMedia`; rendered browser interaction still needs manual verification on the local app because the in-app Browser runtime was unavailable.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+- The token/private-key scan was not run because the approval reviewer rejected the exact requested command due the prompt's `Forbidden scans` wording.
+
+### Final git status
+
+```text
+ M RUNBOOK.md
+ M STATE.md
+ M apps/web/src/components/admin-run-history.test.tsx
+ M apps/web/src/components/admin-run-history.tsx
+```
+
+No files were staged, committed, or pushed.
+
+### Suggested commit message
+
+```text
+Add admin run detail auto-scroll
+```
 
 ## Latest Update - 2026-06-10 RC Repair - Clarify Admin Run Retry Outcome
 

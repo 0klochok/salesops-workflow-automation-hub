@@ -11,6 +11,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type RefObject,
   type UIEvent,
 } from "react";
 
@@ -113,6 +114,9 @@ export function AdminRunHistory() {
     status: "idle",
   });
   const lastRequestedRunIdRef = useRef<string | null>(null);
+  const pendingDetailScrollRunIdRef = useRef<string | null>(null);
+  const detailPanelRef = useRef<HTMLElement | null>(null);
+  const detailHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const filters = useMemo(
     () => parseRunHistoryFilters(searchParams),
     [searchParams]
@@ -229,6 +233,7 @@ export function AdminRunHistory() {
   useEffect(() => {
     if (!selectedRunId) {
       lastRequestedRunIdRef.current = null;
+      pendingDetailScrollRunIdRef.current = null;
       setDetailState({ status: "idle" });
       setRetryState({ status: "idle" });
       return;
@@ -242,6 +247,35 @@ export function AdminRunHistory() {
     void loadRunDetail(selectedRunId);
   }, [loadRunDetail, selectedRunId]);
 
+  useEffect(() => {
+    const pendingRunId = pendingDetailScrollRunIdRef.current;
+    if (!pendingRunId) {
+      return;
+    }
+
+    const renderedRunId =
+      detailState.status === "loaded"
+        ? detailState.detail.run_id
+        : detailState.status === "error"
+          ? detailState.runId
+          : null;
+    if (renderedRunId !== pendingRunId) {
+      return;
+    }
+
+    const detailPanel = detailPanelRef.current;
+    if (!detailPanel) {
+      return;
+    }
+
+    pendingDetailScrollRunIdRef.current = null;
+    detailPanel.scrollIntoView({
+      block: "start",
+      behavior: getRunDetailScrollBehavior(),
+    });
+    detailHeadingRef.current?.focus({ preventScroll: true });
+  }, [detailState]);
+
   function handleFilterChange(nextFilters: RunHistoryFilters) {
     replaceQuery(nextFilters, selectedRunId);
   }
@@ -251,6 +285,7 @@ export function AdminRunHistory() {
   }
 
   function handleSelectRun(runId: string) {
+    pendingDetailScrollRunIdRef.current = runId;
     setRetryState({ status: "idle" });
     replaceQuery(filters, runId);
     void loadRunDetail(runId);
@@ -342,6 +377,8 @@ export function AdminRunHistory() {
               <FilteredOutSelectionNotice runId={selectedRunId ?? ""} />
             ) : null}
             <RunDetailPanel
+              detailHeadingRef={detailHeadingRef}
+              detailPanelRef={detailPanelRef}
               onRetryRun={handleRetryRun}
               retryState={retryState}
               state={detailState}
@@ -1096,11 +1133,27 @@ function FilteredOutSelectionNotice({ runId }: { runId: string }) {
   );
 }
 
+function getRunDetailScrollBehavior(): ScrollBehavior {
+  if (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    return "auto";
+  }
+
+  return "smooth";
+}
+
 function RunDetailPanel({
+  detailHeadingRef,
+  detailPanelRef,
   onRetryRun,
   retryState,
   state,
 }: {
+  detailHeadingRef: RefObject<HTMLHeadingElement | null>;
+  detailPanelRef: RefObject<HTMLElement | null>;
   onRetryRun: (runId: string) => void;
   retryState: RetryState;
   state: DetailState;
@@ -1111,6 +1164,7 @@ function RunDetailPanel({
         aria-label="Run detail panel"
         className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm leading-6 text-muted-foreground sm:p-5"
         data-testid="run-detail-panel"
+        ref={detailPanelRef}
       >
         Select a run to inspect details.
       </section>
@@ -1123,6 +1177,7 @@ function RunDetailPanel({
         aria-label="Run detail loading state"
         className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm leading-6 text-muted-foreground sm:p-5"
         data-testid="run-detail-panel"
+        ref={detailPanelRef}
         role="status"
       >
         Loading run details for {state.runId}...
@@ -1136,9 +1191,16 @@ function RunDetailPanel({
         aria-label="Run detail error state"
         className="min-w-0 rounded-lg border border-red-200 bg-red-50 p-4 text-sm leading-6 text-danger sm:p-5"
         data-testid="run-detail-panel"
+        ref={detailPanelRef}
         role="alert"
       >
-        <h2 className="text-base font-semibold">Unable to load run detail</h2>
+        <h2
+          className="text-base font-semibold"
+          ref={detailHeadingRef}
+          tabIndex={-1}
+        >
+          Unable to load run detail
+        </h2>
         <p className="mt-2 break-words">
           {state.runId}: {formatApiError(state.error)}
         </p>
@@ -1156,10 +1218,16 @@ function RunDetailPanel({
       aria-labelledby="run-detail-heading"
       className="min-w-0 rounded-lg border border-border bg-surface p-4 shadow-panel sm:p-5"
       data-testid="run-detail-panel"
+      ref={detailPanelRef}
     >
       <div className="mb-5 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold" id="run-detail-heading">
+          <h2
+            className="text-base font-semibold"
+            id="run-detail-heading"
+            ref={detailHeadingRef}
+            tabIndex={-1}
+          >
             Run detail
           </h2>
           <p className="break-words text-sm leading-6 text-muted-foreground">

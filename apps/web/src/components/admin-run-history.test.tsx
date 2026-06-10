@@ -33,6 +33,8 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => navigationMock.getSearchParams(),
 }));
 
+let scrollIntoViewMock: ReturnType<typeof vi.fn>;
+
 const runHistoryResponse = {
   runs: [
     {
@@ -243,6 +245,12 @@ describe("AdminRunHistory", () => {
   beforeEach(() => {
     navigationMock.reset();
     navigationMock.replace.mockClear();
+    scrollIntoViewMock = vi.fn();
+    Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoViewMock,
+    });
+    mockReducedMotionPreference(false);
     vi.stubGlobal("fetch", vi.fn());
   });
 
@@ -476,7 +484,18 @@ describe("AdminRunHistory", () => {
       screen.getByRole("button", { name: /view details for run_demo_failed/i })
     );
 
-    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    const heading = await screen.findByRole("heading", { name: "Run detail" });
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "run_demo_failed"
+    );
+    await waitFor(() =>
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({
+        block: "start",
+        behavior: "smooth",
+      })
+    );
+    expect(heading).toHaveAttribute("tabindex", "-1");
+    await waitFor(() => expect(heading).toHaveFocus());
     expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs/run_demo_failed", {
       method: "GET",
       headers: {
@@ -484,6 +503,33 @@ describe("AdminRunHistory", () => {
       },
       cache: "no-store",
     });
+  });
+
+  it("uses instant detail scrolling when reduced motion is preferred", async () => {
+    mockReducedMotionPreference(true);
+    const user = userEvent.setup();
+    mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+
+    expect(await screen.findByText("Run detail")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({
+        block: "start",
+        behavior: "auto",
+      })
+    );
   });
 
   it("opens run details from keyboard activation on View details", async () => {
@@ -1561,6 +1607,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
       "run_demo_failed"
     );
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
   });
 
   it("renders a loading state while selected run detail is pending", async () => {
@@ -1626,6 +1673,17 @@ describe("AdminRunHistory", () => {
     expect(alert).toHaveAttribute("aria-label", "Run detail error state");
     expect(alert).toHaveTextContent("run_demo_failed");
     expect(alert).toHaveTextContent("Automation run not found");
+    await waitFor(() =>
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({
+        block: "start",
+        behavior: "smooth",
+      })
+    );
+    const heading = within(alert).getByRole("heading", {
+      name: /unable to load run detail/i,
+    });
+    expect(heading).toHaveAttribute("tabindex", "-1");
+    await waitFor(() => expect(heading).toHaveFocus());
   });
 
   it("renders an error state when the run-history request fails", async () => {
@@ -1735,6 +1793,25 @@ function mockJsonResponse(body: unknown, status: number) {
     json: async () => body,
     text: async () => JSON.stringify(body),
   };
+}
+
+function mockReducedMotionPreference(matches: boolean) {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => {
+      return {
+        matches:
+          query === "(prefers-reduced-motion: reduce)" ? matches : false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      } as MediaQueryList;
+    })
+  );
 }
 
 function installPointerCaptureMocks(element: HTMLElement) {
