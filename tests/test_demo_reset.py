@@ -255,6 +255,79 @@ def test_demo_reset_is_idempotent(session: Session) -> None:
     assert run_ids(session) == set(DEMO_RUN_IDS)
 
 
+def test_demo_reset_restores_canonical_failed_run_after_retry_mutation(
+    session: Session,
+) -> None:
+    reset_demo_data(session, apply=True)
+    session.commit()
+
+    retry_time = datetime(2026, 6, 10, 12, 5, tzinfo=UTC)
+    failed_run = session.get(AutomationRunRecord, "run_demo_failed")
+    assert failed_run is not None
+    failed_run.status = RunStatus.RETRIED
+    failed_run.updated_at = retry_time
+    session.add(
+        RunAttemptRecord(
+            run_id="run_demo_failed",
+            attempt_number=3,
+            status=RunStatus.RETRIED,
+            suggested_action="Re-run the local mock workflow for this lead.",
+            created_at=retry_time,
+        )
+    )
+    session.add(
+        AuditRecord(
+            audit_id="audit_run_demo_failed_manual_retry",
+            lead_id=failed_run.lead_id,
+            run_id="run_demo_failed",
+            event_type="manual_retry",
+            payload={
+                "run_id": "run_demo_failed",
+                "lead_id": failed_run.lead_id,
+                "status": RunStatus.RETRIED.value,
+                "attempt_number": 3,
+                "attempt_status": RunStatus.RETRIED.value,
+            },
+            created_at=retry_time,
+        )
+    )
+    session.commit()
+
+    mutated_attempt_statuses = session.scalars(
+        select(RunAttemptRecord.status)
+        .where(RunAttemptRecord.run_id == "run_demo_failed")
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    assert failed_run.status is RunStatus.RETRIED
+    assert mutated_attempt_statuses == [
+        RunStatus.QUEUED,
+        RunStatus.FAILED,
+        RunStatus.RETRIED,
+    ]
+
+    result = reset_demo_data(session, apply=True)
+    session.commit()
+
+    restored_failed_run = session.get(AutomationRunRecord, "run_demo_failed")
+    assert restored_failed_run is not None
+    restored_attempt_statuses = session.scalars(
+        select(RunAttemptRecord.status)
+        .where(RunAttemptRecord.run_id == "run_demo_failed")
+        .order_by(RunAttemptRecord.attempt_number)
+    ).all()
+    manual_retry_events = session.scalars(
+        select(AuditRecord).where(
+            AuditRecord.run_id == "run_demo_failed",
+            AuditRecord.event_type == "manual_retry",
+        )
+    ).all()
+
+    assert result.seeded_run_ids == DEMO_RUN_IDS
+    assert restored_failed_run.status is RunStatus.FAILED
+    assert restored_attempt_statuses == [RunStatus.QUEUED, RunStatus.FAILED]
+    assert manual_retry_events == []
+
+
 @pytest.mark.parametrize(
     ("overrides", "match"),
     [

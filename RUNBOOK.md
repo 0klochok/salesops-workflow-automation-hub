@@ -316,7 +316,7 @@ Test local-only persisted admin run history and retry:
 12. Apply date filters such as `from=2026-06-01` and `to=2026-06-01` and confirm the date values persist in the URL.
 13. Select `View details` for a run such as `run_demo_failed`.
 14. Confirm the same-page detail panel shows the selected run, derived owner/error type, persisted attempts, sanitized intake payload, allowlisted mock/audit result data, and `Retry run` for failed or queued selected runs only.
-15. Click `Retry run` for `run_demo_failed` only when you are ready to mutate local demo data. Confirm the success message states that retry was recorded, the table refreshes to attempt 3/retried, and the detail panel shows the new retried attempt.
+15. Click `Retry run` for `run_demo_failed` only when you are ready to mutate local demo data. Confirm the success message states that the local retry request succeeded, the table shows `Retry outcome: request succeeded and was recorded locally.`, the table refreshes to attempt 3/retried, and the detail panel shows the new retried attempt plus the no-separate-CRM/Slack-result note.
 16. Re-run `uv run python -m backend.app.leads.demo_seed` or `uv run python -m backend.app.leads.demo_reset --apply` if you need the canonical seeded failed state again after the retry smoke.
 17. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the detail visible.
 18. Confirm the browser Network tab shows local admin requests only: `GET /api/leads/runs`, `GET /api/leads/runs/<run-id>`, and, only after clicking retry, `POST /api/leads/runs/<run-id>/retry`.

@@ -9,11 +9,293 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Portfolio Final Packaging / Public Review Prep |
-| Overall status | acceptable for public local portfolio review |
-| Quality gate status | Full requested frontend/backend gates, safety scans, diff whitespace gate, and PowerShell-only local smoke passed |
-| Completion | Portfolio final packaging review completed with `STATE.md` update only |
+| Current phase | RC Repair - Clarify Admin Run Retry Outcome |
+| Overall status | repair complete; local gates passed |
+| Quality gate status | Full requested frontend/backend gates, diff whitespace gate, and forbidden-pattern scans passed |
+| Completion | Admin retry outcome repair completed with focused UI, tests, RUNBOOK, and STATE updates |
 | Main blocker | none |
+
+## Latest Update - 2026-06-10 RC Repair - Clarify Admin Run Retry Outcome
+
+### Manual QA defect summary
+
+Manual RC QA found that pressing `Retry run` for a failed admin run changed the persisted run state to `retried`, but the Admin run history and selected run detail did not clearly explain whether the retry request succeeded, failed, remained in progress, or only marked the run as retried. The backend retry contract was verified as synchronous local persistence only: it appends a `retried` attempt, updates the run to `retried`, writes a `manual_retry` audit event, and does not produce a separate CRM/Slack rerun success or failure result.
+
+### Starting evidence
+
+| Check | Result |
+|---|---|
+| Initial `git status --short` | ` M STATE.md` was already present before this repair; the existing `STATE.md` edit was preserved and this phase entry was added above it |
+| Required retry search | `git grep -n -I -i -E "retry\|retried\|Retry" -- .` completed and identified the admin UI, retry tests, Next.js retry proxy, backend retry endpoint/policy, demo seed/reset logic, and backend retry tests |
+
+### Owner layers identified
+
+| Layer | File(s) |
+|---|---|
+| Admin runs history UI/component | `apps/web/src/components/admin-run-history.tsx` |
+| Run detail UI/component | `apps/web/src/components/admin-run-history.tsx` |
+| Retry button/action handler | `handleRetryRun` and `RetryStatusNotice` in `apps/web/src/components/admin-run-history.tsx` |
+| Frontend retry API client | `apps/web/src/lib/run-history-api.ts` |
+| Retry API/proxy route | `apps/web/src/app/api/leads/runs/[runId]/retry/route.ts` |
+| Backend retry endpoint/service | `backend/app/leads/routes.py`, `backend/app/leads/retry.py`, `backend/app/leads/persistence.py` |
+| Demo data / reset logic | `backend/app/leads/demo_seed.py`, `backend/app/leads/demo_reset.py`, `tests/test_demo_reset.py` |
+| Existing tests | `apps/web/src/components/admin-run-history.test.tsx`, `apps/web/src/app/api/leads/runs/retry-route.test.ts`, `tests/test_lead_intake_api.py`, `tests/test_run_logging.py`, `tests/test_demo_reset.py` |
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.tsx` | Added explicit retry-outcome copy in the history table, in-flight notice, retry success notice, and retried run detail panel summary |
+| `apps/web/src/components/admin-run-history.test.tsx` | Updated retry success/in-flight assertions and added a generic retry-proxy failure assertion |
+| `tests/test_demo_reset.py` | Added coverage that demo reset restores canonical `run_demo_failed` after a retry-style mutation |
+| `RUNBOOK.md` | Updated manual admin retry QA instructions to check the new explicit outcome text |
+| `STATE.md` | Recorded this phase, evidence, commands, validation, manual QA instructions, risks, and final status |
+
+### Behavior changed
+
+- History table retried rows now include `Retry outcome: request succeeded and was recorded locally.` in the latest-attempt column.
+- After pressing `Retry run`, the run detail notice now says `Retry succeeded for ...` and states the local manual retry attempt was recorded as `retried`.
+- Retried run detail now shows a persistent outcome summary explaining that the local retry request succeeded and that no separate CRM/Slack retry success or failure result exists for this demo.
+- Retry in-flight copy now says `Retry in progress: submitting local manual retry...`.
+- Retry error paths continue to show explicit failure/blocking messages, including a generic `Retry failed through the local proxy.` path.
+
+### Tests added or updated
+
+| Test file | Coverage |
+|---|---|
+| `apps/web/src/components/admin-run-history.test.tsx` | Asserts retry success does not leave only an ambiguous `retried` state, verifies success outcome text in history and detail, verifies in-flight wording, and verifies explicit failed outcome text for a retry proxy failure |
+| `tests/test_demo_reset.py` | Asserts demo reset restores the canonical failed demo run after a retry-style mutation adds a `retried` attempt and `manual_retry` audit event |
+
+### Commands run and validation results
+
+| Command | Result |
+|---|---|
+| `git status --short` | Started with pre-existing ` M STATE.md`; final status is listed below |
+| `git grep -n -I -i -E "retry\|retried\|Retry" -- .` | Pass; retry handling locations identified |
+| `pnpm --dir apps/web test -- --run admin-run-history` | Pass; `1` test file, `39` tests passed |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest tests/test_demo_reset.py` | Pass; `16 passed in 1.47s` |
+| `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | Pass; Vitest `v3.2.4`, `5` files passed, `55` tests passed |
+| `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | Pass; Next.js `15.5.18` production build compiled successfully and generated `8` routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass with existing warning; `67 passed, 1 warning in 2.35s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; `Success: no issues found in 28 source files` |
+| `git diff --check` | Pass; exit 0 with only Git LF-to-CRLF working-copy warnings for modified files |
+
+### Forbidden-pattern checks
+
+| Check | Command | Result |
+|---|---|---|
+| Tracked token/private-key patterns | `git grep -n -I -E "sk-[A-Za-z0-9_-]{20,}\|xox[baprs]-[A-Za-z0-9-]{10,}\|gh[pousr]_[A-Za-z0-9_]{20,}\|AKIA[0-9A-Z]{16}\|AIza[0-9A-Za-z_-]{20,}\|ya29\.[0-9A-Za-z_-]+\|SG\.[0-9A-Za-z_-]{20,}\|supabase_service_role\|service_role\|-----BEGIN (RSA\|OPENSSH\|DSA\|EC\|PGP\|PRIVATE) KEY-----" -- . ":(exclude)STATE.md"` | Pass; `NO_MATCHES` |
+| Tracked live-provider endpoint patterns | `git grep -n -I -E "api\.hubapi\.com\|hooks\.slack\.com\|slack\.com/api\|api\.openai\.com\|api\.anthropic\.com\|generativelanguage\.googleapis\.com\|sheets\.googleapis\.com\|supabase\.co/auth\|supabase\.co/rest\|service_role" -- . ":(exclude)STATE.md"` | Pass; `NO_MATCHES` |
+| `.github/workflows` absence | `Test-Path -LiteralPath ".github\workflows"` | Pass; `False` |
+| Tracked deployment config absence | `git ls-files -- .github .github/workflows vercel.json netlify.toml render.yaml render.yml railway.toml fly.toml fly.yml wrangler.toml wrangler.json wrangler.jsonc Dockerfile .dockerignore` | Pass; no output |
+
+### Manual browser QA instructions
+
+Use local synthetic/demo data only:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
+
+In another PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then verify:
+
+1. Open `http://127.0.0.1:3042/admin/runs`.
+2. Select `View details` for `run_demo_failed`.
+3. Click `Retry run`.
+4. Confirm the transient notice says `Retry succeeded for run_demo_failed` and explains the local manual retry attempt was recorded as `retried`.
+5. Confirm the history table row shows `Attempt 3: retried` plus `Retry outcome: request succeeded and was recorded locally.`
+6. Confirm the detail panel shows `Retry outcome: request succeeded and was recorded locally.` and `No separate CRM/Slack retry success or failure result exists for this local demo.`
+7. Confirm no real HubSpot, Slack, Google Sheets, OpenAI, paid API, webhook, deployment, CI, reset, edit, delete, send, archive, `PUT`, `PATCH`, or `DELETE` action appears or fires.
+8. Run `uv run python -m backend.app.leads.demo_reset --apply` after the manual retry if canonical seeded demo data is needed again.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| In-app Browser visual QA | skipped/blocked | `tool_search` did not expose a callable in-app Browser control tool in this thread. Manual browser QA instructions above are the required user verification path for rendered UI. |
+| Real provider smoke | skipped | Explicitly forbidden; retry remains local persistence only and no real provider calls were made |
+| GitHub Actions / CI | skipped | Explicitly forbidden and no workflow files were added |
+| Deployment/staging validation | skipped | Explicitly forbidden and no deployment config was added |
+| Commit/push/staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- The backend retry contract still records a local manual retry attempt; it does not re-run CRM/Slack adapters or create a separate final downstream success/failed run. The repaired UI now states that boundary explicitly.
+- Rendered browser QA was not executed because the in-app Browser control tool was unavailable in this thread; manual browser QA remains recommended before final portfolio signoff.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+
+### Final git status
+
+```text
+ M RUNBOOK.md
+ M STATE.md
+ M apps/web/src/components/admin-run-history.test.tsx
+ M apps/web/src/components/admin-run-history.tsx
+ M tests/test_demo_reset.py
+```
+
+`git diff --name-only` returned the same five files. `git diff --stat` reported `5 files changed, 452 insertions(+), 12 deletions(-)`. No files were staged, committed, or pushed.
+
+### Suggested commit message
+
+```text
+Clarify admin retry outcome
+```
+
+## Latest Update - 2026-06-10 Portfolio Release Candidate Visual QA + Public Presentation Polish
+
+### Phase summary
+
+Performed the requested final release-candidate portfolio review. The repository remains clear, credible, mock-safe, and locally reproducible from the public docs. Source-of-truth docs, handoff docs, case-study/demo docs, screenshot references, local setup commands, validation gates, known limitations, mock/demo boundaries, no-paid-API posture, and no-live-provider defaults were checked.
+
+No application behavior, backend code, frontend code, public API, schema, migration, dependency, lockfile, generated source, GitHub Actions workflow, deployment config, real-provider behavior, commit, push, staging action, or provider call was added or changed. No README, RUNBOOK, TDD, HANDOFF, demo asset, backend, frontend, migration, dependency, lockfile, CI, or deployment file needed edits. The only tracked edit is this `STATE.md` evidence entry.
+
+### Files reviewed
+
+| Path | Status | Review result |
+|---|---|---|
+| `README.md` | pass | Clearly explains project purpose, local setup, mock/demo mode, no paid API requirement, no live provider calls by default, validation commands, manual demo path, screenshots, and limitations |
+| `RUNBOOK.md` | pass | Documents PowerShell setup, local PostgreSQL, backend/frontend startup, demo reset, smoke checks, manual QA, recording checklist, shutdown, troubleshooting, and validation commands |
+| `TDD.md` | pass | Current test strategy and gate status match the local-only backend/frontend coverage without claiming production, deployment, CI, auth, live-provider, or full browser E2E coverage |
+| `STATE.md` | updated | Prior RC evidence was present; this entry records the current visual/documentation review, validation, scans, smoke, skipped checks, risks, and git status |
+| `HANDOFF.md` | pass | Documents reviewer path, mock adapter boundaries, before/after workflow, 3-5 minute demo sequence, and credential handling rules |
+| `docs/DEMO_SCRIPT.md` | pass | Provides a concise local reviewer checklist and explicitly excludes real providers, paid APIs, CI, deployment, and real credentials |
+| `docs/DEMO_ASSETS.md` | pass | Documents local screenshot/GIF/video capture rules, local URLs, synthetic data, and optional recording assets without overclaiming committed video output |
+| `docs/CASE_STUDY.md` | pass | Presents the fake-client problem, local solution, stack, validation, and mock/synthetic-data boundary accurately |
+| `docs/assets/README.md` | pass | Confirms committed screenshots are local-only captures using synthetic data and mocked CRM/Slack adapters |
+| `docs/assets/screenshots/*` | pass | Referenced screenshot files are present: home, CSV/session dashboard, admin run history, failed detail, filtered detail, empty filter, docs, mobile home, and mobile admin |
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded the RC visual/documentation review, local smoke fallback, full gates, forbidden-pattern scans, skipped checks, risks, and git status |
+
+### Scope confirmation
+
+- Documentation/state evidence update only.
+- Provider behavior stayed mock/demo/read-only by default.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider call was made.
+- No secrets were printed, stored, logged, screenshotted, or added.
+- No GitHub Actions, CI, deployment, staging, hosted automation, dependency change, lockfile change, migration, commit, push, or staging action was introduced.
+- Temporary smoke logs were written under ignored `logs/`; no tracked generated artifact was introduced.
+
+### Starting repository state
+
+| Check | Status | Result |
+|---|---|---|
+| Initial changed files | pass | `git status --short` returned no output before any edit |
+| Initial staged files | pass | `git diff --cached --name-only` returned no output |
+| Pre-update tracked diff | pass | `git diff --name-only` returned no output before this `STATE.md` update |
+
+### Local mock setup and smoke
+
+The local demo was started in mock/demo mode only. `.env` already existed and was not printed. Local PostgreSQL was started through Docker Compose, Alembic reached head, and guarded demo reset restored synthetic seeded data.
+
+Setup commands:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8128 --log-level warning
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8128"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8128"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3142
+```
+
+| Check | Status | Result |
+|---|---|---|
+| Local PostgreSQL | pass | `docker compose up -d postgres` reported `salesops-postgres Running`; `docker compose ps` showed the service healthy on port `5432` |
+| Alembic migration | pass | PostgreSQL Alembic context initialized and migration command reached head |
+| Guarded demo reset | pass | Reset applied and seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Backend health | pass | `GET http://127.0.0.1:8128/health` returned `status=ok` |
+| Frontend home route | pass | `GET http://127.0.0.1:3142/` returned HTTP `200` and contained `Lead intake form` and `CSV import` |
+| Frontend admin route | pass | `GET http://127.0.0.1:3142/admin/runs` returned HTTP `200` and contained `Admin run history` |
+| Filter/detail routes | pass | The documented admin URLs for status, source, search, owner, error type, empty state, and selected-run-hidden state all returned HTTP `200` |
+| Run-history proxy | pass | `GET http://127.0.0.1:3142/api/leads/runs` returned all four seeded run IDs |
+| Run-detail proxy | pass | `GET http://127.0.0.1:3142/api/leads/runs/run_demo_failed` returned `run_status=failed` and did not match risky `secret`, `token`, `private key`, or `phone` strings |
+| Retry proxy | pass | `POST http://127.0.0.1:3142/api/leads/runs/run_demo_failed/retry` returned `run_status=retried` and `attempt_count=3` |
+| Demo restore after retry | pass | `uv run python -m backend.app.leads.demo_reset --apply` restored canonical seeded demo data after retry mutation |
+| Docs route | pass | `GET http://127.0.0.1:3142/docs` followed the local redirect to `http://127.0.0.1:8128/docs` and returned Swagger UI content |
+| Smoke process cleanup | pass | Smoke-owned listeners on ports `8128` and `3142` were stopped; PostgreSQL was left running as the documented local demo service |
+
+Smoke notes:
+
+- In-app browser visual QA was intended, but the Browser skill's required Node/browser control tool (`node_repl js`) was not exposed by tool discovery in this thread. Browser QA was therefore not claimed as passed.
+- The fallback was the strongest available PowerShell-only local HTTP/API smoke across the same routes and proxy paths, including local retry and `/docs` redirect verification.
+- One early frontend startup command used malformed environment variable quoting and was restarted after stopping only the smoke-owned frontend listener.
+- One early smoke script used `$home`, which conflicts with PowerShell's read-only `$HOME`; the script was corrected to `$homeResponse` and rerun successfully.
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `pnpm --dir apps/web lint` | pass | `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `5` test files passed; `54` tests passed; duration `12.80s` |
+| `pnpm --dir apps/web typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18` production build compiled successfully; generated `8` app routes including `/`, `/admin/runs`, local API proxies, retry proxy, and `/docs` |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass with existing warning | Python `3.12.13`; `66 passed, 1 warning in 2.27s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 28 source files` |
+| `git diff --check` before this `STATE.md` update | pass | Exit 0 with no whitespace errors |
+| `git diff --check` after this `STATE.md` update | pass | Exit 0 with no whitespace errors; Git emitted only an LF-to-CRLF working-copy warning for `STATE.md` |
+
+### Forbidden-pattern and local-only posture scans
+
+| Check | Status | Result |
+|---|---|---|
+| Tracked token/private-key scan | pass | `git grep -n -I -E "sk-[A-Za-z0-9_-]{20,}\|xox[baprs]-[A-Za-z0-9-]{10,}\|gh[pousr]_[A-Za-z0-9_]{20,}\|AKIA[0-9A-Z]{16}\|AIza[0-9A-Za-z_-]{20,}\|ya29\.[0-9A-Za-z_-]+\|SG\.[0-9A-Za-z_-]{20,}\|supabase_service_role\|service_role\|-----BEGIN (RSA\|OPENSSH\|DSA\|EC\|PGP\|PRIVATE) KEY-----" -- . ":(exclude)STATE.md"` returned no matches; exit 1 was treated as the expected no-match result |
+| Tracked live-provider endpoint scan | pass | `git grep -n -I -E "api\.hubapi\.com\|hooks\.slack\.com\|slack\.com/api\|api\.openai\.com\|api\.anthropic\.com\|generativelanguage\.googleapis\.com\|sheets\.googleapis\.com\|supabase\.co/auth\|supabase\.co/rest\|service_role" -- . ":(exclude)STATE.md"` returned no matches; exit 1 was treated as the expected no-match result |
+| GitHub workflow directory | pass | `Test-Path -LiteralPath ".github\workflows"` returned `False` |
+| Tracked deployment config paths | pass | `git ls-files -- .github .github/workflows vercel.json netlify.toml render.yaml render.yml railway.toml fly.toml fly.yml wrangler.toml wrangler.json wrangler.jsonc Dockerfile .dockerignore` returned no output |
+
+### Skipped or limited checks
+
+| Check | Status | Written reason |
+|---|---|---|
+| In-app browser visual QA | skipped/blocked | The installed Browser skill was read, but the required Node/browser control tool was unavailable through tool discovery in this thread. Visual browser QA is not claimed as passed. |
+| PowerShell HTTP/API fallback | pass | Used instead of browser QA because browser tooling was unavailable; covered documented local frontend routes, local API proxies, retry proxy, and `/docs` redirect |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and outside the local mock-only project boundary |
+| GitHub Actions / CI | skipped | Explicitly forbidden; no workflow files exist or were added |
+| Deployment/staging validation | skipped | Explicitly forbidden; no deployment or staging config exists or was added |
+| Dependency install, upgrade, or removal | skipped | Existing dependencies were already available; no dependency or lockfile change was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Final git status
+
+| Check | Status | Result |
+|---|---|---|
+| Final changed files | pass | `git status --short` returned only ` M STATE.md`; `git diff --name-only` returned only `STATE.md` |
+| Diff stat | pass | `STATE.md | 145 +...`; 1 file changed with documentation evidence only |
+| Staging area | pass | No staging action was run |
+
+### Remaining risks
+
+- Fresh visual browser QA was blocked by missing browser-control tooling in this thread, so final layout/console/network claims are limited to prior documented evidence plus the current PowerShell HTTP/API smoke.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+- Local PostgreSQL may remain running because it is the documented local demo service; stop it manually with `docker compose stop postgres` when not needed.
+- Future real CRM/Slack/provider work remains documentation-only and must be a separately approved phase.
+
+### Suggested commit message
+
+```text
+Record portfolio RC visual QA audit
+```
 
 ## Latest Update - 2026-06-10 Portfolio Final Packaging / Public Review Prep
 

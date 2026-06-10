@@ -759,6 +759,12 @@ function RunHistoryTable({
                         Attempt {run.latest_attempt.attempt_number}:{" "}
                         {run.latest_attempt.status}
                       </p>
+                      {run.latest_attempt.status === "retried" ? (
+                        <p className="font-medium text-emerald-900">
+                          Retry outcome: request succeeded and was recorded
+                          locally.
+                        </p>
+                      ) : null}
                       {run.latest_attempt.error_type ? (
                         <p className="text-muted-foreground">
                           Error type: {run.latest_attempt.error_type}
@@ -1179,6 +1185,7 @@ function RunDetailPanel({
       </div>
 
       <RetryStatusNotice retryState={retryState} runId={detail.run_id} />
+      <RetryOutcomeSummary detail={detail} />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="min-w-0 space-y-4">
@@ -1304,7 +1311,7 @@ function RetryStatusNotice({
         className="mb-5 min-w-0 rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground"
         role="status"
       >
-        Submitting local manual retry for {runId}...
+        Retry in progress: submitting local manual retry for {runId}...
       </div>
     );
   }
@@ -1315,9 +1322,11 @@ function RetryStatusNotice({
         className="mb-5 min-w-0 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
         role="status"
       >
-        Retry recorded for {retryState.data.run_id}. Latest attempt{" "}
-        {retryState.data.latest_attempt_number} is{" "}
-        {retryState.data.latest_attempt_status}; run history and detail refreshed.
+        Retry succeeded for {retryState.data.run_id}: local manual retry attempt{" "}
+        {retryState.data.latest_attempt_number} was recorded as{" "}
+        {retryState.data.latest_attempt_status}. Run history and detail
+        refreshed; this local demo does not report a separate CRM/Slack retry
+        result.
       </div>
     );
   }
@@ -1328,6 +1337,35 @@ function RetryStatusNotice({
       role="alert"
     >
       {formatRetryError(retryState.statusCode, retryState.error)}
+    </div>
+  );
+}
+
+function RetryOutcomeSummary({ detail }: { detail: RunDetailResponse }) {
+  if (detail.run_status !== "retried") {
+    return null;
+  }
+
+  const retryAttempt = [...detail.attempts]
+    .reverse()
+    .find((attempt) => attempt.status === "retried");
+  if (!retryAttempt) {
+    return null;
+  }
+
+  return (
+    <div
+      className="mb-5 min-w-0 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+      role="status"
+    >
+      <p className="font-medium">
+        Retry outcome: request succeeded and was recorded locally.
+      </p>
+      <p className="mt-1 break-words">
+        Attempt {retryAttempt.attempt_number} is marked retried from{" "}
+        {formatTimestamp(retryAttempt.created_at)}. No separate CRM/Slack retry
+        success or failure result exists for this local demo.
+      </p>
     </div>
   );
 }

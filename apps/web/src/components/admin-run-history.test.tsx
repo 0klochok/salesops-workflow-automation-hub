@@ -1181,9 +1181,15 @@ describe("AdminRunHistory", () => {
 
     expect(
       await screen.findByText(
-        /Retry recorded for run_demo_failed\. Latest attempt 3 is retried; run history and detail refreshed\./i
+        /Retry succeeded for run_demo_failed: local manual retry attempt 3 was recorded as retried\. Run history and detail refreshed; this local demo does not report a separate CRM\/Slack retry result\./i
       )
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Retry outcome: request succeeded and was recorded locally.")
+    ).toHaveLength(2);
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "No separate CRM/Slack retry success or failure result exists for this local demo."
+    );
     expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
       "Attempt 3"
     );
@@ -1265,7 +1271,9 @@ describe("AdminRunHistory", () => {
     );
 
     expect(
-      await screen.findByText("Submitting local manual retry for run_demo_failed...")
+      await screen.findByText(
+        "Retry in progress: submitting local manual retry for run_demo_failed..."
+      )
     ).toBeInTheDocument();
     const submittingButton = screen.getByRole("button", {
       name: /retry run run_demo_failed/i,
@@ -1285,9 +1293,12 @@ describe("AdminRunHistory", () => {
 
     expect(
       await screen.findByText(
-        /Retry recorded for run_demo_failed\. Latest attempt 3 is retried; run history and detail refreshed\./i
+        /Retry succeeded for run_demo_failed: local manual retry attempt 3 was recorded as retried\. Run history and detail refreshed; this local demo does not report a separate CRM\/Slack retry result\./i
       )
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Retry outcome: request succeeded and was recorded locally.")
+    ).toHaveLength(2);
     expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
       "Attempt 3"
     );
@@ -1402,6 +1413,42 @@ describe("AdminRunHistory", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Retry blocked: run not found.");
     expect(alert).toHaveTextContent("Automation run not found");
+  });
+
+  it("shows an explicit failed outcome when the retry proxy fails", async () => {
+    const user = userEvent.setup();
+    mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+      "/api/leads/runs/run_demo_failed/retry": {
+        body: {
+          detail: "Unexpected local API error.",
+          suggested_action: "Check the local backend logs and retry again.",
+        },
+        status: 500,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+    await screen.findByText("Run detail");
+    await user.click(
+      screen.getByRole("button", { name: /retry run run_demo_failed/i })
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Retry failed through the local proxy.");
+    expect(alert).toHaveTextContent("Unexpected local API error.");
+    expect(alert).toHaveTextContent(
+      "Suggested action: Check the local backend logs and retry again."
+    );
   });
 
   it("does not show retry for non-retryable selected runs", async () => {
