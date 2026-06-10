@@ -10,10 +10,35 @@
 | Repository path | repository root |
 | Current branch | `main` |
 | Current phase | RC Final Freeze and Portfolio Handoff Check |
-| Overall status | RC freeze passed with notes |
-| Quality gate status | Required frontend/backend gates, diff whitespace gate, static Compose validation, workflow/deployment/dependency absence checks, and tracked secret/live-endpoint sentinel scans passed |
-| Completion | Repo is stable for portfolio handoff pending user review, manual browser QA, and manual commit/push |
+| Overall status | RC freeze passed; final manual browser QA passed |
+| Quality gate status | Required frontend/backend gates, diff whitespace gate, static Compose validation, workflow/deployment/dependency absence checks, tracked secret/live-endpoint sentinel scans, and final manual browser QA passed |
+| Completion | Repo is stable for portfolio handoff pending user review and manual commit/push |
 | Main blocker | None |
+
+## Latest Update - 2026-06-11 Final Manual Browser QA Passed
+
+Final manual browser QA was completed on 2026-06-11 and everything passed.
+
+This update records the completed manual QA status only. No code, dependencies, lockfiles, CI, deployment config, provider behavior, secrets, commits, or pushes were changed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded that final manual browser QA passed on 2026-06-11 |
+
+### Validation requested for this update
+
+| Command | Result |
+|---|---|
+| `git status --short` | To run after this documentation-only update |
+| `git diff --check` | To run after this documentation-only update |
+
+### Suggested commit message
+
+```text
+Record final manual browser QA pass
+```
 
 ## Latest Update - 2026-06-11 RC Final Freeze and Portfolio Handoff Check
 
@@ -63,7 +88,7 @@ Validation note: the first no-content secret sentinel scan failed before scannin
 
 ### Manual and browser QA status
 
-Manual browser smoke was not rerun in this freeze pass. Reason: this phase requested the exact local quality gates plus documentation/demo-flow verification, and starting local servers or clicking admin retry would go beyond a non-mutating freeze check by changing local runtime state. No Playwright or browser dependency was installed.
+Final manual browser QA was completed on 2026-06-11 and everything passed. No Playwright or browser dependency was installed by Codex for this documentation-only status update.
 
 The exact manual QA flow remains documented in `README.md`, `RUNBOOK.md`, `HANDOFF.md`, `docs/DEMO_SCRIPT.md`, and `docs/DEMO_ASSETS.md`. Manual browser QA should use:
 
