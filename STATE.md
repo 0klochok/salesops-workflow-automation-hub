@@ -9,11 +9,113 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Admin Runs Detail Auto-Scroll UX |
-| Overall status | implementation complete; local gates passed with notes |
-| Quality gate status | Frontend/backend gates, diff whitespace gate, live-provider scan, and workflow/deployment absence checks passed; token/private-key scan was skipped after approval reviewer rejection because the prompt labeled it under forbidden scans |
-| Completion | Admin `View details` now scrolls/focuses the rendered run detail panel with reduced-motion handling |
-| Main blocker | Rendered browser QA was skipped because the in-app Browser control runtime was not exposed in this thread |
+| Current phase | Admin Runs UX RC validation and final polish |
+| Overall status | RC validation passed with notes |
+| Quality gate status | Required frontend/backend gates, diff whitespace gate, rendered Edge/CDP browser QA, workflow/deployment/dependency absence checks, and safe changed-file secret/live-endpoint scans passed |
+| Completion | Admin `View details` auto-scroll/focus behavior is validated, including one-shot retry-refresh coverage |
+| Main blocker | None |
+
+## Latest Update - 2026-06-10 Admin Runs UX RC Validation and Final Polish
+
+### Phase summary
+
+Inspected `apps/web/src/components/admin-run-history.tsx`, `apps/web/src/components/admin-run-history.test.tsx`, `RUNBOOK.md`, and `STATE.md` for the Admin run detail auto-scroll implementation.
+
+The component implementation is minimal and scoped: the scroll is gated by an explicit-click pending run-id ref, consumed once after the matching detail or error state renders, uses `prefers-reduced-motion: reduce` to switch from smooth to `auto`, and focuses the detail heading with `preventScroll`. Initial URL-selected details, filter changes, canonical query replacement, and retry-driven history/detail refreshes do not set the pending scroll ref.
+
+No component behavior change was needed. A focused test-only polish added explicit one-shot assertions so the suite now proves the clicked detail scroll happens exactly once and retry refresh does not trigger a second scroll.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/components/admin-run-history.test.tsx` | Added narrow assertions for one-shot detail scroll and no extra scroll after successful retry refresh |
+| `STATE.md` | Recorded RC validation, browser QA, skipped-tool reasons, guardrail results, and remaining risks |
+
+### Scope and guardrails
+
+| Check | Result |
+|---|---|
+| Retry behavior scope | Pass; no retry implementation or backend behavior changed |
+| Backend source | Pass; no backend files changed |
+| Dependency and lockfiles | Pass; no `package.json`, `pnpm-lock.yaml`, `pyproject.toml`, or `uv.lock` changes |
+| Deployment config | Pass; no deployment config changes |
+| GitHub Actions | Pass; no `.github/workflows` changes |
+| Live provider/API additions | Pass; safe file-path-only scan of changed non-`STATE.md` files returned `NO_MATCHES` |
+| Secrets/tokens/private keys | Pass; safe file-path-only scan of changed non-`STATE.md` files returned `NO_MATCHES` |
+| Paid/live provider usage | Pass; no real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider call was made |
+| Git actions | Pass; no staging, commit, push, branch creation, deploy, reset, rebase, or stash was run |
+
+### Tests updated
+
+| Test file | Coverage added |
+|---|---|
+| `apps/web/src/components/admin-run-history.test.tsx` | `opens run details on a normal View details click` now asserts `scrollIntoView` is called exactly once; `retries a failed selected run and refreshes history and detail` now asserts the initial clicked detail scroll remains a single call after retry refresh |
+
+### Required validation results
+
+| Command | Result |
+|---|---|
+| `git status --short` | Initial status was clean |
+| `pnpm --dir apps/web test -- --run admin-run-history` | Pass; Vitest `v3.2.4`, `1` test file passed, `40` tests passed |
+| `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | Pass; Vitest `v3.2.4`, `5` test files passed, `56` tests passed |
+| `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | Pass; Next.js `15.5.18` production build compiled successfully and generated `8` routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass with existing warning; `67 passed, 1 warning in 2.68s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; `Success: no issues found in 28 source files` |
+| `git diff --check` | Pass; exit 0 with Git LF-to-CRLF working-copy warnings for `STATE.md` and `apps/web/src/components/admin-run-history.test.tsx` |
+
+### Browser QA
+
+Rendered browser QA used installed headless Microsoft Edge through Chrome DevTools Protocol because the in-app Browser control tool and an installed Playwright CLI were unavailable without adding dependencies.
+
+Setup and cleanup:
+
+- `docker compose ps postgres`: pass; `salesops-postgres` was already `Up` and `healthy`.
+- `uv run alembic upgrade head`: pass; migrations were current.
+- `uv run python -m backend.app.leads.demo_reset --apply`: pass before browser QA; seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Temporary backend/frontend servers on `127.0.0.1:8397` and `127.0.0.1:3397`: pass; `/health` and `/admin/runs` returned HTTP `200`.
+- Temporary Edge CDP on `127.0.0.1:9337`: pass; CDP endpoint was ready.
+- Post-retry restore: pass; `uv run python -m backend.app.leads.demo_reset --apply` restored canonical synthetic demo rows after the retry check.
+- Temporary listener cleanup: pass; no listeners remained on `8397`, `3397`, or `9337`.
+
+Observed browser checks:
+
+| Scenario | Result |
+|---|---|
+| Low-row `View details` click | Pass; clicking `View details for run_demo_queued` scrolled from `scrollY=324` to `scrollY=1178`, placed the detail panel at `top=0`, and recorded one app `scrollIntoView({ block: "start", behavior: "smooth" })` call |
+| One-shot scroll | Pass; clicked detail recorded exactly one app scroll call |
+| Focus transfer | Pass; focus moved to `#run-detail-heading`; pressing Tab afterward moved to the normal `Retry run run_demo_queued` button, so keyboard flow remained usable |
+| Initial URL-selected detail | Pass; `/admin/runs?runId=run_demo_failed` rendered the detail with `scrollY=0`, zero app scroll calls, and no forced heading focus |
+| Filter change after selected detail | Pass; applying `status=success` showed the selected-run-hidden notice, kept the selected detail visible, and kept scroll call count at `1` |
+| Reduced motion | Pass; emulated `prefers-reduced-motion: reduce` returned `matchMedia=true` and recorded one app scroll call with `behavior: "auto"` |
+| Retry refresh | Pass; clicking `Retry run run_demo_failed` showed retry success and `Attempt 3`, refreshed detail/history, and kept scroll call count at `1` |
+| Browser console/runtime/network | Pass; `0` console warnings/errors, `0` runtime exceptions, and `0` non-local browser requests were observed |
+
+### Skipped or limited checks
+
+| Check | Status | Written reason |
+|---|---|---|
+| In-app Browser control path | skipped/blocked | The Browser skill was read, but `tool_search` did not expose the required `node_repl js` browser-control tool in this thread; no in-app Browser result is claimed |
+| Playwright CLI path | skipped | `npx` exists, but no installed `playwright` or `playwright-cli` binary and no project Playwright dependency are present; dependency downloads/installs were out of scope |
+| Real provider smoke | skipped | Explicitly forbidden; the project remains local/mock-only |
+| GitHub Actions / CI | skipped | Explicitly forbidden and no workflow files were added or run |
+| Deployment/staging validation | skipped | Explicitly forbidden and no deployment config was added |
+| Commit/push/staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+- Browser QA used Edge/CDP as a local fallback rather than the in-app Browser plugin because the required control tool was unavailable.
+- Cleanup note: the temporary cleanup script parsed the numeric `frontendPort=3397` line as a candidate process id and `Stop-Process` reported stopping PID `3397` if present. The canonical demo seed was restored, no repository files were affected by cleanup, and no temporary QA listeners remained afterward. Future cleanup scripts should parse only process-id keys.
+
+### Suggested commit message
+
+```text
+Tighten admin run detail scroll regression coverage
+```
 
 ## Latest Update - 2026-06-10 Admin Runs Detail Auto-Scroll UX
 

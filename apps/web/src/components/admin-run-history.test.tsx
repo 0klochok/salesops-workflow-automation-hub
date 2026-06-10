@@ -494,6 +494,7 @@ describe("AdminRunHistory", () => {
         behavior: "smooth",
       })
     );
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
     expect(heading).toHaveAttribute("tabindex", "-1");
     await waitFor(() => expect(heading).toHaveFocus());
     expect(fetchMock).toHaveBeenCalledWith("/api/leads/runs/run_demo_failed", {
@@ -1220,6 +1221,7 @@ describe("AdminRunHistory", () => {
       screen.getByRole("button", { name: /view details for run_demo_failed/i })
     );
     await screen.findByText("Run detail");
+    await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalledTimes(1));
 
     await user.click(
       screen.getByRole("button", { name: /retry run run_demo_failed/i })
@@ -1242,6 +1244,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
       "Re-run the local mock workflow for this lead."
     );
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
     const table = within(screen.getByTestId("run-history-table"));
     expect(table.getByText("Attempt 3: retried")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
