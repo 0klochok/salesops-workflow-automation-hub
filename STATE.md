@@ -9,11 +9,131 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | RC final documentation and release-readiness audit |
+| Current phase | RC Manual Acceptance + Portfolio Packaging Review |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Required frontend/backend gates, local smoke, documentation updates, and diff whitespace gate passed |
-| Completion | RC final documentation and release-readiness audit completed without runtime behavior changes |
+| Quality gate status | Full requested frontend/backend gates, safety scans, diff whitespace gate, and PowerShell-only local smoke passed |
+| Completion | RC manual acceptance and portfolio packaging review completed with `STATE.md` update only |
 | Main blocker | none |
+
+## Latest Update - 2026-06-10 RC Manual Acceptance + Portfolio Packaging Review
+
+### Phase summary
+
+Performed the requested final manual acceptance and portfolio packaging review against the current RC state. The project remains ready to show as a local-first portfolio repository: README, RUNBOOK, TDD, and STATE were reviewed for setup accuracy, mock-only provider boundaries, current gate evidence, skipped checks, risks, and reproducibility from docs.
+
+No runtime product behavior, API route, UI feature, backend logic, migration, dependency, lockfile, GitHub Actions workflow, deployment config, real provider integration, staging action, commit, push, or git staging was added or performed. The only file changed in this phase is `STATE.md` to record the new review evidence.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded the RC manual acceptance, docs review, safety scan, quality gate, local smoke, skipped-check, risk, and next-phase evidence |
+
+### Scope confirmation
+
+- Documentation/portfolio acceptance review only.
+- No product feature expansion.
+- No source-code, dependency, migration, lockfile, generated source, GitHub Actions, deployment, provider, commit, push, or staging changes.
+- No paid API usage.
+- No real HubSpot, Slack, Google Sheets, OpenAI, webhook, production API, or external provider call.
+- No secrets were printed, stored, logged, screenshotted, or added to source files.
+
+### Starting repository state
+
+| Check | Status | Result |
+|---|---|---|
+| Initial changed files | pass | `git status --short` returned no output before this phase's `STATE.md` update |
+| Staged files | pass | `git diff --cached --name-only` returned no output |
+| GitHub workflow files | pass | `Test-Path -LiteralPath ".github\workflows"` returned `False`; `git ls-files -- .github` returned no output |
+| Deployment config files | pass | No tracked `.github`, workflow, Vercel, Netlify, Render, Railway, Fly, Wrangler, Dockerfile, or `.dockerignore` deployment config paths were found |
+
+### Docs reviewed
+
+| Document | Status | Review result |
+|---|---|---|
+| `README.md` | pass | Accurate local-first portfolio positioning, clear setup/demo instructions, mock-only CRM/Slack boundary, no paid API requirement, and no misleading production/deployment claim found |
+| `RUNBOOK.md` | pass | Includes local PostgreSQL/Docker Compose, Alembic, backend, frontend, demo reset, smoke checklist, recording checklist, shutdown, and cleanup guidance |
+| `TDD.md` | pass | Current strategy and gate status match the implemented backend/frontend tests; coverage is not presented as live-provider, E2E browser, production, deployment, auth, or CI coverage |
+| `STATE.md` | updated | Prior RC evidence was present; this new top entry records the current manual acceptance run, current gate outputs, skipped checks, risks, and next recommended phase |
+
+### Forbidden-pattern and local-only posture checks
+
+| Check | Status | Result |
+|---|---|---|
+| Tracked token/private-key scan excluding `STATE.md` self-references | pass | No matches for OpenAI-style keys, Slack tokens, GitHub tokens, AWS keys, Google API/OAuth tokens, SendGrid keys, service-role strings, or private-key markers |
+| Tracked live-provider endpoint scan excluding `STATE.md` self-references | pass | No matches for live HubSpot, Slack API/webhook, OpenAI, Anthropic, Google Gemini/Sheets, Supabase auth/rest, or service-role endpoint patterns |
+| Staged files | pass | No staged files |
+| GitHub Actions / workflows | pass | No tracked workflow files and `.github\workflows` is absent |
+| Deployment config | pass | No tracked deployment config files found |
+
+### Automated validation
+
+| Command | Status | Exact result |
+|---|---|---|
+| `pnpm --dir apps/web lint` | pass | `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | pass | Vitest `v3.2.4`; `5` test files passed; `54` tests passed; duration `16.94s` |
+| `pnpm --dir apps/web typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | pass | Next.js `15.5.18` production build compiled successfully; generated `8` app routes including `/`, `/admin/runs`, local API proxies, retry proxy, and `/docs` |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass with existing warning | Python `3.12.13`; `66 passed, 1 warning in 2.62s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 28 source files` |
+| `git diff --check` after this `STATE.md` update | pass | Exit 0 with no whitespace errors; Git emitted only an LF-to-CRLF working-copy notice for `STATE.md` |
+
+### Local smoke result
+
+PowerShell-only local smoke followed the documented RUNBOOK path on `127.0.0.1` with temporary backend/frontend jobs and no real provider calls:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level warning
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+| Check | Status | Result |
+|---|---|---|
+| Local PostgreSQL | pass | `docker compose up -d postgres` reported `salesops-postgres Running` |
+| Alembic migration | pass | PostgreSQL Alembic context initialized and migration command reached head |
+| Guarded demo reset | pass | Reset applied against local synthetic demo data |
+| Backend health | pass | `GET http://127.0.0.1:8028/health` returned `status=ok` |
+| Frontend home route | pass | `GET http://127.0.0.1:3042/` returned HTTP `200` and included `Lead intake form` and `CSV import` |
+| Frontend admin route | pass | `GET http://127.0.0.1:3042/admin/runs` returned HTTP `200` and included `Admin run history` |
+| Frontend run-history proxy | pass | `GET http://127.0.0.1:3042/api/leads/runs` returned seeded local runs including `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried` |
+| Frontend run-detail proxy | pass | `GET http://127.0.0.1:3042/api/leads/runs/run_demo_failed` returned the selected failed run without risky raw `phone`, `secret`, or `token` fields |
+| Local retry proxy | pass | `POST http://127.0.0.1:3042/api/leads/runs/run_demo_failed/retry` updated the local run to `retried` with `attempt_number` 3 |
+| Demo restore | pass | `uv run python -m backend.app.leads.demo_reset --apply` restored the four canonical seeded demo runs after retry mutation |
+| Temporary process cleanup | pass | Temporary backend and frontend listeners on ports `8028` and `3042` were stopped; final port checks returned `False` for both listeners |
+
+Smoke note: the first smoke script attempt failed before app verification because PowerShell treats `$HOME`/`$home` as a read-only built-in variable. No app failure was observed, no retry mutation had run yet, and follow-up port checks showed no leftover listeners. The corrected PowerShell smoke passed.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Visual browser/manual UI QA in this phase | limited | This phase explicitly required PowerShell commands only, so the smoke used local HTTP/API checks rather than Browser/Playwright visual automation |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not required; the project remains mock-only and local-first |
+| GitHub Actions / CI | skipped | Explicitly forbidden for this phase and not present in the repo |
+| Dependency install or upgrade | skipped | Existing local dependencies were already present and no new dependency was needed |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- This phase's live smoke was PowerShell HTTP/API based, not a fresh visual browser QA pass, because the phase required PowerShell commands only.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+- Local PostgreSQL is running after smoke because it is the documented local demo service; stop it manually with `docker compose stop postgres` when not needed.
+
+### Next recommended phase
+
+User manual review, then manual staging/commit/push if the recorded RC evidence and final diff are acceptable. Optional next portfolio step is recording the 3-5 minute demo using `docs/DEMO_ASSETS.md` and `docs/DEMO_SCRIPT.md`.
+
+### Suggested commit message
+
+```text
+Record RC manual acceptance review
+```
 
 ## Latest Update - 2026-06-10 RC Final Documentation And Release-Readiness Audit
 
