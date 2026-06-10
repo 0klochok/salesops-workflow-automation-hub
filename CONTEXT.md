@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-09 |
+| Last updated | 2026-06-10 |
 | Owner | User |
 | Status | final portfolio readiness review |
-| Current phase | Final Portfolio Readiness Review |
+| Current phase | Frontend/admin retry hardening |
 | Repository | salesops-workflow-automation-hub-fresh |
 | Repository path | `repository root` |
 | Primary runtime | Local Windows 11 / PowerShell |
@@ -15,15 +15,15 @@
 
 ## 2. Project Summary
 
-This is a greenfield portfolio project for a code-first sales operations workflow automation demo. The implemented local demo captures leads, validates them, deduplicates them, simulates CRM upserts through an adapter, simulates Slack notifications through an adapter, records backup/audit data, and exposes a read-only admin dashboard for persisted runs and failure inspection.
+This is a greenfield portfolio project for a code-first sales operations workflow automation demo. The implemented local demo captures leads, validates them, deduplicates them, simulates CRM upserts through an adapter, simulates Slack notifications through an adapter, records backup/audit data, and exposes a local-only admin dashboard for persisted runs, failure inspection, and guarded manual retry.
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
-The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, a persistence-backed local lead intake path, backend-only failure detail/retry endpoints, enriched persisted run history with lead email/company summary fields, derived demo owner and run-level error type, read-only selected run detail, and deterministic demo seed data. The frontend includes a read-only `/admin/runs` page that displays persisted run history, lead identity, owner/error-type fields, URL-backed filters, and a same-page selected run detail panel through local Next.js GET proxies. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
+The backend includes a `uv`-managed FastAPI app, local-safe settings, a deterministic health endpoint, a persistence-backed local lead intake path, failure detail/retry endpoints, enriched persisted run history with lead email/company summary fields, derived demo owner and run-level error type, selected run detail, and deterministic demo seed data. The frontend includes a local-only `/admin/runs` page that displays persisted run history, lead identity, owner/error-type fields, URL-backed filters, a same-page selected run detail panel through local Next.js GET proxies, and selected-run retry through a local Next.js POST proxy. `POST /leads/intake` validates synthetic lead payloads, uses persisted lead snapshots for dedupe, calls mock CRM/Slack adapter boundaries, records local workflow data, and returns local run results without network calls.
 
-The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, a current-session dashboard stored in browser `sessionStorage`, read-only admin filtering for status, source, search, date range, derived owner, and run-level error type, and a local `/docs` redirect to the FastAPI docs served by the backend.
+The frontend now includes `apps/web`, a `pnpm`-managed Next.js App Router demo. It provides a schema-aligned lead form, local CSV parser/import UI, Next.js proxy route, same-session duplicate hints, a current-session dashboard stored in browser `sessionStorage`, local-only admin filtering for status, source, search, date range, derived owner, and run-level error type, selected-run retry for failed or queued runs, and a local `/docs` redirect to the FastAPI docs served by the backend.
 
-The current portfolio-readiness state keeps the project local-only, mock-safe, GET-only for the public admin view, and free of retry/edit/delete/send/archive/mutation controls. Manual retry remains available as a backend-only local endpoint. `HANDOFF.md` now documents safe future CRM/Slack credential boundaries, before/after workflow framing, and reviewer demo guidance without adding live integrations.
+The current portfolio-readiness state keeps the project local-only and mock-safe. Admin retry is limited to selected failed or queued runs, preserves backend `403`/`404`/`409` meanings in the UI, and does not expose demo reset, edit, delete, send, archive, provider, or unsafe reset controls. `HANDOFF.md` documents safe future CRM/Slack credential boundaries, before/after workflow framing, and reviewer demo guidance without adding live integrations.
 
 ## 3. Source-of-Truth Files
 
@@ -103,9 +103,9 @@ The current portfolio-readiness state keeps the project local-only, mock-safe, G
 - Duplicate detection by email and company domain. Backend local foundation exists; frontend same-session hints added.
 - CRM upsert adapter for contact/deal create-or-update behavior. Mock boundary implemented.
 - Slack notification adapter for qualified lead notifications. Mock boundary implemented.
-- Automation run log with queued, success, failed, and retried statuses. Local model, persistence-backed intake/retry records, run history, selected run detail, seed data, and read-only admin UI implemented.
-- Manual retry for failed automation runs. Backend endpoint implemented for failed and queued persisted runs; public admin UI intentionally remains read-only.
-- Error detail with payload, validation issue, error type, suggested action. Backend failure detail endpoint and read-only selected run detail panel are implemented.
+- Automation run log with queued, success, failed, and retried statuses. Local model, persistence-backed intake/retry records, run history, selected run detail, seed data, and local-only admin UI implemented.
+- Manual retry for failed automation runs. Backend endpoint and selected-run admin retry UI are implemented for failed and queued persisted runs.
+- Error detail with payload, validation issue, error type, suggested action. Backend failure detail endpoint and selected run detail panel are implemented.
 - Admin table with filters by date, source, status, lead owner, and error type. Source is also displayed and included in text search.
 - Backup/audit records. Persisted for local intake and manual retry events.
 - Portfolio handoff materials. Documentation-only handoff guidance, before/after workflow, reviewer checklist, and demo script are implemented in `HANDOFF.md`.

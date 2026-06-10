@@ -16,7 +16,7 @@ For a concise 5-10 minute portfolio reviewer path, use [docs/DEMO_SCRIPT.md](doc
 - `backend/app/leads/service.py` injects those protocols into the lead workflow service.
 - `backend/app/config.py` reads local-safe configuration, but there is no live provider dispatch or SDK integration.
 - The public demo and `/admin/runs` dashboard use local FastAPI, local Next.js routes, and local PostgreSQL.
-- The admin screen should issue local read-only `GET` requests for persisted run history and selected run detail.
+- The admin screen should issue local `GET` requests for persisted run history and selected run detail, plus `POST /api/leads/runs/<run-id>/retry` only when retrying a failed or queued selected run.
 
 ## Local Run Sequence
 
@@ -74,7 +74,7 @@ It does not wipe every locally submitted lead or every workflow run in the datab
 1. Problem setup, 20 to 30 seconds: describe the growth agency, 5 sales reps, form/CSV intake, duplicate risk, slow handoffs, and weak auditability.
 2. Public intake, 45 to 60 seconds: submit one synthetic lead through the form, then import one CSV row.
 3. Automation behavior, 45 to 60 seconds: show validation, persisted dedupe evidence, mock CRM upsert, mock Slack notification, and local audit/run records.
-4. Admin inspection, 60 to 90 seconds: open `/admin/runs`, filter by status/source/date/owner/error type, search for a seeded company, open `run_demo_failed`, and show sanitized failure detail.
+4. Admin inspection, 60 to 90 seconds: open `/admin/runs`, filter by status/source/date/owner/error type, search for a seeded company, open `run_demo_failed`, show sanitized failure detail, and point out the local-only retry action.
 5. Safety and handoff, 30 to 45 seconds: point out mock-only defaults, placeholder-only `.env.example`, no CI/deployment/live providers, and approval-gated future provider work.
 
 Expected reviewer signals:
@@ -82,8 +82,8 @@ Expected reviewer signals:
 - seeded success, failed, queued, and retried runs render;
 - filters by date, source, status, owner, and error type work;
 - selected run detail shows sanitized payload and attempt history;
-- public admin interactions remain local read-only `GET` requests;
-- no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, `POST`, `PUT`, `PATCH`, or `DELETE` control is visible in the admin UI;
+- public admin interactions remain local-only, with retry limited to `POST /api/leads/runs/<run-id>/retry` for failed or queued selected runs;
+- no demo reset, edit, delete, submit, resubmit, rerun, send, archive, worker, `PUT`, `PATCH`, or `DELETE` control is visible in the admin UI;
 - no real provider calls, secrets, deployment config, GitHub Actions, staging, commits, or pushes are required.
 
 ## Before And After Workflow
@@ -102,7 +102,7 @@ After:
 - Email and company-domain dedupe evidence is recorded.
 - CRM upsert and Slack notification steps are simulated by deterministic mock adapters.
 - Lead, run, attempt, and audit records are persisted locally.
-- The admin dashboard shows run status, source, owner, error type, failure detail, and retry history without exposing public mutation controls.
+- The admin dashboard shows run status, source, owner, error type, failure detail, retry history, and guarded local retry without exposing reset or live-provider mutation controls.
 
 ## Known Local Warnings
 

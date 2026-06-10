@@ -1,6 +1,6 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a local-first portfolio demo for automating a growth agency's lead intake workflow. It accepts leads from a public form and CSV upload, validates and deduplicates them, simulates CRM contact/deal upsert behavior, simulates qualified-lead Slack notification, persists audit/run records, and gives reviewers a read-only admin dashboard for run history and failure detail.
+SalesOps Workflow Automation Hub is a local-first portfolio demo for automating a growth agency's lead intake workflow. It accepts leads from a public form and CSV upload, validates and deduplicates them, simulates CRM contact/deal upsert behavior, simulates qualified-lead Slack notification, persists audit/run records, and gives reviewers a local-only admin dashboard for run history, failure detail, and guarded manual retry.
 
 The demo is built for a fake growth agency with 5 sales reps. It is intended for sales operations, revenue operations, and agency teams that need faster lead handoff, fewer duplicates, and clearer auditability without depending on spreadsheets or manual CRM/Slack updates.
 
@@ -10,7 +10,7 @@ All demo data is synthetic. All CRM and Slack behavior is deterministic mock beh
 
 - **Client problem:** a growth agency with 5 sales reps is losing time and audit clarity to manual form/CSV lead handling, duplicate checks, CRM updates, and Slack handoffs.
 - **Automated workflow:** local intake validates leads, checks duplicates by email and company domain, simulates CRM contact/deal upsert, simulates qualified-lead Slack notification, and stores run/audit evidence.
-- **Reviewer proof:** committed screenshots show the public intake page, CSV import evidence, read-only admin run history, filtered admin views, and sanitized failure detail.
+- **Reviewer proof:** committed screenshots show the public intake page, CSV import evidence, local-only admin run history, filtered admin views, sanitized failure detail, and retry guardrails.
 - **Safety boundary:** the project is mock-only and local-first by default; it does not require or call real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, or live webhooks.
 
 ## What It Does
@@ -22,9 +22,9 @@ All demo data is synthetic. All CRM and Slack behavior is deterministic mock beh
 - Simulates CRM contact/deal create-or-update behavior with a mock adapter.
 - Simulates Slack notifications for qualified leads with a mock adapter.
 - Persists local lead, automation run, attempt, and audit records.
-- Shows a read-only admin run-history dashboard with date, source, status, owner, error-type, and search filters.
+- Shows a local-only admin run-history dashboard with date, source, status, owner, error-type, and search filters.
 - Shows selected run details with sanitized payload, validation/failure context, attempts, and suggested action.
-- Keeps manual retry as a backend-only local endpoint; the public admin demo stays read-only.
+- Lets failed or queued selected runs be retried through the local admin detail panel while preserving history.
 
 ## Demo Proof Points
 
@@ -52,7 +52,7 @@ This repository is intentionally local-only by default.
 - No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider call is required or made by the demo.
 - `.env.example` contains placeholders only. Keep local values in ignored `.env` files and do not commit credential values.
 - No GitHub Actions, deployment config, production credentials, or live-provider setup is included.
-- The public admin dashboard is read-only; backend retry behavior remains local-only and is not exposed as a public admin action.
+- The admin dashboard is local-only; manual retry is exposed only for failed or queued selected runs and still goes through local mock-provider safety checks.
 - Backend retry refuses unsafe non-local or non-mock provider settings before mutating local run records.
 - Future real-provider work requires a separate approved phase; see [HANDOFF.md](HANDOFF.md) for safe boundaries.
 
@@ -64,7 +64,7 @@ Portfolio-ready screenshots are stored under `docs/assets/screenshots/` and use 
 
 ![SalesOps CSV import latest result and session dashboard](docs/assets/screenshots/salesops-csv-session-dashboard.png)
 
-![SalesOps read-only admin run-history table](docs/assets/screenshots/salesops-admin-run-history.png)
+![SalesOps local-only admin run-history table](docs/assets/screenshots/salesops-admin-run-history.png)
 
 ![SalesOps failed run detail with sanitized retry guidance](docs/assets/screenshots/salesops-admin-failed-detail.png)
 
@@ -119,7 +119,7 @@ pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 Open:
 
 - `http://127.0.0.1:3042/` for the public lead form and CSV import.
-- `http://127.0.0.1:3042/admin/runs` for the read-only run dashboard.
+- `http://127.0.0.1:3042/admin/runs` for the local-only run dashboard.
 - `http://127.0.0.1:3042/docs` to redirect to the local FastAPI docs at `http://127.0.0.1:8028/docs`.
 
 ## Suggested Demo Walkthrough
@@ -128,8 +128,8 @@ Open:
 2. Import one valid CSV row and show it in the browser-session dashboard.
 3. Open `/admin/runs` and show seeded success, failed, queued, and retried runs.
 4. Filter by status, source, owner, error type, date, and search text.
-5. Open `run_demo_failed` and show sanitized failure detail and suggested action.
-6. Point out that the admin UI is read-only and all provider behavior is mocked locally.
+5. Open `run_demo_failed` and show sanitized failure detail, suggested action, and the local retry action.
+6. Point out that admin retry remains local/mock-only and all provider behavior is mocked locally.
 
 The concise local reviewer checklist is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md). The portfolio case study is in [docs/CASE_STUDY.md](docs/CASE_STUDY.md). The full handoff and 3-5 minute script are in [HANDOFF.md](HANDOFF.md). Recommended screenshot, GIF, and video shots are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md). Detailed local operations are in [RUNBOOK.md](RUNBOOK.md).
 
@@ -178,7 +178,7 @@ Current status: portfolio-ready local demo, not a production service.
 Known boundaries:
 
 - Real CRM, Slack, Google Sheets, OpenAI, paid-provider, production API, webhook, deployment, auth, and CI flows are intentionally absent.
-- The admin UI is read-only; backend retry exists for local workflow records but is not exposed in the public admin page.
+- The admin UI exposes local manual retry only for failed or queued selected runs; demo reset, provider-send, edit, delete, archive, and unsafe reset actions remain absent.
 - Demo seed data is synthetic and deterministic.
 - Canonical demo leads and runs are explicitly marked as demo data for local reset targeting.
 - Local PostgreSQL is the documented demo database. SQLite is only used by tests where it is justified as a local fallback.

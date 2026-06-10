@@ -194,6 +194,51 @@ const runDetailResponse = {
   ],
 };
 
+const retrySuccessResponse = {
+  run_id: "run_demo_failed",
+  lead_id: "lead_demo_failed",
+  run_status: "retried",
+  attempt_count: 3,
+  latest_attempt_number: 3,
+  latest_attempt_status: "retried",
+};
+
+const retriedRunHistoryResponse = {
+  runs: [
+    {
+      ...runHistoryResponse.runs[0],
+      run_status: "retried",
+      updated_at: "2026-06-01T10:02:00Z",
+      attempt_count: 3,
+      latest_attempt: {
+        attempt_number: 3,
+        status: "retried",
+        error_type: null,
+        summary: "Latest attempt recorded as retried.",
+        created_at: "2026-06-01T10:02:00Z",
+      },
+    },
+    ...runHistoryResponse.runs.slice(1),
+  ],
+};
+
+const retriedRunDetailResponse = {
+  ...runDetailResponse,
+  run_status: "retried",
+  updated_at: "2026-06-01T10:02:00Z",
+  attempts: [
+    ...runDetailResponse.attempts,
+    {
+      attempt_number: 3,
+      status: "retried",
+      error_type: null,
+      error_message: null,
+      suggested_action: "Re-run the local mock workflow for this lead.",
+      created_at: "2026-06-01T10:02:00Z",
+    },
+  ],
+};
+
 describe("AdminRunHistory", () => {
   beforeEach(() => {
     navigationMock.reset();
@@ -235,7 +280,7 @@ describe("AdminRunHistory", () => {
     expect(screen.getByText("run_demo_queued")).toBeInTheDocument();
     expect(screen.getByText("Noah Kim")).toBeInTheDocument();
     expect(
-      screen.getByText("Select a run to inspect read-only details.")
+      screen.getByText("Select a run to inspect details.")
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /lead demo/i })).toHaveClass(
       "focus-visible:ring-2"
@@ -398,7 +443,7 @@ describe("AdminRunHistory", () => {
     fireEvent.click(detailButton);
 
     expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
-      "Select a run to inspect read-only details."
+      "Select a run to inspect details."
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
@@ -652,7 +697,7 @@ describe("AdminRunHistory", () => {
     fireEvent.click(detailButton);
 
     expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
-      "Select a run to inspect read-only details."
+      "Select a run to inspect details."
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
@@ -1056,7 +1101,7 @@ describe("AdminRunHistory", () => {
     expect(table.getByText("Manual entry")).toBeInTheDocument();
   });
 
-  it("loads and renders selected run details from the read-only detail endpoint", async () => {
+  it("loads and renders selected run details from the detail endpoint", async () => {
     const user = userEvent.setup();
     const fetchMock = mockFetchByUrl({
       "/api/leads/runs": { body: runHistoryResponse, status: 200 },
@@ -1105,6 +1150,220 @@ describe("AdminRunHistory", () => {
     );
   });
 
+  it("retries a failed selected run and refreshes history and detail", async () => {
+    const user = userEvent.setup();
+    const fetchMock = mockFetchByUrl({
+      "/api/leads/runs": [
+        { body: runHistoryResponse, status: 200 },
+        { body: retriedRunHistoryResponse, status: 200 },
+      ],
+      "/api/leads/runs/run_demo_failed": [
+        { body: runDetailResponse, status: 200 },
+        { body: retriedRunDetailResponse, status: 200 },
+      ],
+      "/api/leads/runs/run_demo_failed/retry": {
+        body: retrySuccessResponse,
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+    await screen.findByText("Run detail");
+
+    await user.click(
+      screen.getByRole("button", { name: /retry run run_demo_failed/i })
+    );
+
+    expect(
+      await screen.findByText(
+        /Retry recorded for run_demo_failed\. Latest attempt 3 is retried; run history and detail refreshed\./i
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "Attempt 3"
+    );
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "Re-run the local mock workflow for this lead."
+    );
+    const table = within(screen.getByTestId("run-history-table"));
+    expect(table.getByText("Attempt 3: retried")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/leads/runs/run_demo_failed/retry",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+        },
+        cache: "no-store",
+      }
+    );
+    expect(
+      fetchMock.mock.calls.filter(([url]) => url === "/api/leads/runs")
+    ).toHaveLength(2);
+    expect(
+      fetchMock.mock.calls.filter(
+        ([url]) => url === "/api/leads/runs/run_demo_failed"
+      )
+    ).toHaveLength(2);
+  });
+
+  it("shows an explicit unsafe-provider message when retry returns 403", async () => {
+    const user = userEvent.setup();
+    mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+      "/api/leads/runs/run_demo_failed/retry": {
+        body: { detail: "CRM_PROVIDER must be mock for manual retry." },
+        status: 403,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+    await screen.findByText("Run detail");
+    await user.click(
+      screen.getByRole("button", { name: /retry run run_demo_failed/i })
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(
+      "Retry blocked: unsafe provider configuration."
+    );
+    expect(alert).toHaveTextContent(
+      "CRM_PROVIDER must be mock for manual retry."
+    );
+  });
+
+  it("shows an explicit non-retryable message when retry returns 409", async () => {
+    const user = userEvent.setup();
+    mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+      "/api/leads/runs/run_demo_failed/retry": {
+        body: { detail: "Only failed or queued automation runs can be retried" },
+        status: 409,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+    await screen.findByText("Run detail");
+    await user.click(
+      screen.getByRole("button", { name: /retry run run_demo_failed/i })
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(
+      "Retry unavailable: no failure or non-retryable state."
+    );
+    expect(alert).toHaveTextContent(
+      "Only failed or queued automation runs can be retried"
+    );
+  });
+
+  it("shows an explicit missing-run message when retry returns 404", async () => {
+    const user = userEvent.setup();
+    mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_failed": {
+        body: runDetailResponse,
+        status: 200,
+      },
+      "/api/leads/runs/run_demo_failed/retry": {
+        body: { detail: "Automation run not found" },
+        status: 404,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+    await screen.findByText("Run detail");
+    await user.click(
+      screen.getByRole("button", { name: /retry run run_demo_failed/i })
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Retry blocked: run not found.");
+    expect(alert).toHaveTextContent("Automation run not found");
+  });
+
+  it("does not show retry for non-retryable selected runs", async () => {
+    const user = userEvent.setup();
+    mockFetchByUrl({
+      "/api/leads/runs": { body: runHistoryResponse, status: 200 },
+      "/api/leads/runs/run_demo_success": {
+        body: {
+          ...runDetailResponse,
+          run_id: "run_demo_success",
+          lead_id: "lead_demo_success",
+          email: "success.demo@example.com",
+          company_name: "Northstar Growth",
+          company_domain: "northstar.example",
+          owner: "Avery Brooks",
+          source: "csv_upload",
+          run_status: "success",
+          error_type: null,
+          failure_detail_available: false,
+          attempts: [
+            {
+              attempt_number: 1,
+              status: "queued",
+              error_type: null,
+              error_message: null,
+              suggested_action: null,
+              created_at: "2026-06-01T09:00:00Z",
+            },
+            {
+              attempt_number: 2,
+              status: "success",
+              error_type: null,
+              error_message: null,
+              suggested_action: null,
+              created_at: "2026-06-01T09:01:00Z",
+            },
+          ],
+          audit_events: [],
+        },
+        status: 200,
+      },
+    });
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_success");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_success/i })
+    );
+
+    await screen.findByText("Run detail");
+    expect(
+      screen.queryByRole("button", { name: /retry run run_demo_success/i })
+    ).not.toBeInTheDocument();
+  });
+
   it("loads selected run details after filtering the run list", async () => {
     navigationMock.setSearchParams("status=failed");
     const user = userEvent.setup();
@@ -1139,7 +1398,7 @@ describe("AdminRunHistory", () => {
     );
   });
 
-  it("keeps selected read-only detail visible when filters hide the selected run", async () => {
+  it("keeps selected detail visible when filters hide the selected run", async () => {
     navigationMock.setSearchParams("status=success&runId=run_demo_failed");
     mockFetchByUrl({
       "/api/leads/runs": { body: runHistoryResponse, status: 200 },
@@ -1254,7 +1513,7 @@ describe("AdminRunHistory", () => {
     expect(alert).toHaveTextContent("Suggested action: Start the FastAPI backend");
   });
 
-  it("does not show retry controls or issue mutation requests", async () => {
+  it("does not show retry before selecting an eligible run or expose reset controls", async () => {
     const fetchMock = mockFetch(runHistoryResponse, 200);
 
     render(<AdminRunHistory />);
@@ -1277,6 +1536,16 @@ describe("AdminRunHistory", () => {
         screen.queryByRole("button", { name: mutationLabel })
       ).not.toBeInTheDocument();
     }
+    for (const resetLabel of [
+      /demo reset/i,
+      /reset demo/i,
+      /reset data/i,
+      /reset runs/i,
+      /unsafe reset/i,
+    ]) {
+      expect(screen.queryByRole("button", { name: resetLabel })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: resetLabel })).not.toBeInTheDocument();
+    }
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const table = within(screen.getByTestId("run-history-table"));
@@ -1293,9 +1562,10 @@ function mockFetch(body: unknown, status: number) {
   return fetchMock;
 }
 
-function mockFetchByUrl(
-  routes: Record<string, { body: unknown; status: number }>
-) {
+type MockRoute = { body: unknown; status: number };
+
+function mockFetchByUrl(routes: Record<string, MockRoute | MockRoute[]>) {
+  const callCounts = new Map<string, number>();
   const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     void init;
     const url = urlFromFetchInput(input);
@@ -1303,7 +1573,12 @@ function mockFetchByUrl(
     if (!route) {
       return Promise.resolve(mockJsonResponse({ detail: "Unexpected URL" }, 500));
     }
-    return Promise.resolve(mockJsonResponse(route.body, route.status));
+    const routeResponses = Array.isArray(route) ? route : [route];
+    const callCount = callCounts.get(url) ?? 0;
+    callCounts.set(url, callCount + 1);
+    const response =
+      routeResponses[Math.min(callCount, routeResponses.length - 1)];
+    return Promise.resolve(mockJsonResponse(response.body, response.status));
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;

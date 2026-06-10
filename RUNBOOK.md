@@ -260,7 +260,7 @@ pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
 
-The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, read-only persisted run history through `GET /api/leads/runs`, and selected run detail through `GET /api/leads/runs/[runId]` to the FastAPI backend. The `/admin/runs` screen stays read-only, supports URL-backed status/source/search/date/owner/error-type filters client-side, and does not trigger retry, edit, delete, submit, resubmit, rerun, send, archive, worker-start, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` actions.
+The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, persisted run history through `GET /api/leads/runs`, selected run detail through `GET /api/leads/runs/[runId]`, and selected-run retry through `POST /api/leads/runs/[runId]/retry` to the FastAPI backend. The `/admin/runs` screen is local-only, supports URL-backed status/source/search/date/owner/error-type filters client-side, shows retry only for failed or queued selected runs, and does not expose demo reset, edit, delete, submit, resubmit, rerun, send, archive, worker-start, background-job, `PUT`, `PATCH`, or `DELETE` actions.
 
 ## 9. Manual Frontend Verification
 
@@ -300,7 +300,7 @@ grace@example.com,Grace,Hopper,Example Co,example.com,88,Director
 3. Confirm the import summary reports one local submission and the dashboard includes the CSV row with source `csv_upload`.
 4. Remove a required CSV value and import again to verify row-level validation errors appear before invalid rows are submitted.
 
-Test read-only persisted admin run history:
+Test local-only persisted admin run history and retry:
 
 1. Reset local demo data with `uv run python -m backend.app.leads.demo_reset --apply` after PostgreSQL is running and migrations are applied.
 2. Open `http://localhost:3000/admin/runs`.
@@ -315,10 +315,12 @@ Test read-only persisted admin run history:
 11. Search for a value with no matches and confirm the filtered empty state says no runs match the filters.
 12. Apply date filters such as `from=2026-06-01` and `to=2026-06-01` and confirm the date values persist in the URL.
 13. Select `View details` for a run such as `run_demo_failed`.
-14. Confirm the same-page detail panel shows the selected run, derived owner/error type, persisted attempts, sanitized intake payload, and allowlisted mock/audit result data.
-15. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the read-only detail visible.
-16. Confirm the browser Network tab shows only local GET requests such as `/api/leads/runs` and `/api/leads/runs/run_demo_failed`.
-17. Confirm no retry button, mutation action, edit action, delete action, send action, archive action, POST, PUT, PATCH, DELETE, real external API call, or webhook is visible or triggered.
+14. Confirm the same-page detail panel shows the selected run, derived owner/error type, persisted attempts, sanitized intake payload, allowlisted mock/audit result data, and `Retry run` for failed or queued selected runs only.
+15. Click `Retry run` for `run_demo_failed` only when you are ready to mutate local demo data. Confirm the success message states that retry was recorded, the table refreshes to attempt 3/retried, and the detail panel shows the new retried attempt.
+16. Re-run `uv run python -m backend.app.leads.demo_seed` or `uv run python -m backend.app.leads.demo_reset --apply` if you need the canonical seeded failed state again after the retry smoke.
+17. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the detail visible.
+18. Confirm the browser Network tab shows local admin requests only: `GET /api/leads/runs`, `GET /api/leads/runs/<run-id>`, and, only after clicking retry, `POST /api/leads/runs/<run-id>/retry`.
+19. Confirm no demo reset control, edit action, delete action, send action, archive action, provider action, `PUT`, `PATCH`, `DELETE`, real external API call, or webhook is visible or triggered.
 
 ## 10. Current Local Validation
 
@@ -380,7 +382,7 @@ $env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
 pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
 
-Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/source/search/date/owner/error-type filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local GET-only.
+Open `http://127.0.0.1:3042/admin/runs`, confirm unfiltered seeded runs load, apply status/source/search/date/owner/error-type filters, confirm the filtered empty state, select a run detail after filtering, open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, confirm the selected-run-hidden notice, and verify browser requests for admin interactions remain local-only. If you click `Retry run`, confirm the request is `POST /api/leads/runs/<run-id>/retry` and reseed demo data afterward if you need canonical screenshots.
 
 Open `http://127.0.0.1:3042/docs` and confirm it redirects to the local FastAPI docs at `http://127.0.0.1:8028/docs`.
 
@@ -441,7 +443,7 @@ If you chose different ports, replace `8028` and `3042` in the commands and brow
 Open these local pages in the recording browser:
 
 - `http://127.0.0.1:3042/` for the public lead form and CSV import;
-- `http://127.0.0.1:3042/admin/runs` for the read-only persisted admin dashboard;
+- `http://127.0.0.1:3042/admin/runs` for the local-only persisted admin dashboard;
 - `http://127.0.0.1:3042/docs` for the local FastAPI docs redirect;
 - `http://127.0.0.1:3042/admin/runs?status=failed` for status filtering; expect seeded `run_demo_failed`;
 - `http://127.0.0.1:3042/admin/runs?source=csv_upload` for source filtering; expect seeded `run_demo_failed`;
@@ -468,7 +470,7 @@ Recommended final stills:
 
 - `salesops-home.png`: public form and CSV import entry point.
 - `salesops-csv-session-dashboard.png`: synthetic CSV import and session dashboard.
-- `salesops-admin-run-history.png`: seeded read-only run table.
+- `salesops-admin-run-history.png`: seeded local-only run table.
 - `salesops-admin-failed-detail.png`: failed run detail with sanitized payload and suggested action.
 - `salesops-admin-filtered-detail.png`: selected run detail preserved while filters are active.
 - `salesops-admin-empty-filter.png`: optional no-match filter state.
@@ -483,8 +485,8 @@ On `/admin/runs`, verify:
 - `Reset filters` is visually secondary, aligns with the filter group, wraps cleanly on narrow layouts, and clears active filters;
 - selected detail opens on the same page;
 - `?status=success&runId=run_demo_failed` shows the selected-run-hidden notice while keeping detail visible;
-- admin interactions issue local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>` only;
-- no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered;
+- admin interactions issue local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>`, plus `POST /api/leads/runs/<run-id>/retry` only when `Retry run` is clicked for a failed or queued selected run;
+- no demo reset, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered;
 - if the Next.js dev tools badge appears because the frontend is running under `next dev`, keep it closed or crop it out of final footage when desired. It is a local development indicator, not app behavior or an integration.
 
 On `/docs`, verify that the browser lands on the local FastAPI Swagger UI served by the backend and remains on `127.0.0.1`.
@@ -520,21 +522,21 @@ Visually pass the check only when:
 - status, source, search, date, owner, and error-type filters update the URL and visible rows correctly;
 - the filtered empty state, same-page detail panel, and selected-run-hidden notice are visible in the documented scenarios;
 - controls wrap cleanly at narrow widths, with table overflow contained in the table scroller rather than the whole page;
-- the admin UI remains read-only and exposes no retry, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `POST`, `PUT`, `PATCH`, or `DELETE` controls.
+- the admin UI remains local-only, shows `Retry run` only for failed or queued selected runs, and exposes no demo reset, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `PUT`, `PATCH`, or `DELETE` controls.
 
 Treat these browser findings as blocking:
 
 - application console errors, hydration errors, runtime overlays, or persistent framework error overlays;
 - failed local API requests for documented pages or admin interactions;
 - non-local network requests, real provider requests, webhooks, or paid/external API calls;
-- admin mutation requests or visible mutation controls;
+- admin mutation requests outside the selected-run local retry route, or visible reset/provider mutation controls;
 - any visible secret, `.env` content, provider dashboard, private account data, real customer data, or unrelated local files.
 
 These findings are acceptable during manual QA:
 
 - the Next.js dev tools badge when using `next dev`;
 - local static asset requests from the Next.js dev server;
-- local `GET` requests to `/api/leads/runs`, `/api/leads/runs/<run-id>`, `/leads/runs`, and `/leads/runs/<run-id>`.
+- local `GET` requests to `/api/leads/runs`, `/api/leads/runs/<run-id>`, `/leads/runs`, and `/leads/runs/<run-id>`, plus local selected-run retry requests to `/api/leads/runs/<run-id>/retry` and `/leads/runs/<run-id>/retry`.
 
 Stop local services with `Ctrl+C` in the backend and frontend PowerShell windows. Stop PostgreSQL only if you do not want it running after QA:
 

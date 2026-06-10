@@ -14,7 +14,7 @@
 
 Design a local-first sales operations workflow automation demo that shows how lead intake can move from manual copy/paste work to a traceable, testable automation pipeline. The system remains safe for portfolio use by defaulting to mock integrations and synthetic data.
 
-The current local demo includes persisted intake, deterministic demo seed data, failure detail, backend-only retry, and a read-only `/admin/runs` page with URL-backed status, source, search, date, owner, and error-type filters. It keeps the public intake response contract, mock CRM/Slack adapters, and read-only admin UI boundaries unchanged. Real integrations, auth, retry UI, deployment, and GitHub Actions remain out of scope unless explicitly approved later.
+The current local demo includes persisted intake, deterministic demo seed data, failure detail, guarded retry, and a local-only `/admin/runs` page with URL-backed status, source, search, date, owner, and error-type filters. It keeps the public intake response contract and mock CRM/Slack adapter boundaries unchanged. Real integrations, auth, deployment, GitHub Actions, reset UI, and unsafe provider actions remain out of scope unless explicitly approved later.
 
 ## 3. Stack
 
@@ -68,7 +68,7 @@ Current local flow:
 ```text
 Next.js UI -> Next.js local proxy -> FastAPI intake -> validation -> persisted snapshots -> dedupe -> mock CRM -> mock Slack -> persistence repository -> UI session dashboard
 FastAPI failure/retry endpoints -> persistence repository -> stored runs, attempts, and audit records
-Next.js admin UI -> Next.js local run-history/detail proxies -> FastAPI run-history/detail endpoints -> persistence repository -> stored run list and selected run detail with derived owner/error type
+Next.js admin UI -> Next.js local run-history/detail/retry proxies -> FastAPI run-history/detail/retry endpoints -> persistence repository -> stored run list, selected run detail, and local retry attempt with derived owner/error type
 Demo seed command -> SQLAlchemy session -> deterministic local run records
 ```
 
@@ -99,6 +99,8 @@ flowchart LR
     V --> X["GET /api/leads/runs/[runId]"]
     X --> Y["Run-detail endpoint"]
     Y --> H
+    V --> Z["POST /api/leads/runs/[runId]/retry"]
+    Z --> R
     U["Demo seed command"] --> P
 ```
 
@@ -127,7 +129,7 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 
 `GET /leads/runs/{run_id}/failure` returns persisted failure detail for a run with a failed attempt. Unknown run IDs return `404`; runs without failed attempts return `409`.
 
-`POST /leads/runs/{run_id}/retry` is backend-only and requires local/mock-safe settings: `APP_ENV` must be local/demo/test/development, `MOCK_MODE` must be true, CRM and Slack providers must be `mock`, and Google Sheets must be disabled or mock. Unsafe retry settings return `403` without mutating the run. Safe retry requests accept `failed` and `queued` runs, append a `retried` attempt, update the run status to `retried`, and write a `manual_retry` audit event. Unknown run IDs return `404`; `success` and already-`retried` runs return `409`.
+`POST /leads/runs/{run_id}/retry` requires local/mock-safe settings: `APP_ENV` must be local/demo/test/development, `MOCK_MODE` must be true, CRM and Slack providers must be `mock`, and Google Sheets must be disabled or mock. Unsafe retry settings return `403` without mutating the run. Safe retry requests accept `failed` and `queued` runs, append a `retried` attempt, update the run status to `retried`, and write a `manual_retry` audit event. Unknown run IDs return `404`; `success` and already-`retried` runs return `409`. The frontend exposes this through `POST /api/leads/runs/[runId]/retry`, preserving backend status codes and response bodies so the admin UI can show specific `403`, `404`, and `409` messages.
 
 `GET /leads/runs` returns persisted run history sorted by `automation_runs.created_at` descending and `automation_runs.run_id` ascending for timestamp ties. Each item includes `run_id`, `lead_id`, persisted lead `email`, `company_name`, `company_domain`, a deterministic demo `owner` derived from `lead_id`, `source`, `run_status`, run-level `error_type` derived from the latest non-null persisted attempt error type, `created_at`, `updated_at`, `attempt_count`, `failure_detail_available`, and a sanitized `latest_attempt` summary. It does not expose raw audit payloads, phone, message, or unrestricted error detail.
 
@@ -145,9 +147,9 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - Manual retry records update only local persistence, require local/mock provider settings, and do not call CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
 - Run-history responses are built from persisted runs, leads, and attempts and expose only a safe summary contract with stored email and company identity.
 - Run-detail responses are built from existing persisted run, lead, attempt, and audit records with allowlisted/sanitized payload fields only.
-- The read-only frontend admin run-history UI consumes the persisted run list and selected run detail through local Next.js GET proxies, displays stored lead/run/audit summaries, supports URL-backed status/source/search/date/owner/error-type filters client-side, and exposes no retry or mutation action.
+- The local-only frontend admin run-history UI consumes the persisted run list, selected run detail, and selected-run retry through local Next.js proxies, displays stored lead/run/audit summaries, supports URL-backed status/source/search/date/owner/error-type filters client-side, exposes retry only for failed or queued selected runs, and exposes no demo reset, provider-send, edit, delete, archive, or unsafe reset action.
 - The current admin owner is a deterministic portfolio-demo assignment derived from existing `lead_id` values. It is not a persisted sales-rep routing model.
-- The current run-level error type is derived from the latest non-null persisted attempt error type. It supports the read-only filter without adding a migration or a broader failure taxonomy.
+- The current run-level error type is derived from the latest non-null persisted attempt error type. It supports the admin error-type filter without adding a migration or a broader failure taxonomy.
 - Demo seed data writes fixed synthetic success, failed, queued, and retried runs through local SQLAlchemy records only and marks their persisted lead/run records as demo data.
 - Repository tests validate persistence behavior with SQLite as a unit-test fallback; PostgreSQL remains the local integration target.
 - Persisted owner assignment, broader failure taxonomies, and admin filters beyond the current contract require future API/UI work.

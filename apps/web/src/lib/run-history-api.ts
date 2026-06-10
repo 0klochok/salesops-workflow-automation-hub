@@ -1,5 +1,6 @@
 import type {
   ApiErrorResponse,
+  RetryRunResponse,
   RunDetailResponse,
   RunHistoryResponse,
 } from "./types";
@@ -21,6 +22,18 @@ export type RunDetailApiResult =
       ok: true;
       status: number;
       data: RunDetailResponse;
+    }
+  | {
+      ok: false;
+      status: number;
+      error: ApiErrorResponse;
+    };
+
+export type RetryRunApiResult =
+  | {
+      ok: true;
+      status: number;
+      data: RetryRunResponse;
     }
   | {
       ok: false;
@@ -75,6 +88,34 @@ export async function fetchRunDetail(runId: string): Promise<RunDetailApiResult>
     ok: true,
     status: response.status,
     data: body as RunDetailResponse,
+  };
+}
+
+export async function retryRun(runId: string): Promise<RetryRunApiResult> {
+  const response = await fetch(
+    `/api/leads/runs/${encodeURIComponent(runId)}/retry`,
+    {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+      },
+      cache: "no-store",
+    }
+  );
+  const body = await parseJsonBody(response);
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      error: normalizeErrorBody(body),
+    };
+  }
+
+  return {
+    ok: true,
+    status: response.status,
+    data: body as RetryRunResponse,
   };
 }
 

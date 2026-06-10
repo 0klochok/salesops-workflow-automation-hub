@@ -20,13 +20,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { formatApiError, leadSourceLabel } from "@/lib/format";
-import { fetchRunDetail, fetchRunHistory } from "@/lib/run-history-api";
+import { fetchRunDetail, fetchRunHistory, retryRun } from "@/lib/run-history-api";
 import { leadSources } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type {
   ApiErrorResponse,
   ErrorType,
   LeadSource,
+  RetryRunResponse,
   RunDetailResponse,
   RunHistoryItem,
   RunStatus,
@@ -42,6 +43,17 @@ type DetailState =
   | { status: "loading"; runId: string }
   | { status: "loaded"; detail: RunDetailResponse }
   | { status: "error"; runId: string; error: ApiErrorResponse };
+
+type RetryState =
+  | { status: "idle" }
+  | { status: "submitting"; runId: string }
+  | { status: "success"; runId: string; data: RetryRunResponse }
+  | {
+      status: "error";
+      runId: string;
+      statusCode: number;
+      error: ApiErrorResponse;
+    };
 
 type FilterStatus = RunStatus | "all";
 type FilterSource = LeadSource | "all";
@@ -97,6 +109,9 @@ export function AdminRunHistory() {
   const [detailState, setDetailState] = useState<DetailState>({
     status: "idle",
   });
+  const [retryState, setRetryState] = useState<RetryState>({
+    status: "idle",
+  });
   const lastRequestedRunIdRef = useRef<string | null>(null);
   const filters = useMemo(
     () => parseRunHistoryFilters(searchParams),
@@ -140,6 +155,25 @@ export function AdminRunHistory() {
         runId,
         error: {
           detail: "Unable to load persisted run detail from the local proxy.",
+          suggested_action: "Confirm the Next.js dev server is running.",
+        },
+      });
+    }
+  }, []);
+
+  const refreshRunHistory = useCallback(async () => {
+    try {
+      const result = await fetchRunHistory();
+      if (result.ok) {
+        setState({ status: "loaded", runs: result.data.runs });
+      } else {
+        setState({ status: "error", error: result.error });
+      }
+    } catch {
+      setState({
+        status: "error",
+        error: {
+          detail: "Unable to refresh persisted run history from the local proxy.",
           suggested_action: "Confirm the Next.js dev server is running.",
         },
       });
@@ -196,6 +230,7 @@ export function AdminRunHistory() {
     if (!selectedRunId) {
       lastRequestedRunIdRef.current = null;
       setDetailState({ status: "idle" });
+      setRetryState({ status: "idle" });
       return;
     }
 
@@ -203,6 +238,7 @@ export function AdminRunHistory() {
       return;
     }
 
+    setRetryState({ status: "idle" });
     void loadRunDetail(selectedRunId);
   }, [loadRunDetail, selectedRunId]);
 
@@ -215,8 +251,39 @@ export function AdminRunHistory() {
   }
 
   function handleSelectRun(runId: string) {
+    setRetryState({ status: "idle" });
     replaceQuery(filters, runId);
     void loadRunDetail(runId);
+  }
+
+  async function handleRetryRun(runId: string) {
+    setRetryState({ status: "submitting", runId });
+
+    try {
+      const result = await retryRun(runId);
+      if (result.ok) {
+        setRetryState({ status: "success", runId, data: result.data });
+        await Promise.all([refreshRunHistory(), loadRunDetail(runId)]);
+        return;
+      }
+
+      setRetryState({
+        status: "error",
+        runId,
+        statusCode: result.status,
+        error: result.error,
+      });
+    } catch {
+      setRetryState({
+        status: "error",
+        runId,
+        statusCode: 0,
+        error: {
+          detail: "Unable to submit manual retry to the local proxy.",
+          suggested_action: "Confirm the Next.js dev server is running.",
+        },
+      });
+    }
   }
 
   const visibleRuns =
@@ -237,7 +304,7 @@ export function AdminRunHistory() {
               <h1 className="min-w-0 text-2xl font-semibold tracking-normal text-foreground">
                 Admin run history
               </h1>
-              <Badge>Read-only</Badge>
+              <Badge>Local-only</Badge>
             </div>
             <Link
               className="inline-flex min-h-9 shrink-0 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-foreground shadow-panel transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -248,6 +315,7 @@ export function AdminRunHistory() {
           </div>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
             Persisted automation runs from the local backend run-history endpoint.
+            Failed and queued runs can be retried against local mock providers.
           </p>
         </header>
 
@@ -273,7 +341,11 @@ export function AdminRunHistory() {
             {selectedRunIsFilteredOut ? (
               <FilteredOutSelectionNotice runId={selectedRunId ?? ""} />
             ) : null}
-            <RunDetailPanel state={detailState} />
+            <RunDetailPanel
+              onRetryRun={handleRetryRun}
+              retryState={retryState}
+              state={detailState}
+            />
           </>
         ) : null}
       </div>
@@ -1012,13 +1084,21 @@ function FilteredOutSelectionNotice({ runId }: { runId: string }) {
       role="status"
     >
       Selected run <span className="break-all font-medium">{runId}</span> is
-      outside the current filtered list. The read-only detail panel remains
-      available below.
+      outside the current filtered list. The detail panel remains available
+      below.
     </section>
   );
 }
 
-function RunDetailPanel({ state }: { state: DetailState }) {
+function RunDetailPanel({
+  onRetryRun,
+  retryState,
+  state,
+}: {
+  onRetryRun: (runId: string) => void;
+  retryState: RetryState;
+  state: DetailState;
+}) {
   if (state.status === "idle") {
     return (
       <section
@@ -1026,7 +1106,7 @@ function RunDetailPanel({ state }: { state: DetailState }) {
         className="min-w-0 rounded-lg border border-dashed border-border bg-surface p-4 text-sm leading-6 text-muted-foreground sm:p-5"
         data-testid="run-detail-panel"
       >
-        Select a run to inspect read-only details.
+        Select a run to inspect details.
       </section>
     );
   }
@@ -1061,6 +1141,9 @@ function RunDetailPanel({ state }: { state: DetailState }) {
   }
 
   const { detail } = state;
+  const canRetry = isRetryableRunStatus(detail.run_status);
+  const isSubmittingRetry =
+    retryState.status === "submitting" && retryState.runId === detail.run_id;
 
   return (
     <section
@@ -1079,9 +1162,23 @@ function RunDetailPanel({ state }: { state: DetailState }) {
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Badge tone={runStatusTone(detail.run_status)}>{detail.run_status}</Badge>
-          <Badge>Read-only</Badge>
+          <Badge>Local-only</Badge>
+          {canRetry ? (
+            <Button
+              aria-label={`Retry run ${detail.run_id}`}
+              className="h-10 min-w-[7rem] whitespace-nowrap px-4"
+              disabled={isSubmittingRetry}
+              onClick={() => onRetryRun(detail.run_id)}
+              type="button"
+              variant="secondary"
+            >
+              {isSubmittingRetry ? "Retrying..." : "Retry run"}
+            </Button>
+          ) : null}
         </div>
       </div>
+
+      <RetryStatusNotice retryState={retryState} runId={detail.run_id} />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="min-w-0 space-y-4">
@@ -1187,6 +1284,51 @@ function RunDetailPanel({ state }: { state: DetailState }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function RetryStatusNotice({
+  retryState,
+  runId,
+}: {
+  retryState: RetryState;
+  runId: string;
+}) {
+  if (retryState.status === "idle" || retryState.runId !== runId) {
+    return null;
+  }
+
+  if (retryState.status === "submitting") {
+    return (
+      <div
+        className="mb-5 min-w-0 rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground"
+        role="status"
+      >
+        Submitting local manual retry for {runId}...
+      </div>
+    );
+  }
+
+  if (retryState.status === "success") {
+    return (
+      <div
+        className="mb-5 min-w-0 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+        role="status"
+      >
+        Retry recorded for {retryState.data.run_id}. Latest attempt{" "}
+        {retryState.data.latest_attempt_number} is{" "}
+        {retryState.data.latest_attempt_status}; run history and detail refreshed.
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="mb-5 min-w-0 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-danger"
+      role="alert"
+    >
+      {formatRetryError(retryState.statusCode, retryState.error)}
+    </div>
   );
 }
 
@@ -1428,6 +1570,24 @@ function getRunSourceOptions(runs: RunHistoryItem[]): LeadSource[] {
 
 function getRunErrorType(run: RunHistoryItem): ErrorType | null {
   return run.error_type ?? run.latest_attempt?.error_type ?? null;
+}
+
+function isRetryableRunStatus(status: RunStatus): boolean {
+  return status === "failed" || status === "queued";
+}
+
+function formatRetryError(statusCode: number, error: ApiErrorResponse): string {
+  const detail = formatApiError(error);
+  if (statusCode === 403) {
+    return `Retry blocked: unsafe provider configuration. ${detail}`;
+  }
+  if (statusCode === 404) {
+    return `Retry blocked: run not found. ${detail}`;
+  }
+  if (statusCode === 409) {
+    return `Retry unavailable: no failure or non-retryable state. ${detail}`;
+  }
+  return `Retry failed through the local proxy. ${detail}`;
 }
 
 function formatTimestamp(value: string): string {

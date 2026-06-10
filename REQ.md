@@ -14,7 +14,7 @@
 
 SalesOps Workflow Automation Hub is a local portfolio demo for a growth agency with 5 sales reps. It shows how lead intake, validation, deduplication, CRM sync simulation, Slack notification simulation, backup/audit logging, failure inspection, and manual retries can be automated with a code-first system.
 
-The current portfolio-readiness state keeps the demo local-first, deterministic, and mock-only. The public admin UI is read-only; manual retry remains a backend-only local endpoint.
+The current portfolio-readiness state keeps the demo local-first, deterministic, and mock-only. The admin UI is local-only; manual retry is exposed only for failed or queued selected runs and remains guarded by backend local/mock provider safety checks.
 
 ## 3. Goals
 
@@ -22,7 +22,7 @@ The current portfolio-readiness state keeps the demo local-first, deterministic,
 |---|---|---|---|
 | G-001 | Replace manual lead copy/paste with a traceable automation workflow | P0 | Demo flow shows validated lead intake through run logging |
 | G-002 | Reduce duplicate lead handling | P0 | Duplicate checks by email and company domain are tested |
-| G-003 | Make failures inspectable and retryable | P0 | Admin view shows failure details; backend retry behavior is tested without exposing public admin mutation controls |
+| G-003 | Make failures inspectable and retryable | P0 | Admin view shows failure details and guarded local retry behavior without exposing reset or provider mutation controls |
 | G-004 | Keep external integrations safe for a portfolio demo | P0 | CRM and Slack use mocks by default |
 | G-005 | Present the project clearly as portfolio work | P1 | README, architecture diagram, seed data, handoff docs, and demo script exist |
 
@@ -65,10 +65,10 @@ The current portfolio-readiness state keeps the demo local-first, deterministic,
 | FR-004 | The system detects duplicate leads by email and company domain. | P0 | Duplicate and non-duplicate cases are covered by tests. | persistence-backed backend dedupe plus frontend session hint |
 | FR-005 | The CRM adapter simulates create-or-update behavior for contacts/deals. | P0 | Tests prove create, update, duplicate, and failure behavior in mock mode. | mock foundation implemented |
 | FR-006 | The Slack adapter simulates notification for qualified leads. | P0 | Qualified lead produces a mock notification record; unqualified lead does not. | mock foundation implemented |
-| FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | persisted backend run history and read-only frontend view with persisted lead identity implemented |
-| FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | backend endpoint implemented; public admin UI intentionally read-only |
-| FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | backend failure endpoint and same-page read-only selected run detail UI implemented; public admin mutation actions remain intentionally absent |
-| FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type; source is visible and searchable. | read-only persisted run-history UI implemented with status, source, search, date, derived owner, and run-level error-type filters |
+| FR-007 | Automation runs are logged with lifecycle statuses. | P0 | Queued, success, failed, and retried states are persisted and visible. | persisted backend run history and local-only frontend view with persisted lead identity implemented |
+| FR-008 | Failed automation runs can be retried manually. | P0 | Retry creates a new attempt and updates run state without losing history. | backend endpoint and selected-run admin retry UI implemented for failed or queued runs |
+| FR-009 | Failure details are inspectable. | P0 | Admin can view payload, validation issue, error type, and suggested action. | backend failure endpoint and same-page selected run detail UI implemented; reset/provider mutation actions remain absent |
+| FR-010 | Admin users can filter automation runs. | P0 | Filters work for date, source, status, owner, and error type; source is visible and searchable. | local-only persisted run-history UI implemented with status, source, search, date, derived owner, and run-level error-type filters |
 | FR-011 | Demo data can be seeded locally. | P1 | Seed command creates representative leads, runs, failures, and retries. | deterministic local seed command implemented |
 | FR-012 | Portfolio handoff materials explain how real CRM/Slack credentials would be added safely. | P1 | Handoff doc documents credential boundaries without real secrets. | documentation-only handoff implemented in `HANDOFF.md` |
 

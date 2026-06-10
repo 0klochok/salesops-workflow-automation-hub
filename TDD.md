@@ -22,7 +22,7 @@
 
 ## 3. Current Test Status
 
-The current local demo has backend validation, dedupe, mock adapter, persistence, failure-detail, retry, seed-data, and frontend admin coverage. The public `/admin/runs` page remains read-only and does not add mutation controls, real integrations, auth, deployment, GitHub Actions, or database migrations.
+The current local demo has backend validation, dedupe, mock adapter, persistence, failure-detail, retry, seed-data, and frontend admin coverage. The `/admin/runs` page remains local-only, exposes manual retry only for failed or queued selected runs, and does not add reset controls, real integrations, auth, deployment, GitHub Actions, or database migrations.
 
 Current backend commands:
 
@@ -82,16 +82,18 @@ Current frontend tests still cover:
 - CSV parsing for valid and invalid rows;
 - same-session duplicate hint behavior;
 - session dashboard filtering by source;
-- read-only persisted run-history rows;
+- local-only persisted run-history rows;
 - persisted lead email/company identity, derived owner, and run-level error type in run-history rows;
-- source, owner, and error-type filters preserve URL state and filter the read-only table;
+- source, owner, and error-type filters preserve URL state and filter the table;
 - older run-history rows remain readable if enriched identity fields are absent from a mocked response;
 - empty and error states for `/admin/runs`;
-- absence of retry/edit/delete/send/archive/mutation controls or non-GET run-history fetches.
+- retry success refreshes selected detail and run history through local mock-only routes;
+- explicit retry error messages for unsafe provider `403`, missing run `404`, and non-retryable/no-failure `409` responses;
+- absence of demo reset/edit/delete/send/archive/provider controls.
 - selected run detail fetches through `GET /api/leads/runs/{runId}`;
 - selected run detail loading and error states;
-- read-only detail rendering of lead/run metadata, attempts, safe intake payload, and allowlisted mock/audit summaries;
-- absence of retry/mutation controls in the run detail experience.
+- detail rendering of lead/run metadata, attempts, safe intake payload, and allowlisted mock/audit summaries;
+- retry action visibility only for failed or queued selected runs.
 
 Existing backend tests also cover:
 
@@ -112,7 +114,7 @@ Existing backend tests also cover:
 | Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
 | Retry logic tests | Failed/queued run retry, new attempt creation, history preservation, status transitions, rejection of non-retryable runs | Backend unit/API tests | `uv run pytest` |
 | Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run pytest` |
-| Admin run history/detail tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility | Backend API tests and frontend component tests | `uv run pytest`; `pnpm --dir apps/web test -- --run` |
+| Admin run history/detail/retry tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility, retry success refresh, explicit 403/404/409 retry errors, no reset UI | Backend API tests and frontend component tests | `uv run pytest`; `pnpm --dir apps/web test -- --run` |
 | Demo seed tests | Success/failed/queued/retried examples, repeatability, local-only deterministic records | Backend API/repository tests | `uv run pytest` |
 | Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test -- --run` |
 | CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test -- --run` |

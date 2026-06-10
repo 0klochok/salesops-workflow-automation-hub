@@ -6,7 +6,7 @@ A fake growth agency with 5 sales reps receives leads from website forms and CSV
 
 ## Solution
 
-SalesOps Workflow Automation Hub turns that manual handoff into a local, code-first workflow. A FastAPI backend accepts validated lead payloads, persists lead/run/audit records, checks duplicate evidence by email and company domain, simulates CRM contact/deal upsert behavior, and simulates qualified-lead Slack notification. A Next.js frontend provides a public demo intake experience plus a read-only admin run dashboard for reviewers.
+SalesOps Workflow Automation Hub turns that manual handoff into a local, code-first workflow. A FastAPI backend accepts validated lead payloads, persists lead/run/audit records, checks duplicate evidence by email and company domain, simulates CRM contact/deal upsert behavior, and simulates qualified-lead Slack notification. A Next.js frontend provides a public demo intake experience plus a local-only admin run dashboard for reviewers, including guarded retry for failed or queued selected runs.
 
 ## Core Workflow
 
@@ -39,4 +39,3 @@ This is intentionally a local portfolio demo. It uses synthetic data, local Post
 ## Client Adaptation Opportunities
 
 A client could adapt this pattern for lead routing, inbound sales qualification, partner intake, event follow-up, operations QA, or any workflow that needs validation, dedupe, traceable external-system handoff, and failure review. Real CRM, Slack, Google Sheets, or other provider integrations should be added only in a separate approved phase behind the existing adapter boundaries, with mock-first tests and explicit credential handling.
-

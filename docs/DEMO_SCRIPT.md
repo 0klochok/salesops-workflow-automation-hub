@@ -49,7 +49,7 @@ This path should take 5-10 minutes after dependencies are installed and the loca
 5. Confirm seeded success, failed, queued, and retried runs are visible.
 6. Filter by status, source, owner, error type, date, and search text.
 7. Open `run_demo_failed` and inspect the sanitized failure detail, attempt history, payload summary, and suggested action.
-8. Confirm the admin UI is read-only and does not expose retry, edit, delete, send, or provider-action controls.
+8. Confirm the admin UI is local-only, shows retry only for failed or queued selected runs, and does not expose demo reset, edit, delete, send, or provider-action controls.
 9. Open `http://127.0.0.1:8028/docs` only as local FastAPI API evidence.
 10. Mention that all CRM and Slack behavior is deterministic mock behavior backed by local persistence.
 
@@ -82,7 +82,7 @@ Asset provenance and current recording notes are in `docs/assets/README.md` and 
 - Real credentials, tokens, private keys, or production secrets.
 - GitHub Actions, CI, deployment config, hosted automation, and production hardening.
 - Auth, multi-user permissions, billing, or customer-data workflows.
-- Public admin mutation controls; backend retry remains local-only and is not exposed as a public admin action.
+- Public admin reset/provider controls; retry remains local-only and is exposed only for failed or queued selected runs.
 - Demo video or GIF export; the repository currently commits still screenshots only and keeps the optional capture plan in `docs/DEMO_ASSETS.md`.
 
 ## Quality Gate Reminder

@@ -112,6 +112,15 @@ export type RunDetailResponse = {
   audit_events: RunDetailAuditEvent[];
 };
 
+export type RetryRunResponse = {
+  run_id: string;
+  lead_id: string;
+  run_status: RunStatus;
+  attempt_count: number;
+  latest_attempt_number: number;
+  latest_attempt_status: RunStatus;
+};
+
 export type ApiErrorDetail = {
   type?: string;
   loc?: Array<string | number>;

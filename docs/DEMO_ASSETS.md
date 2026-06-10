@@ -33,7 +33,7 @@ Use local URLs only:
 | `docs/assets/screenshots/salesops-home.png` | Included | Desktop | Public landing page with lead form and CSV import | Page heading, lead form, CSV import surface, and no provider-dashboard context |
 | `docs/assets/screenshots/salesops-form-success.png` | Optional, not included | Desktop | Synthetic form submission result | Success status plus validation, backend dedupe, mock CRM, and mock Slack outcomes |
 | `docs/assets/screenshots/salesops-csv-session-dashboard.png` | Included | Desktop | CSV import result and session dashboard | A valid synthetic CSV import, latest result, and browser-session evidence |
-| `docs/assets/screenshots/salesops-admin-run-history.png` | Included | Desktop | Read-only admin run table with seeded rows | Seeded success, failed, queued, and retried runs with filters visible |
+| `docs/assets/screenshots/salesops-admin-run-history.png` | Included | Desktop | Local-only admin run table with seeded rows | Seeded success, failed, queued, and retried runs with filters visible |
 | `docs/assets/screenshots/salesops-admin-failed-detail.png` | Included | Desktop | `run_demo_failed` selected detail | Sanitized intake payload, attempts, failure context, and suggested action |
 | `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Included | Desktop | Filtered admin state with selected detail preserved | Filters active while selected run detail remains inspectable |
 | `docs/assets/screenshots/salesops-admin-empty-filter.png` | Included | Desktop | No-match filtered admin state | The filtered empty state and reset path are understandable |
@@ -88,7 +88,7 @@ Mobile stills to capture:
 | `docs/assets/demo/salesops-public-intake.gif` | Optional, not included | Fill a synthetic form lead, submit it, then show the latest result | The public form works end to end with mock adapters |
 | `docs/assets/demo/salesops-csv-import.gif` | Optional, not included | Paste one valid synthetic CSV row, import it, and show the dashboard row | CSV upload behavior is understandable without a live provider |
 | `docs/assets/demo/salesops-admin-filters.gif` | Optional, not included | Open `/admin/runs`, apply status/source/search/owner/error-type filters, then reset | The run dashboard supports reviewer-friendly investigation |
-| `docs/assets/demo/salesops-failure-detail.gif` | Optional, not included | Open `run_demo_failed` and show failure detail plus suggested action | Failure evidence is sanitized, actionable, and read-only |
+| `docs/assets/demo/salesops-failure-detail.gif` | Optional, not included | Open `run_demo_failed` and show failure detail plus suggested action | Failure evidence is sanitized, actionable, and local-only |
 | `docs/assets/demo/salesops-portfolio-demo.mp4` | Optional, not included | 3-5 minute full walkthrough following `HANDOFF.md` | The whole local story is easy to evaluate without extra setup narration |
 
 No GIF or video binaries are currently committed. `docs/assets/demo/README.md` remains the placeholder location for future intentionally selected recordings.
@@ -97,7 +97,7 @@ No GIF or video binaries are currently committed. `docs/assets/demo/README.md` r
 
 - Capture only local URLs such as `http://127.0.0.1:3042/`, `http://127.0.0.1:3042/admin/runs`, `http://127.0.0.1:3042/docs`, and the redirected FastAPI docs URL `http://127.0.0.1:8028/docs`.
 - Use deterministic demo seed data or synthetic form/CSV values only.
-- Keep the admin page read-only in the recording; do not show retry, edit, delete, send, or provider-action workflows.
+- Keep the admin page local-only in the recording; show retry only as a guarded failed/queued selected-run action, and do not show demo reset, edit, delete, send, or provider-action workflows.
 - Show the mock-only boundary briefly: local FastAPI, local Next.js, local PostgreSQL, mock CRM, and mock Slack.
 - Do not show `.env` contents, shell history with secrets, browser profiles, provider dashboards, or personal/private data.
 - Do not claim deployment, GitHub Actions, production smoke, real CRM, real Slack, paid API, or live provider validation.
