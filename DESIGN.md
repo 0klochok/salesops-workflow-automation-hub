@@ -140,6 +140,7 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - Same-session duplicate hints compare submitted email and company domain in the browser session.
 - Backend `dedupe.status` remains the authoritative backend response and is displayed separately from frontend hints.
 - SQLAlchemy tables now store leads, automation runs, run attempts, and audit records from `POST /leads/intake`.
+- Local demo reset identity is explicit on persisted lead and run records through `leads.is_demo` and `automation_runs.is_demo`; attempts and audit records are reset through their marked parent run/lead relationships.
 - Failure detail responses use a safe allowlist from the stored intake audit payload and omit high-risk freeform fields such as `phone` and `message`.
 - Manual retry records update only local persistence; they do not call CRM, Slack, Google Sheets, OpenAI, paid APIs, or external webhooks.
 - Run-history responses are built from persisted runs, leads, and attempts and expose only a safe summary contract with stored email and company identity.
@@ -147,7 +148,7 @@ The frontend proxy preserves backend status codes and response bodies. If the lo
 - The read-only frontend admin run-history UI consumes the persisted run list and selected run detail through local Next.js GET proxies, displays stored lead/run/audit summaries, supports URL-backed status/source/search/date/owner/error-type filters client-side, and exposes no retry or mutation action.
 - The current admin owner is a deterministic portfolio-demo assignment derived from existing `lead_id` values. It is not a persisted sales-rep routing model.
 - The current run-level error type is derived from the latest non-null persisted attempt error type. It supports the read-only filter without adding a migration or a broader failure taxonomy.
-- Demo seed data writes fixed synthetic success, failed, queued, and retried runs through local SQLAlchemy records only.
+- Demo seed data writes fixed synthetic success, failed, queued, and retried runs through local SQLAlchemy records only and marks their persisted lead/run records as demo data.
 - Repository tests validate persistence behavior with SQLite as a unit-test fallback; PostgreSQL remains the local integration target.
 - Persisted owner assignment, broader failure taxonomies, and admin filters beyond the current contract require future API/UI work.
 

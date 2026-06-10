@@ -165,8 +165,9 @@ Expected behavior:
 
 - refuses to run unless `APP_ENV` is local/demo/test/development, mock providers are enabled, and the database URL points to local SQLite or a local `salesops_*` demo/test PostgreSQL database;
 - dry-runs without `--apply` and reports matched rows without mutating the database;
-- deletes only deterministic seed records and reserved example/test-domain synthetic smoke records;
-- writes exactly four synthetic demo runs: success, failed, queued, and retried;
+- deletes rows explicitly marked through local `leads.is_demo` or `automation_runs.is_demo`;
+- keeps a narrow backward-compatible fallback for pre-marker known demo IDs and reserved example/test-domain synthetic smoke rows;
+- writes exactly four synthetic demo runs marked as demo data: success, failed, queued, and retried;
 - uses fixed timestamps and local SQLAlchemy persistence only;
 - does not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, webhooks, or external services.
 

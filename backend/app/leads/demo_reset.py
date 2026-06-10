@@ -131,12 +131,18 @@ def reset_demo_data(session: Session, *, apply: bool) -> DemoResetResult:
 def collect_demo_reset_candidates(session: Session) -> DemoResetCandidates:
     lead_ids = set(
         session.scalars(
-            select(LeadRecord.lead_id).where(_resettable_lead_predicate())
+            select(LeadRecord.lead_id).where(
+                or_(
+                    LeadRecord.is_demo.is_(True),
+                    _legacy_resettable_lead_predicate(),
+                )
+            )
         ).all()
     )
     run_rows = session.execute(
         select(AutomationRunRecord.run_id, AutomationRunRecord.lead_id).where(
             or_(
+                AutomationRunRecord.is_demo.is_(True),
                 AutomationRunRecord.run_id.in_(DEMO_RUN_IDS),
                 AutomationRunRecord.lead_id.in_(lead_ids),
             )
@@ -144,9 +150,8 @@ def collect_demo_reset_candidates(session: Session) -> DemoResetCandidates:
     ).all()
 
     run_ids: set[str] = set()
-    for run_id, lead_id in run_rows:
+    for run_id, _lead_id in run_rows:
         run_ids.add(run_id)
-        lead_ids.add(lead_id)
 
     return DemoResetCandidates(
         lead_ids=tuple(sorted(lead_ids)),
@@ -154,7 +159,9 @@ def collect_demo_reset_candidates(session: Session) -> DemoResetCandidates:
     )
 
 
-def _resettable_lead_predicate() -> ColumnElement[bool]:
+def _legacy_resettable_lead_predicate() -> ColumnElement[bool]:
+    """Match pre-marker local demo rows from earlier reset implementations."""
+
     email = func.lower(LeadRecord.email)
     company_domain = func.lower(LeadRecord.company_domain)
     email_predicates: list[ColumnElement[bool]] = [

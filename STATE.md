@@ -9,11 +9,118 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Safe Local Demo Reset Command |
+| Current phase | Explicit Demo Data Markers |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Backend lint, typecheck, tests, guarded reset smoke, local backend smoke, and local frontend HTTP smoke passed; browser console check limited |
-| Completion | Guarded demo reset command implemented, tested, documented, and smoke-validated |
+| Quality gate status | Backend lint, typecheck, tests, Alembic migration, guarded reset sequence, and local backend/admin HTTP smoke passed; frontend/browser checks skipped because frontend source did not change |
+| Completion | Explicit demo markers implemented, migrated, tested, documented, and smoke-validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-10 Explicit Demo Data Markers For Reset
+
+### Phase summary
+
+Hardened the local demo reset implementation so reset targeting no longer depends only on known seed IDs and reserved example/test-domain predicates. Persisted demo identity is now explicit on the lead and automation-run owner records, while the old predicate cleanup remains as a narrow migration-era fallback for pre-marker local demo rows.
+
+No frontend source change, dependency install/update, GitHub Actions workflow, real provider call, paid API call, staging action, commit, or push was performed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `backend/app/leads/persistence.py` | Added `is_demo` SQLAlchemy columns to `LeadRecord` and `AutomationRunRecord` |
+| `alembic/versions/20260610_0002_add_demo_markers.py` | Added Alembic migration for `leads.is_demo` and `automation_runs.is_demo` |
+| `backend/app/leads/demo_seed.py` | Marked the four canonical demo leads and runs with `is_demo=True` |
+| `backend/app/leads/demo_reset.py` | Made reset candidate collection marker-first and kept a narrow legacy fallback |
+| `tests/test_demo_reset.py` | Expanded focused coverage for dry run, marker deletion, non-demo preservation, reseeding markers, legacy fallback, safety guards, and idempotency |
+| `README.md` | Documented marker-first reset semantics |
+| `RUNBOOK.md` | Updated reset expectations for marker targeting and legacy fallback |
+| `DESIGN.md` | Recorded the lead/run marker design decision |
+| `STATE.md` | Recorded this phase, validation, skipped checks, risks, and git status |
+
+### Design decision
+
+The explicit marker is a single non-null boolean:
+
+- `leads.is_demo`
+- `automation_runs.is_demo`
+
+Attempts and audit records were not given duplicate marker columns because they are owned by run/lead foreign keys. Reset deletes attempts and audit records through marked run/lead relationships.
+
+Reset candidate collection now:
+
+- selects lead candidates from `leads.is_demo = true`;
+- selects run candidates from `automation_runs.is_demo = true`;
+- also selects runs attached to marked demo leads;
+- preserves a narrow fallback for known `run_demo_*`/`lead_demo_*` IDs and reserved example/test-domain local rows created before the marker existed;
+- does not delete an unmarked lead merely because a run points at it.
+
+### Safety guardrails preserved
+
+- `APP_ENV` must be local/demo/test/development.
+- `MOCK_MODE` must be true.
+- `CRM_PROVIDER` and `SLACK_PROVIDER` must be `mock`.
+- `GOOGLE_SHEETS_PROVIDER` must be `disabled` or `mock`.
+- PostgreSQL host must be local.
+- PostgreSQL database name must be one of `salesops_local`, `salesops_demo`, or `salesops_test`.
+- SQLite remains allowed only for local/test reset use.
+- Reset dry-runs by default and mutates only with `--apply`.
+- No API endpoint or frontend reset control was added.
+
+### Automated validation
+
+| Command | Status | Result |
+|---|---|---|
+| `uv run pytest tests/test_demo_reset.py -q` | pass | `15 passed in 0.95s` |
+| `uv run ruff check .` | pass | `All checks passed!` |
+| `uv run mypy .` | pass | `Success: no issues found in 31 source files` |
+| `uv run pytest` | pass with existing warning | `63 passed, 1 warning in 2.33s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `docker compose up -d postgres` | pass | `Container salesops-postgres Running` |
+| `uv run alembic upgrade head` | pass | Ran `20260601_0001 -> 20260610_0002, Add explicit demo markers` |
+| `uv run python -m backend.app.leads.demo_reset` | pass | Dry run matched `4 synthetic/demo runs` and `4 synthetic/demo leads` |
+| `uv run python -m backend.app.leads.demo_reset --apply` | pass | Deleted `4 runs`, `4 leads`, `8 attempts`, and `18 audit records`; seeded the four canonical demo runs |
+| `uv run python -m backend.app.leads.demo_reset` | pass | Post-apply dry run matched `4 synthetic/demo runs` and `4 synthetic/demo leads` |
+
+### Local smoke
+
+Temporary backend smoke server:
+
+```powershell
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8131 --log-level info
+```
+
+| Check | Status | Result |
+|---|---|---|
+| `GET /health` | pass | Returned `status=ok` and service name |
+| `GET /leads/runs` | pass | Returned exactly the four canonical runs: queued, retried, failed, and success |
+| `GET /leads/runs/run_demo_failed` | pass | Returned failed status, 2 attempts, sanitized intake payload, and mock audit events |
+| `GET /leads/runs/run_demo_failed/failure` | pass | Returned adapter error detail and suggested action |
+| `POST /leads/runs/run_demo_failed/retry` | pass | Returned `run_status=retried`, `attempt_count=3`, and latest attempt `retried` |
+| Post-retry detail lookup | pass | Showed 3 attempts and a `manual_retry` audit event |
+| Post-smoke reset restore | pass | `uv run python -m backend.app.leads.demo_reset --apply` deleted the retried smoke state and reseeded the four canonical runs |
+| Temporary process cleanup | pass | Stopped the launcher PID and verified/stopped the child Uvicorn process on port `8131`; final port check returned no listener |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Frontend lint/tests/typecheck/build | skipped | No frontend source changed in this phase |
+| Browser UI smoke | skipped/limited | No frontend source changed; local backend/admin API smoke verified the reset-dependent run history, detail, failure, and retry paths |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; project remains local/mock-only |
+| GitHub Actions / CI | skipped | Explicitly forbidden |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+
+### Remaining risks
+
+- The legacy fallback intentionally still deletes unmarked pre-marker local rows that use known demo IDs or reserved example/test domains. This is documented and narrow, but those rows are not marker-only by definition.
+- Browser rendering was not rechecked because this phase did not modify frontend source; backend/admin API smoke passed.
+- Local PostgreSQL was left running because it is part of the documented local demo path.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+
+### Suggested commit message
+
+```text
+Add explicit demo markers to reset flow
+```
 
 ## Latest Update - 2026-06-10 Safe Local Demo Reset Command
 

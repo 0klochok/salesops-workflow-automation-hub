@@ -96,9 +96,10 @@ uv run python -m backend.app.leads.demo_reset --apply
 ```
 
 The reset command is local/demo-only and dry-runs unless `--apply` is provided. With
-`--apply`, it refuses non-local/mock settings, removes only deterministic seed records
-and reserved example/test-domain synthetic smoke records, then reseeds the four
-portfolio demo runs.
+`--apply`, it refuses non-local/mock settings, removes rows explicitly marked as
+demo data through the local `is_demo` lead/run marker, keeps a narrow legacy
+fallback for pre-marker known demo IDs and reserved example/test-domain synthetic
+smoke rows, then reseeds the four marked portfolio demo runs.
 
 Start the backend in one PowerShell window:
 
@@ -178,6 +179,7 @@ Known boundaries:
 - Real CRM, Slack, Google Sheets, OpenAI, paid-provider, production API, webhook, deployment, auth, and CI flows are intentionally absent.
 - The admin UI is read-only; backend retry exists for local workflow records but is not exposed in the public admin page.
 - Demo seed data is synthetic and deterministic.
+- Canonical demo leads and runs are explicitly marked as demo data for local reset targeting.
 - Local PostgreSQL is the documented demo database. SQLite is only used by tests where it is justified as a local fallback.
 - Browser recording or video export is not committed; the demo script is documented for manual recording.
 

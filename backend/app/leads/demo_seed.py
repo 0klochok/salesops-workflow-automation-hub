@@ -209,6 +209,7 @@ def _add_demo_run(session: Session, run: DemoRun) -> None:
             job_title=run.lead.job_title,
             phone=run.lead.phone,
             message=run.lead.message,
+            is_demo=True,
             created_at=run.created_at,
             updated_at=run.updated_at,
         )
@@ -218,6 +219,7 @@ def _add_demo_run(session: Session, run: DemoRun) -> None:
             run_id=run.run_id,
             lead_id=run.lead.lead_id,
             status=run.status,
+            is_demo=True,
             created_at=run.created_at,
             updated_at=run.updated_at,
         )
