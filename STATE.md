@@ -4,16 +4,126 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-10 |
+| Last updated | 2026-06-11 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Admin Runs UX RC validation and final polish |
-| Overall status | RC validation passed with notes |
-| Quality gate status | Required frontend/backend gates, diff whitespace gate, rendered Edge/CDP browser QA, workflow/deployment/dependency absence checks, and safe changed-file secret/live-endpoint scans passed |
-| Completion | Admin `View details` auto-scroll/focus behavior is validated, including one-shot retry-refresh coverage |
+| Current phase | RC Final Freeze and Portfolio Handoff Check |
+| Overall status | RC freeze passed with notes |
+| Quality gate status | Required frontend/backend gates, diff whitespace gate, static Compose validation, workflow/deployment/dependency absence checks, and tracked secret/live-endpoint sentinel scans passed |
+| Completion | Repo is stable for portfolio handoff pending user review, manual browser QA, and manual commit/push |
 | Main blocker | None |
+
+## Latest Update - 2026-06-11 RC Final Freeze and Portfolio Handoff Check
+
+### Phase summary
+
+Performed a release-candidate freeze check focused on stability, reproducibility, documentation coherence, and local/mock-only handoff posture.
+
+Reviewed `README.md`, `RUNBOOK.md`, `HANDOFF.md`, `docs/DEMO_SCRIPT.md`, `docs/DEMO_ASSETS.md`, root/frontend package scripts, `pyproject.toml`, and current repository status. The documented local demo path remains coherent: create ignored `.env` from `.env.example`, install with `uv sync` and `pnpm install`, start local PostgreSQL with Docker Compose, apply Alembic migrations, seed/reset deterministic demo data, run FastAPI on `127.0.0.1:8028`, run Next.js on `127.0.0.1:3042` with both backend-base environment variables pointed at the local backend, then open `/`, `/admin/runs`, and local API docs.
+
+No README, RUNBOOK, HANDOFF, code, dependency, lockfile, migration, deployment, GitHub Actions, or production-behavior correction was needed. This `STATE.md` entry is the only intended documentation change for the phase.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded final RC freeze validation, skipped-gate reasons, manual QA status, guardrails, residual risks, and suggested manual commit message |
+
+### Required validation results
+
+| Command | Result |
+|---|---|
+| `git status --short` | Pass before documentation update; no output |
+| `git diff --check` | Pass before documentation update; no output |
+| `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | Pass; Vitest `v3.2.4`, `5` test files passed, `56` tests passed |
+| `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | Pass; Next.js `15.5.18` compiled successfully and generated `8` routes |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass with existing warning; Python `3.12.13`, `67 passed`, `1` FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; `Success: no issues found in 28 source files` |
+
+### Additional freeze checks
+
+| Check | Command | Result |
+|---|---|---|
+| Static Docker Compose validation | `docker compose config` | Pass; rendered `postgres` service, local `salesops_local` database, local credentials, healthcheck, and port `5432` mapping |
+| Post-validation tracked diffs before `STATE.md` update | `git diff --name-only` | Pass; no output |
+| Workflow directory absence | `Test-Path -LiteralPath .\.github\workflows` | Pass; `False` |
+| Tracked workflow/deployment config inventory | `git ls-files -- .github .github\workflows vercel.json netlify.toml render.yaml render.yml railway.toml fly.toml fly.yml wrangler.toml wrangler.json wrangler.jsonc Dockerfile .dockerignore` | Pass; no output |
+| Dependency, lockfile, compose, and Next config diffs | `git diff -- package.json pnpm-lock.yaml pyproject.toml uv.lock apps/web/package.json apps/web/next.config.ts compose.yml` | Pass; no output |
+| Staged files | `git diff --cached --name-only` | Pass; no output |
+| `.env` ignore status | `git check-ignore -v .env` | Pass; `.gitignore:2:.env` |
+| Tracked secret/private-key sentinel scan | PowerShell loop over token/private-key patterns using `git grep -I -q -E -e`, excluding `STATE.md` | Pass; `NO_MATCHES` |
+| Tracked live-provider endpoint sentinel scan | PowerShell loop over live endpoint patterns using `git grep -I -q -E -e`, excluding `STATE.md` | Pass; `NO_MATCHES` |
+
+Validation note: the first no-content secret sentinel scan failed before scanning because `git grep` parsed the dash-prefixed private-key pattern as an option. It was rerun with `-e` so every pattern was treated as a pattern; the corrected scan passed with `NO_MATCHES`.
+
+### Manual and browser QA status
+
+Manual browser smoke was not rerun in this freeze pass. Reason: this phase requested the exact local quality gates plus documentation/demo-flow verification, and starting local servers or clicking admin retry would go beyond a non-mutating freeze check by changing local runtime state. No Playwright or browser dependency was installed.
+
+The exact manual QA flow remains documented in `README.md`, `RUNBOOK.md`, `HANDOFF.md`, `docs/DEMO_SCRIPT.md`, and `docs/DEMO_ASSETS.md`. Manual browser QA should use:
+
+```powershell
+if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
+uv sync
+pnpm install
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/docs`
+
+Browser pass criteria remain: public form and CSV import render and submit synthetic data locally; seeded success, failed, queued, and retried runs render; date/source/status/owner/error-type/search filters update rows and URL; selected run detail shows sanitized payload, attempts, suggested action, and local retry only for failed or queued runs; `/docs` redirects to local FastAPI docs; browser/network evidence stays on `127.0.0.1` or local Next/FastAPI routes; no secrets, provider dashboards, real customer data, external provider calls, or unsafe admin mutation controls appear.
+
+### Skipped or limited checks
+
+| Check | Status | Written reason |
+|---|---|---|
+| Dependency install | skipped | `uv sync` and `pnpm install` were not rerun because no dependencies changed and all frozen/backend plus frontend gates ran against the existing local installs |
+| Docker container startup | skipped | Static `docker compose config` passed; starting PostgreSQL was not required by the requested gate and would alter local runtime state |
+| Alembic migration against live local PostgreSQL | skipped | The requested backend tests passed and static Compose validation passed; running migrations against the user's local database was not required for the non-mutating freeze pass |
+| Demo reset/seed mutation | skipped | The commands are documented and previously covered by tests; running `demo_reset --apply` or retry actions would mutate local demo data during a freeze check |
+| Automated browser smoke | skipped | No local dev servers were started in this phase, and no new Playwright/browser dependency may be installed; exact manual browser QA steps are documented above |
+| GitHub Actions / CI validation | skipped | Explicitly forbidden; no workflow files exist or were added |
+| Deployment/staging validation | skipped | Explicitly forbidden and no deployment config exists or was added |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden; the project remains local/mock-only |
+| Staging, commit, push, branch, reset, rebase, or stash | skipped | Explicitly forbidden; Codex did not run these actions |
+
+### Guardrails confirmed
+
+- No production behavior or source code was changed.
+- No dependencies were added, removed, upgraded, or installed.
+- No lockfiles were changed.
+- No deployment config or GitHub Actions were created or modified.
+- No real provider/API call was made.
+- No `.env` contents, secrets, tokens, private keys, provider dashboards, or real customer data were printed or stored.
+- No commit or push was performed.
+
+### Remaining risks
+
+- Manual browser QA was not rerun in this phase; use the exact manual QA flow above before recording or presenting the demo.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains non-blocking.
+- Secret/live-endpoint scans intentionally exclude `STATE.md` to avoid documentation self-matches; future scans should keep using no-content sentinel output when checking for sensitive patterns.
+- Final tracked diff should remain limited to this `STATE.md` update until the user manually reviews, stages, commits, and pushes.
+
+### Suggested commit message
+
+```text
+Record RC final freeze handoff check
+```
 
 ## Latest Update - 2026-06-10 Admin Runs UX RC Validation and Final Polish
 
