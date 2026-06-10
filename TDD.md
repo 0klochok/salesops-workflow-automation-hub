@@ -88,7 +88,9 @@ Current frontend tests still cover:
 - older run-history rows remain readable if enriched identity fields are absent from a mocked response;
 - empty and error states for `/admin/runs`;
 - retry success refreshes selected detail and run history through local mock-only routes;
+- retry in-flight state disables the selected-run action and prevents duplicate retry submissions;
 - explicit retry error messages for unsafe provider `403`, missing run `404`, and non-retryable/no-failure `409` responses;
+- Next.js retry proxy route-handler tests preserve backend success, `403`, `404`, and `409` status/body responses and return safe `502` JSON when the local backend is unreachable;
 - absence of demo reset/edit/delete/send/archive/provider controls.
 - selected run detail fetches through `GET /api/leads/runs/{runId}`;
 - selected run detail loading and error states;
@@ -114,7 +116,7 @@ Existing backend tests also cover:
 | Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
 | Retry logic tests | Failed/queued run retry, new attempt creation, history preservation, status transitions, rejection of non-retryable runs | Backend unit/API tests | `uv run pytest` |
 | Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run pytest` |
-| Admin run history/detail/retry tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility, retry success refresh, explicit 403/404/409 retry errors, no reset UI | Backend API tests and frontend component tests | `uv run pytest`; `pnpm --dir apps/web test -- --run` |
+| Admin run history/detail/retry tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility, retry success refresh, retry proxy status/body preservation, no duplicate retry submissions, explicit 403/404/409 retry errors, no reset UI | Backend API tests, frontend component tests, and frontend route-handler tests | `uv run pytest`; `pnpm --dir apps/web test -- --run` |
 | Demo seed tests | Success/failed/queued/retried examples, repeatability, local-only deterministic records | Backend API/repository tests | `uv run pytest` |
 | Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test -- --run` |
 | CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test -- --run` |

@@ -9,11 +9,113 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Backend/admin run-history and retry hardening |
+| Current phase | Admin retry proxy/UI release-candidate cleanup |
 | Overall status | acceptable for public local portfolio review |
-| Quality gate status | Frontend lint/tests/typecheck/build, backend tests/lint/typecheck, rendered admin retry smoke, docs updates, and diff whitespace gate passed |
-| Completion | Frontend/admin retry UI hardening implemented, tested, documented, and smoke-validated |
+| Quality gate status | Required frontend/backend gates, safety scans, rendered admin retry smoke, docs updates, and diff whitespace gate passed |
+| Completion | Admin retry proxy/UI release-candidate cleanup implemented, tested, documented, and smoke-validated |
 | Main blocker | none |
+
+## Latest Update - 2026-06-10 Admin Retry Proxy/UI Release-Candidate Cleanup
+
+### Phase summary
+
+Added narrow release-candidate confidence for the existing admin retry behavior without changing runtime product behavior. The Next.js retry proxy now has direct route-handler tests for backend response preservation and safe backend-unreachable handling, and the admin component tests now cover in-flight retry disabling to prevent accidental duplicate submissions.
+
+No public API, backend route, runtime frontend behavior, database migration, dependency, reset UI, provider reset control, unsafe reset endpoint, GitHub Actions workflow, real provider call, paid API call, staging action, commit, or push was added or performed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/app/api/leads/runs/retry-route.test.ts` | Added direct route-handler coverage for the retry proxy success, `403`, `404`, `409`, and backend-unreachable `502` paths |
+| `apps/web/src/components/admin-run-history.test.tsx` | Added in-flight retry coverage proving the retry button disables, avoids duplicate POSTs, and still refreshes history/detail after completion |
+| `TDD.md` | Documented retry proxy route-handler coverage and duplicate-submit guard coverage |
+| `STATE.md` | Recorded this phase, validation, smoke results, skipped checks, risks, and git status |
+
+### Safety guardrails preserved
+
+- Runtime code was not changed; this phase added tests and source-of-truth documentation only.
+- No frontend demo reset control, provider reset control, unsafe reset endpoint, edit/delete/send/archive action, or non-local provider mutation was added.
+- No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider call was made.
+- No dependency, migration, GitHub Actions workflow, staging action, commit, push, or branch operation was performed.
+
+### Automated validation
+
+| Command | Status | Result |
+|---|---|---|
+| `pnpm --dir apps/web test -- --run src/components/admin-run-history.test.tsx` | pass | `1 passed`; `38 tests` passed |
+| `pnpm --dir apps/web test -- --run src/app/api/leads/runs/retry-route.test.ts` | pass | `1 passed`; `5 tests` passed |
+| `pnpm --dir apps/web lint` | pass | `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | pass | `5 passed`; `54 tests` passed |
+| `pnpm --dir apps/web typecheck` | pass | `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | pass | Next.js build completed; route list includes `/api/leads/runs/[runId]/retry` |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass with existing warning | `66 passed, 1 warning in 2.52s`; warning is the existing FastAPI/Starlette `TestClient` deprecation |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass | `All checks passed!` |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass | `Success: no issues found in 28 source files` |
+| Runtime forbidden-control scan | pass | No matches in runtime admin/API files for demo reset, provider reset, edit/delete/send/archive/resubmit/rerun/worker/background-job controls, or `PUT`/`PATCH`/`DELETE` actions |
+| Broad forbidden-control scan | limited/pass | Only matched `delete process.env...` cleanup in the new test file; no runtime UI/API match |
+| Tracked live-endpoint scan excluding `STATE.md` | pass | No live HubSpot, Slack, OpenAI, Anthropic, Google, Supabase, or service-role endpoint matches |
+| Tracked token/private-key scan excluding `STATE.md` | pass | No token-like or private-key matches |
+| GitHub Actions workflow check | pass | `.github/workflows` is absent |
+| `git diff --check` | pass | Exit 0; Git reported LF-to-CRLF working-copy notices, with no whitespace errors |
+
+### Rendered admin retry smoke
+
+Temporary local smoke setup followed the existing `RUNBOOK.md` path:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level warning
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+| Check | Status | Result |
+|---|---|---|
+| Backend health | pass | `GET http://127.0.0.1:8028/health` returned `status=ok` |
+| Frontend route | pass | Headless Edge loaded `http://127.0.0.1:3042/admin/runs` with title `SalesOps Workflow Automation Hub` |
+| Rendered retry path | pass | Opened `run_demo_failed`, clicked `Retry run`, saw `Retry recorded for run_demo_failed`, and saw `Attempt 3` in refreshed detail |
+| Direct proxy detail after retry | pass | `GET /api/leads/runs/run_demo_failed` returned `run_status=retried`, `attempt_count=3`, latest attempt `3/retried` |
+| Console/runtime health | pass | Edge/CDP collected no console warnings/errors and no runtime exceptions |
+| Network locality | pass | Edge/CDP collected no non-local browser requests and no failed requests |
+| Forbidden controls | pass | Visible controls were `Lead demo`, `Reset filters`, and `View details`; no forbidden reset/provider/edit/delete/send/archive/resubmit/rerun/worker controls were visible |
+| Post-smoke restore | pass | `uv run python -m backend.app.leads.demo_reset --apply` restored canonical seeded rows after the live local retry |
+| Temporary process cleanup | pass | Temporary backend, frontend, and Edge CDP listeners on ports `8028`, `3042`, and `9234` were stopped; final checks showed no remaining listeners |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden and not needed; project remains local/mock-only |
+| GitHub Actions / CI | skipped | Explicitly forbidden |
+| Commit, push, and staging | skipped | Explicitly forbidden; no `git add`, `git commit`, or `git push` was run |
+| In-app Browser plugin path | limited | Browser plugin was listed, but tool discovery did not expose usable browser-control tools in this thread |
+| Playwright CLI path | limited | `pnpm --dir apps/web exec playwright --version` failed because Playwright is not installed; no dependency was added |
+
+### Remaining risks
+
+- Rendered smoke used a desktop headless Edge/CDP fallback instead of the in-app Browser plugin because no browser-control tool was available.
+- Browser smoke covered the retry success path; automated route/component tests cover `403`, `404`, `409`, backend-unreachable, and duplicate-submit behavior.
+- PostgreSQL was left running because it was already part of the documented local demo path.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains.
+
+### Git status
+
+```text
+ M STATE.md
+ M TDD.md
+ M apps/web/src/components/admin-run-history.test.tsx
+?? apps/web/src/app/api/leads/runs/retry-route.test.ts
+```
+
+### Suggested commit message
+
+```text
+Add admin retry proxy coverage
+```
 
 ## Latest Update - 2026-06-10 Frontend/Admin Retry UI Hardening
 

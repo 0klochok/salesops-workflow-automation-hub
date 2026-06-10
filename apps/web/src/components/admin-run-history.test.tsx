@@ -1212,6 +1212,100 @@ describe("AdminRunHistory", () => {
     ).toHaveLength(2);
   });
 
+  it("disables retry while the request is in flight and prevents duplicate submissions", async () => {
+    const user = userEvent.setup();
+    let resolveRetry: (response: ReturnType<typeof mockJsonResponse>) => void =
+      () => undefined;
+    const retryRequest = new Promise<ReturnType<typeof mockJsonResponse>>(
+      (resolve) => {
+        resolveRetry = resolve;
+      }
+    );
+    const callCounts = new Map<string, number>();
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      void init;
+      const url = urlFromFetchInput(input);
+      const callCount = callCounts.get(url) ?? 0;
+      callCounts.set(url, callCount + 1);
+
+      if (url === "/api/leads/runs") {
+        return Promise.resolve(
+          mockJsonResponse(
+            callCount === 0 ? runHistoryResponse : retriedRunHistoryResponse,
+            200
+          )
+        );
+      }
+      if (url === "/api/leads/runs/run_demo_failed") {
+        return Promise.resolve(
+          mockJsonResponse(
+            callCount === 0 ? runDetailResponse : retriedRunDetailResponse,
+            200
+          )
+        );
+      }
+      if (url === "/api/leads/runs/run_demo_failed/retry") {
+        return retryRequest;
+      }
+
+      return Promise.resolve(mockJsonResponse({ detail: "Unexpected URL" }, 500));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AdminRunHistory />);
+
+    await screen.findByText("run_demo_failed");
+    await user.click(
+      screen.getByRole("button", { name: /view details for run_demo_failed/i })
+    );
+    await screen.findByText("Run detail");
+
+    await user.click(
+      screen.getByRole("button", { name: /retry run run_demo_failed/i })
+    );
+
+    expect(
+      await screen.findByText("Submitting local manual retry for run_demo_failed...")
+    ).toBeInTheDocument();
+    const submittingButton = screen.getByRole("button", {
+      name: /retry run run_demo_failed/i,
+    });
+    expect(submittingButton).toBeDisabled();
+    expect(submittingButton).toHaveTextContent("Retrying...");
+
+    await user.click(submittingButton);
+
+    expect(
+      fetchMock.mock.calls.filter(
+        ([url]) => url === "/api/leads/runs/run_demo_failed/retry"
+      )
+    ).toHaveLength(1);
+
+    resolveRetry(mockJsonResponse(retrySuccessResponse, 200));
+
+    expect(
+      await screen.findByText(
+        /Retry recorded for run_demo_failed\. Latest attempt 3 is retried; run history and detail refreshed\./i
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("run-detail-panel")).toHaveTextContent(
+      "Attempt 3"
+    );
+    expect(
+      fetchMock.mock.calls.filter(
+        ([url]) => url === "/api/leads/runs/run_demo_failed/retry"
+      )
+    ).toHaveLength(1);
+    expect(
+      fetchMock.mock.calls.filter(([url]) => url === "/api/leads/runs")
+    ).toHaveLength(2);
+    expect(
+      fetchMock.mock.calls.filter(
+        ([url]) => url === "/api/leads/runs/run_demo_failed"
+      )
+    ).toHaveLength(2);
+  });
+
   it("shows an explicit unsafe-provider message when retry returns 403", async () => {
     const user = userEvent.setup();
     mockFetchByUrl({
