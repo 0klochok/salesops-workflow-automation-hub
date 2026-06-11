@@ -15,6 +15,93 @@
 | Completion | Repo is stable for portfolio handoff pending user review and manual commit/push |
 | Main blocker | None |
 
+## Latest Update - 2026-06-11 RC-FINAL Portfolio Release Evidence Audit
+
+Performed a final portfolio release evidence audit focused on reviewer setup, demo reset guidance, handoff consistency, local validation instructions, CI/deployment absence, paid/live-provider boundaries, and secret-like string hygiene. This pass did not change runtime behavior, app code, package manifests, lockfiles, migrations, GitHub Actions, deployment config, demo/runtime data, secrets, commits, or pushes.
+
+### Files inspected
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Portfolio overview, Quick Start, screenshots, validation, and documentation map |
+| `HANDOFF.md` | Reviewer handoff, demo reset/seed notes, 3-5 minute demo sequence, credential boundary |
+| `docs/DEMO_SCRIPT.md` | Short reviewer checklist and install/seed path |
+| `STATE.md` | Current and historical validation evidence |
+| `RUNBOOK.md` | Local setup, reset, manual QA, validation, troubleshooting |
+| `docs/DEMO_ASSETS.md` | Screenshot/GIF/video capture checklist and safety rules |
+| `docs/CASE_STUDY.md` | Public portfolio case study and mock/synthetic-data boundary |
+| `docs/assets/README.md` | Screenshot asset provenance |
+| `docs/assets/demo/README.md` | Optional recording asset placeholder |
+| `REQ.md` | Requirements, out-of-scope items, and acceptance criteria |
+| `DESIGN.md` | Architecture, data model, adapter boundaries, local-only retry/reset posture |
+| `CONTEXT.md` | Current project context, constraints, and feature status |
+| `EXEC_PLAN.md` | Phase history, acceptance criteria, and safety/recovery notes |
+| `TDD.md` | Test strategy, current gate expectations, and quality matrix |
+
+### Audit findings
+
+| Check | Result |
+|---|---|
+| Full reviewer/demo reset command | Pass; current reviewer-facing setup paths use `uv run python -m backend.app.leads.demo_reset --apply` after local PostgreSQL and Alembic setup |
+| `demo_seed` positioning | Pass; current handoff/runbook wording describes `demo_seed` as a narrower optional refresh of the four known seed records, while historical `STATE.md` entries preserve older phase evidence |
+| Setup and demo instructions | Pass; README, HANDOFF, DEMO_SCRIPT, RUNBOOK, and DEMO_ASSETS consistently use PowerShell, local PostgreSQL, local FastAPI/Next.js ports, and mock-only provider boundaries |
+| Reviewer handoff | Pass; future real-provider work is documented as a separate approved phase with placeholder-only `.env.example` guidance |
+| Manual QA instructions | Pass; manual browser/runtime QA steps are documented, but were not rerun in this no-runtime audit |
+| Accidental CI/deployment references | Pass; references describe GitHub Actions/CI/deployment as absent, out of scope, or explicitly skipped |
+| Paid/live-provider references | Pass; references describe paid APIs, HubSpot, Slack, Google Sheets, OpenAI, webhooks, and production APIs as absent/mock-only unless explicitly approved |
+| Secret-like strings | Pass; filename-only tracked scans did not find token/private-key or live-provider endpoint patterns outside historical `STATE.md` documentation |
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded this final audit evidence, validation results, skipped checks, risks, and suggested commit message |
+
+### Validation results
+
+| Command | Result |
+|---|---|
+| `git status --short` before edits | Pass; no output |
+| `git diff --check` before edits | Pass; no output |
+| `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | Pass; Vitest `v3.2.4`, `5` test files passed, `56` tests passed |
+| `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | Pass; Next.js `15.5.18` compiled successfully and generated `8` routes |
+| `uv run python -c "import backend.app.leads.demo_reset; print('demo_reset import OK')"` | Pass; printed `demo_reset import OK` |
+| Filename-only tracked token/private-key scan excluding `STATE.md` | Pass; no filenames printed; `git grep` exited 1 because there were no matches |
+| Filename-only tracked live-provider endpoint scan excluding `STATE.md` | Pass; no filenames printed; `git grep` exited 1 because there were no matches |
+| `Test-Path -LiteralPath .\.github\workflows` | Pass; `False` |
+| `git ls-files -- .github .github\workflows` | Pass; no output |
+
+Validation note: PowerShell could not start inside the managed sandbox in this workspace (`CreateProcessAsUserW failed: 5`), so the same local commands were run through approved escalated PowerShell. No forbidden git write, runtime mutation, real-provider, or paid/external API command was run.
+
+### Skipped or limited checks
+
+| Check | Status | Written reason |
+|---|---|---|
+| Docker/PostgreSQL startup | skipped | Explicitly not run because this was a no-runtime audit and starting local services was approval-gated |
+| Alembic migration against local PostgreSQL | skipped | Explicitly not run because it requires the local database runtime path and was approval-gated |
+| `demo_reset --apply` execution | skipped | Explicitly not run because it mutates local demo/runtime data |
+| App server startup and browser QA | skipped | Explicitly not run because runtime/browser QA required prior explanation and approval; docs already contain manual QA steps |
+| Backend pytest/Ruff/mypy | skipped | Not part of the user's allowed safe validation list for this RC-FINAL audit; latest broader backend gate evidence remains historical in this file |
+| Dependency install | skipped | No dependency manifests or lockfiles changed, and requested frontend/backend import gates ran against existing local installs |
+| GitHub Actions / CI validation | skipped | Explicitly forbidden; no workflow files exist or were added |
+| Deployment/staging validation | skipped | Explicitly forbidden and no deployment config exists or was added |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden; the project remains local/mock-only |
+| Staging, commit, push, branch, reset, rebase, or stash | skipped | Explicitly forbidden; Codex did not run these actions |
+
+### Remaining risks
+
+- Manual browser QA and local PostgreSQL reset flow were not rerun during this no-runtime audit.
+- Historical `STATE.md` entries still preserve older `demo_seed` phase evidence; the current reviewer-facing docs now use `demo_reset --apply` as the full reset command and frame `demo_seed` as a narrow optional refresh.
+- Broader backend pytest/Ruff/mypy gates were not rerun in this phase because they were outside the user-approved safe validation list.
+
+### Suggested commit message
+
+```text
+Record RC final portfolio evidence audit
+```
+
 ## Latest Update - 2026-06-11 Release/Package Documentation Audit
 
 Performed a final release/package documentation audit for portfolio handoff. The audit stayed documentation-only and did not change runtime behavior, package manifests, lockfiles, migrations, CI, deployment config, provider behavior, secrets, commits, or pushes.
