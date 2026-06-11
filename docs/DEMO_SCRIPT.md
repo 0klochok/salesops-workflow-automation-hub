@@ -21,7 +21,7 @@ uv sync
 pnpm install
 docker compose up -d postgres
 uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 ```
 
 Start the backend in one PowerShell window:

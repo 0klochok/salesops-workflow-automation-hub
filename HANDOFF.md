@@ -28,7 +28,7 @@ uv sync
 pnpm install
 docker compose up -d postgres
 uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 ```
 
 Start the backend in one PowerShell window:
@@ -51,15 +51,15 @@ Open:
 - `http://127.0.0.1:3042/admin/runs`
 - `http://127.0.0.1:8028/docs`
 
-## Demo Seed And Reset Notes
+## Demo Reset And Seed Notes
 
-The deterministic seed command is:
+The recommended deterministic reviewer reset command is:
 
 ```powershell
-uv run python -m backend.app.leads.demo_seed
+uv run python -m backend.app.leads.demo_reset --apply
 ```
 
-It clears and replaces only the known deterministic records:
+It validates local/mock safety settings, removes rows explicitly marked as demo data plus the narrow legacy synthetic fallback, and reseeds the known deterministic records:
 
 - `run_demo_success`
 - `run_demo_failed`
@@ -67,7 +67,13 @@ It clears and replaces only the known deterministic records:
 - `run_demo_queued`
 - their matching `lead_demo_*` records and related attempt/audit rows
 
-It does not wipe every locally submitted lead or every workflow run in the database. If a fully fresh local database is needed, use the repository's documented local database workflow in [RUNBOOK.md](RUNBOOK.md) and keep the operation local-only.
+If you only need to refresh those four known seed records without removing older synthetic smoke rows, run:
+
+```powershell
+uv run python -m backend.app.leads.demo_seed
+```
+
+Neither command is intended for production data. Keep the operation local-only and use the repository's documented local database workflow in [RUNBOOK.md](RUNBOOK.md) if a fully fresh local database is needed.
 
 ## Suggested 3-5 Minute Demo
 

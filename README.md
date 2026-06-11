@@ -175,6 +175,8 @@ uv run python -m backend.app.leads.demo_reset --apply
 
 Current status: portfolio-ready local demo, not a production service.
 
+Final manual browser QA passed on 2026-06-11. See [STATE.md](STATE.md) for the exact pass criteria, validation history, skipped-gate reasons, and remaining risks.
+
 Known boundaries:
 
 - Real CRM, Slack, Google Sheets, OpenAI, paid-provider, production API, webhook, deployment, auth, and CI flows are intentionally absent.

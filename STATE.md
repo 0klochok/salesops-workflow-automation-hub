@@ -15,6 +15,55 @@
 | Completion | Repo is stable for portfolio handoff pending user review and manual commit/push |
 | Main blocker | None |
 
+## Latest Update - 2026-06-11 Release/Package Documentation Audit
+
+Performed a final release/package documentation audit for portfolio handoff. The audit stayed documentation-only and did not change runtime behavior, package manifests, lockfiles, migrations, CI, deployment config, provider behavior, secrets, commits, or pushes.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Added a concise public-facing note that final manual browser QA passed on 2026-06-11 and points readers to this file for pass criteria and risks |
+| `HANDOFF.md` | Aligned the reviewer setup path with the safer `demo_reset --apply` command and clarified when `demo_seed` is only an optional narrow refresh |
+| `docs/DEMO_SCRIPT.md` | Aligned the short reviewer install/seed path with `demo_reset --apply` |
+| `STATE.md` | Recorded this final documentation audit, validation results, skipped checks, and remaining risks |
+
+### Validation results
+
+| Command | Result |
+|---|---|
+| `git status --short` before edits | Pass; no output |
+| `git diff --check` | Pass; exited 0 with Git line-ending warnings for the edited Markdown files only |
+| `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | Pass; Vitest `v3.2.4`, `5` test files passed, `56` tests passed |
+| `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | Pass; Next.js `15.5.18` production build compiled successfully and generated `8` routes |
+
+### Skipped or limited checks
+
+| Check | Status | Written reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | skipped | This phase changed documentation only, and the requested extra local validation was limited to documented commands already available in package scripts |
+| Dependency install | skipped | No dependency manifests or lockfiles changed; existing local installs were sufficient for validation |
+| Docker/PostgreSQL startup, Alembic, and demo reset execution | skipped | Running local database mutation commands was not needed for a documentation audit and would alter local runtime state |
+| Manual browser QA rerun | skipped | Final manual browser QA was already completed on 2026-06-11 and recorded in this file; no UI/runtime behavior changed in this phase |
+| GitHub Actions / CI validation | skipped | Explicitly forbidden; no workflow files exist or were added |
+| Deployment/staging validation | skipped | Explicitly forbidden and no deployment config exists or was added |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden; the project remains local/mock-only |
+| Staging, commit, push, branch, reset, rebase, or stash | skipped | Explicitly forbidden; Codex did not run these actions |
+
+### Remaining risks
+
+- Final manual browser QA was not rerun during this documentation-only audit.
+- Git reports line-ending normalization warnings for the edited Markdown files; `git diff --check` still passes.
+- The existing FastAPI/Starlette `TestClient` deprecation warning remains a known non-blocking backend test warning from prior validation.
+
+### Suggested commit message
+
+```text
+Finalize portfolio handoff documentation
+```
+
 ## Latest Update - 2026-06-11 Final Manual Browser QA Passed
 
 Final manual browser QA was completed on 2026-06-11 and everything passed.
