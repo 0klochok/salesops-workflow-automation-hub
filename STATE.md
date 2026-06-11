@@ -9,11 +9,102 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | RC demo asset cleanup and local validation |
-| Overall status | Demo asset docs refreshed and new local API docs screenshot captured; automated gates passed; backend docs QA passed; exact frontend `3042` runtime QA is blocked by an existing stale Next dev process |
-| Quality gate status | Required backend/frontend automated gates passed; local PostgreSQL, Alembic, and demo reset passed; fallback frontend QA on `3043` passed; exact `3042` frontend QA needs a restart approval or manual restart |
-| Completion | Partially complete pending exact-port frontend runtime QA on `http://127.0.0.1:3042` |
-| Main blocker | Existing Node process `8120` on `127.0.0.1:3042` returns Next dev 500 errors after the required production build rewrote `.next`; Codex did not stop it because process-stop approval was rejected |
+| Current phase | Final demo/docs consistency and portfolio-readiness pass |
+| Overall status | Active demo docs are consistent with the current local-only `/docs` page and `/openapi.json`; screenshot inventory matches disk; canonical `3042` frontend QA passed |
+| Quality gate status | Required backend/frontend automated gates passed; local PostgreSQL, Alembic, demo reset, backend docs QA, OpenAPI QA, and canonical frontend route QA passed |
+| Completion | Complete for this final documentation/demo-readiness pass |
+| Main blocker | None |
+
+## Latest Update - 2026-06-11 Final Demo Docs Consistency Pass
+
+Audited `README.md`, `RUNBOOK.md`, `STATE.md`, `docs/DEMO_ASSETS.md`, `docs/DEMO_SCRIPT.md`, and `docs/assets/README.md` for the current local-only API docs evidence. The current docs evidence is `docs/assets/screenshots/salesops-local-api-docs.png`, and the backend `/docs` page is a local-only HTML page that links to `/openapi.json`.
+
+No new screenshot was created. The existing screenshot inventory under `docs/assets/screenshots/` contains exactly the nine documented files, including `salesops-local-api-docs.png`, and does not contain `salesops-docs-swagger.png`.
+
+PowerShell sandbox note: sandboxed PowerShell still failed with `CreateProcessAsUserW failed: 5`, so requested local commands were run through approved escalated PowerShell. Commands stayed local to the repository, local Docker/PostgreSQL, local FastAPI/Next.js services, and localhost HTTP checks.
+
+### What changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Clarified that the current `/docs` evidence is the local-only API docs page with its `/openapi.json` link |
+| `docs/DEMO_SCRIPT.md` | Updated the reviewer path to use the frontend `/docs` redirect and verify `/openapi.json` |
+| `docs/assets/README.md` | Clarified that `salesops-local-api-docs.png` includes the `/openapi.json` link |
+| `STATE.md` | Recorded this audit, validation, manual QA, skipped checks, and remaining risks |
+
+`RUNBOOK.md` and `docs/DEMO_ASSETS.md` were audited and already described the current local-only `/docs` page and `/openapi.json` correctly, so they were left unchanged.
+
+### Required gate results
+
+| Gate | Command | Result |
+|---|---|---|
+| Repo status | `git status --short` | Pass; final output was `M README.md`, `M STATE.md`, `M docs/DEMO_SCRIPT.md`, and `M docs/assets/README.md` |
+| Focused docs tests | `uv run pytest tests\test_docs.py` | Pass; 2 passed, 1 known FastAPI/Starlette `TestClient` deprecation warning |
+| Backend tests | `uv run pytest` | Pass; 69 passed, 1 known FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint | `uv run ruff check .` | Pass; all checks passed |
+| Backend typecheck | `uv run mypy .` | Pass; no issues found in 32 source files |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| Frontend tests | `pnpm --dir apps/web test` | Pass; 5 test files passed, 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes including `/docs` |
+| Whitespace check | `git diff --check` | Pass; exit 0 with Git LF-to-CRLF working-copy warnings for touched Markdown only |
+
+### Manual QA results
+
+| Check | Command or URL | Result |
+|---|---|---|
+| Port precheck | `Get-NetTCPConnection` for `8028` and `3042` | Pass; both ports were free before QA |
+| PostgreSQL | `docker compose up -d postgres` | Pass; `salesops-postgres` was running |
+| Alembic | `uv run alembic upgrade head` | Pass; PostgreSQL migration context initialized and no pending migration output |
+| Demo reset | `uv run python -m backend.app.leads.demo_reset --apply` | Pass; deleted 4 runs, 4 leads, 8 attempts, and 18 audit records, then seeded 4 demo runs |
+| Backend docs | `http://127.0.0.1:8028/docs` | Pass; HTTP 200, local docs title present, `/openapi.json` link present, no requested remote-runtime markers |
+| OpenAPI JSON | `http://127.0.0.1:8028/openapi.json` | Pass; title `SalesOps Workflow Automation Hub API` |
+| Frontend home | `http://127.0.0.1:3042/` | Pass; HTTP 200, `Lead intake form` and `CSV import` present |
+| Frontend admin | `http://127.0.0.1:3042/admin/runs` and `/api/leads/runs` | Pass; HTTP 200, admin heading present, seeded `run_demo_failed` available through the local proxy |
+| Frontend docs redirect | `http://127.0.0.1:3042/docs` | Pass; HTTP 307 to `http://127.0.0.1:8028/docs` |
+| Port cleanup | `Stop-Process` for the backend/frontend process IDs started by Codex | Pass; ports `8028` and `3042` were clear afterward |
+
+The first local HTTP QA script failed before frontend checks because `$home` conflicts with PowerShell's read-only `$HOME` variable. The corrected script reran successfully; this was a script variable-name issue, not an application failure.
+
+### Documentation and pattern checks
+
+| Check | Result |
+|---|---|
+| Active screenshot inventory | Pass; actual files under `docs/assets/screenshots/` match the documented current set |
+| Old asset file on disk | Pass; `salesops-docs-swagger.png` is absent from `docs/assets/screenshots/` |
+| Old asset references in active docs | Pass/limited; active docs mention `salesops-docs-swagger.png` only as removed legacy history |
+| Swagger wording in active docs | Pass/limited; active docs mention Swagger only to say the current docs page is not Swagger UI and the former asset was removed |
+| Remote runtime markers in active docs | Pass; no `cdn`, `unpkg`, or `jsdelivr` matches in active docs outside historical `STATE.md` |
+| Accidental secret markers in active docs | Pass; no matches for the requested key-name/token markers outside historical `STATE.md` |
+| `STATE.md` historical audit | Pass/limited; older sections preserve prior Swagger-era evidence and search-command text, but this latest entry and the meta table are the current source of truth |
+
+### Skipped checks
+
+| Check | Status | Reason |
+|---|---|---|
+| New screenshot capture | Skipped | Not necessary; `salesops-local-api-docs.png` already exists and the inventory matches disk |
+| Fallback frontend port | Skipped | Canonical `127.0.0.1:3042` was free and passed QA |
+| Browser screenshot/video capture | Skipped | Not necessary for this docs consistency pass; localhost HTTP QA verified the required routes and redirect |
+| Real provider or paid API smoke | Skipped | Explicitly forbidden; CRM, Slack, Google Sheets, OpenAI, paid APIs, production APIs, and webhooks remain absent/mock-only |
+| Commit, push, staging, branch, deploy, CI | Skipped | Explicitly forbidden; no GitHub Actions, deployment config, commit, push, or staging action was performed |
+| `.env` read/edit | Skipped | `.env` existence was checked only; contents were not read, printed, edited, or screenshotted |
+
+### Remaining risks
+
+- Manual QA used PowerShell localhost HTTP checks rather than a new visual browser screenshot; no layout or pixel review was needed for this docs-only wording pass.
+- Historical `STATE.md` entries still contain old Swagger-era evidence by design; the current meta table and latest update supersede them.
+- `docker compose up -d postgres` found PostgreSQL already running and it was left running. Backend and frontend QA processes started by Codex were stopped.
+- Ignored generated artifacts from frontend test/build and ignored QA logs may exist locally, but tracked source changes remained documentation-only.
+
+### Confirmation
+
+Codex did not stage, commit, push, create a branch, reset, rebase, stash, deploy, add CI, call paid APIs, call real HubSpot/Slack/Google Sheets/OpenAI, print `.env`, print secrets, edit `.env`, or call real external providers.
+
+### Suggested commit message
+
+```text
+Clarify local docs demo evidence
+```
 
 ## Latest Update - 2026-06-11 RC Demo Asset Cleanup
 

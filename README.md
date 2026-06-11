@@ -74,7 +74,7 @@ Asset notes are in [docs/assets/README.md](docs/assets/README.md), and the optio
 
 Final still screenshots belong in `docs/assets/screenshots/`. Optional GIFs or short recordings belong in `docs/assets/demo/` and should stay untracked until intentionally selected for the portfolio. The exact capture checklist, suggested filenames, and desktop/mobile viewport recommendations are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md).
 
-Additional local captures for the filtered empty state, `/docs` local API docs redirect, and mobile-width layouts are also kept in `docs/assets/screenshots/` for final portfolio review.
+Additional local captures for the filtered empty state, the current local-only `/docs` API docs page with its `/openapi.json` link, and mobile-width layouts are also kept in `docs/assets/screenshots/` for final portfolio review.
 
 ## Quick Start
 
@@ -120,7 +120,7 @@ Open:
 
 - `http://127.0.0.1:3042/` for the public lead form and CSV import.
 - `http://127.0.0.1:3042/admin/runs` for the local-only run dashboard.
-- `http://127.0.0.1:3042/docs` to redirect to the local FastAPI docs at `http://127.0.0.1:8028/docs`.
+- `http://127.0.0.1:3042/docs` to redirect to the local FastAPI docs at `http://127.0.0.1:8028/docs`, which links to `http://127.0.0.1:8028/openapi.json`.
 
 ## Suggested Demo Walkthrough
 

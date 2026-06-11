@@ -50,7 +50,7 @@ This path should take 5-10 minutes after dependencies are installed and the loca
 6. Filter by status, source, owner, error type, date, and search text.
 7. Open `run_demo_failed` and inspect the sanitized failure detail, attempt history, payload summary, and suggested action.
 8. Confirm the admin UI is local-only, shows retry only for failed or queued selected runs, and does not expose demo reset, edit, delete, send, or provider-action controls.
-9. Open `http://127.0.0.1:8028/docs` only as local FastAPI API evidence.
+9. Open `http://127.0.0.1:3042/docs`, confirm it redirects to `http://127.0.0.1:8028/docs`, and confirm the local-only API docs page links to `http://127.0.0.1:8028/openapi.json`.
 10. Mention that all CRM and Slack behavior is deterministic mock behavior backed by local persistence.
 
 ## UI Areas To Inspect
@@ -62,7 +62,7 @@ This path should take 5-10 minutes after dependencies are installed and the loca
 - Date, source, status, lead owner, error type, and search filters.
 - Selected run detail panel.
 - Failed-run suggested action and sanitized payload.
-- Local FastAPI docs at `/docs`.
+- Local FastAPI docs at `/docs` and OpenAPI JSON at `/openapi.json`.
 
 ## Existing Assets
 

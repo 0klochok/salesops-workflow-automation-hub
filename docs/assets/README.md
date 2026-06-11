@@ -22,7 +22,7 @@ Current screenshot set:
 - `salesops-admin-failed-detail.png` - selected failed run with sanitized detail.
 - `salesops-admin-filtered-detail.png` - filtered admin table with selected run detail preserved.
 - `salesops-admin-empty-filter.png` - no-match filtered admin state.
-- `salesops-local-api-docs.png` - current local-only API docs page after the frontend `/docs` redirect.
+- `salesops-local-api-docs.png` - current local-only API docs page after the frontend `/docs` redirect, including the `/openapi.json` link.
 - `salesops-mobile-home.png` - mobile-width public intake layout.
 - `salesops-mobile-admin-runs.png` - mobile-width admin layout.
 
