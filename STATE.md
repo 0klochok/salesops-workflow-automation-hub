@@ -9,11 +9,98 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | RC Final Freeze and Portfolio Handoff Check |
-| Overall status | RC freeze passed; final manual browser QA passed |
-| Quality gate status | Required frontend/backend gates, diff whitespace gate, static Compose validation, workflow/deployment/dependency absence checks, tracked secret/live-endpoint sentinel scans, and final manual browser QA passed |
-| Completion | Repo is stable for portfolio handoff pending user review and manual commit/push |
-| Main blocker | None |
+| Current phase | RC final browser QA and release-readiness sign-off |
+| Overall status | RC local app runtime passed browser QA for `/` and `/admin/runs`; release sign-off is blocked by `/docs` local-only traffic finding |
+| Quality gate status | Required backend/frontend gates passed; local PostgreSQL, Alembic, demo reset, and browser app QA passed; `/docs` browser/local-only check failed because FastAPI default docs reference external CDN assets |
+| Completion | Not signed off until the `/docs` local-only browser traffic issue is accepted or repaired in an approved phase |
+| Main blocker | `http://127.0.0.1:8028/docs` HTML references `https://cdn.jsdelivr.net/...` Swagger assets and `https://fastapi.tiangolo.com/img/favicon.png`; opening it in a browser would make non-local requests |
+
+## Latest Update - 2026-06-11 RC Final Browser QA and Release-Readiness Sign-Off
+
+Performed the requested final local runtime verification on 2026-06-11 at 08:16:54 +03:00. This pass used only local mock/demo paths, local PostgreSQL, FastAPI on `127.0.0.1:8028`, and Next.js on `127.0.0.1:3042`.
+
+This phase changed `STATE.md` only. It did not change backend code, frontend code, migrations, package manifests, lockfiles, GitHub Actions, deployment config, provider config, secrets, commits, pushes, branches, rebases, resets, stashes, or production/paid integrations.
+
+PowerShell sandbox note: the managed sandbox failed before executing commands with `CreateProcessAsUserW failed: 5`, so the requested PowerShell commands were run through approved escalated PowerShell. The commands stayed inside the repository except for local browser/process/runtime operations needed for QA.
+
+### Commands and gate results
+
+| Gate | Command or action | Result |
+|---|---|---|
+| Starting repo state | `git status --short` | Pass; no output |
+| Env guard | `if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }` | Pass; `.env` present, contents not printed |
+| Backend dependency sync | `uv sync` | Pass; resolved 44 packages, checked 42 packages |
+| Frontend dependency install | `pnpm install` | Pass; already up to date, pnpm `11.5.0` |
+| Local PostgreSQL | `docker compose up -d postgres` | Pass; `salesops-postgres` running |
+| Alembic migrations | `uv run alembic upgrade head` | Pass; PostgreSQL migration context initialized and at head |
+| Demo reset | `uv run python -m backend.app.leads.demo_reset --apply` | Pass; initial reset deleted 4 runs, 4 leads, 9 attempts, 19 audit records, then seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Backend tests | `uv run pytest` | Pass; 67 passed, 1 known FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint | `uv run ruff check .` | Pass; all checks passed |
+| Backend typecheck | `uv run mypy .` | Pass; no issues found in 31 source files |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; ESLint exited 0 |
+| Frontend tests | `pnpm --dir apps/web test` | Pass; Vitest 5 files passed, 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled and generated 8 routes |
+| Backend runtime | `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028` | Pass; `/health` returned `status=ok` and service `salesops-workflow-automation-hub` |
+| Frontend runtime | `$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"` plus `$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"` and `pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042` | Pass after stopping a stale listener already on `3042`; clean proxy smoke returned `PROXY_OK` through backend `8028` |
+| Public browser QA | Headless Chrome CDP against `http://127.0.0.1:3042/` | Pass; homepage loaded, lead form submitted synthetic data, latest result showed success, backend dedupe `unique`, CRM `created`, Slack `sent`, CSV import reported `1 of 1 rows submitted locally`, no console warnings/errors, and no non-local network URLs |
+| Admin browser QA | Headless Chrome CDP against `http://127.0.0.1:3042/admin/runs` | Pass; seeded rows rendered, status/source/owner/error-type/date/search filters worked, empty filter state rendered, `View details` opened `run_demo_failed`, scroll/focus moved to `run-detail-heading`, retry succeeded locally, unsafe admin controls were absent, no console warnings/errors, and no non-local network URLs |
+| Post-retry demo restore | `uv run python -m backend.app.leads.demo_reset --apply` | Pass; restored canonical demo state after retry QA; `run_demo_failed` returned to `failed` with 2 attempts |
+| API docs HTML | `Invoke-WebRequest -Uri "http://127.0.0.1:8028/docs" -UseBasicParsing` plus remote-URL scan | Fail for local-only browser requirement; local HTML returned but referenced `https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js`, `https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css`, and `https://fastapi.tiangolo.com/img/favicon.png` |
+| Browser `/docs` open | Not opened in Chrome | Skipped for safety; opening it would trigger known non-local CDN/FastAPI image requests |
+| Workflow directory | `Test-Path -LiteralPath ".\.github\workflows"` | Pass; `False` |
+| Tracked workflow files | `git ls-files -- .github .github/workflows` | Pass; no output |
+| Secret/private-key scan | `git grep -n -I -E "...secret/private-key sentinel..." -- . ":(exclude)STATE.md"` | Pass; no matches, exit 1 means no matches |
+| Live-provider endpoint scan | `git grep -n -I -E "...live provider endpoint sentinel..." -- . ":(exclude)STATE.md"` | Pass; no matches, exit 1 means no matches |
+| Changed-doc forbidden git/deployment command scan | `git diff -- STATE.md | Select-String -Pattern "git add|git commit|git push|git reset|git rebase|git stash|deploy|wrangler|vercel|netlify|gh workflow"` | Pass/limited; matches were documentation evidence or negative confirmation around deployment, not runnable forbidden commands |
+| Final whitespace check | `git diff --check` | Pass; exit 0 with Git's LF-to-CRLF working-copy warning for `STATE.md` |
+| Final changed files | `git diff --name-only` | Pass; `STATE.md` only |
+| Final repo state | `git status --short` | Pass; `M STATE.md` only |
+
+### Browser QA evidence
+
+| Check | Result |
+|---|---|
+| `http://127.0.0.1:3042/` homepage | Pass; title `SalesOps Workflow Automation Hub`, visible `Lead intake form` and `CSV import` |
+| Lead form submit | Pass; synthetic `rc.browser.qa.<timestamp>@example.com` lead produced success, backend dedupe `unique`, CRM `created`, Slack `sent` |
+| CSV import path | Pass; synthetic CSV row submitted locally and summary showed `1 of 1 rows submitted locally.` |
+| `http://127.0.0.1:3042/admin/runs` | Pass; rendered `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Filters | Pass; status `failed`, source `csv_upload`, owner `Maya Patel`, error type `adapter`, date `2026-06-01` to `2026-06-01`, and no-match search were verified through URL and DOM state |
+| View details | Pass; `run_demo_failed` detail rendered, URL became `?runId=run_demo_failed`, `scrollY=1959`, detail top was `94`, and active element was `run-detail-heading` |
+| Guarded retry | Pass; failed run showed `Retry run`, retry succeeded locally, and the detail showed `Retry outcome: request succeeded and was recorded locally.` |
+| Unsafe controls | Pass; visible admin buttons were `Reset filters` and `View details`; no delete, edit, resubmit, rerun, send, archive, worker, reset-demo, or provider controls were visible |
+| Local-only app traffic | Pass for `/` and `/admin/runs`; Chrome CDP saw no non-local HTTP(S) URLs for those app pages |
+| API docs browser traffic | Fail/blocked; `/docs` HTML uses external Swagger/FastAPI assets, so browser-opening `/docs` would not remain local-only |
+
+### Skipped checks and reasons
+
+| Check | Status | Reason |
+|---|---|---|
+| In-app Browser plugin | skipped/fallback used | The Browser skill was read, but tool discovery returned no required `node_repl js` tool. Headless Chrome through local DevTools was used without adding dependencies |
+| Browser open of `http://127.0.0.1:8028/docs` | skipped | The local `/docs` HTML was inspected first and contains external asset URLs; opening it in a browser would make non-local requests |
+| GitHub Actions or CI | skipped | Explicitly forbidden; workflow absence was checked locally instead |
+| Deployment/staging validation | skipped | Explicitly forbidden and no deployment was attempted |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden; only local mock/demo paths were used |
+| Git staging, commit, push, branch, rebase, reset, stash, or destructive checkout | skipped | Explicitly forbidden; Codex did not run these operations |
+
+### Remaining risks
+
+- Release sign-off is blocked until the `/docs` local-only traffic issue is either accepted as a known FastAPI Swagger UI limitation or fixed in an approved repair phase by serving docs assets locally or disabling/replacing Swagger UI for the portfolio path.
+- Headless Chrome covered desktop viewport behavior for the requested flows; manual visual review in a visible browser is still recommended before recording portfolio assets.
+- Browser QA submitted synthetic local leads and retried one failed run, then `demo_reset --apply` restored the canonical four seeded demo runs.
+- Docker PostgreSQL was left running because the requested setup started it. Backend and frontend dev servers started by Codex were stopped after QA.
+- The known FastAPI/Starlette `TestClient` deprecation warning remains non-blocking.
+
+### Confirmation
+
+- Codex did not commit, push, create a branch, rebase, reset, stash, deploy, add CI, call paid APIs, call real HubSpot/Slack/Google Sheets/OpenAI, print `.env`, print secrets, or call real external providers.
+- The only tracked file intentionally changed in this phase is `STATE.md`.
+
+### Suggested commit message
+
+```text
+Record RC final browser QA evidence
+```
 
 ## Latest Update - 2026-06-11 RC Final Manual Verification + Portfolio Release Evidence
 
