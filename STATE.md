@@ -9,11 +9,131 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | RC final browser QA and release-readiness sign-off |
-| Overall status | RC local app runtime passed browser QA for `/` and `/admin/runs`; release sign-off is blocked by `/docs` local-only traffic finding |
-| Quality gate status | Required backend/frontend gates passed; local PostgreSQL, Alembic, demo reset, and browser app QA passed; `/docs` browser/local-only check failed because FastAPI default docs reference external CDN assets |
-| Completion | Not signed off until the `/docs` local-only browser traffic issue is accepted or repaired in an approved phase |
-| Main blocker | `http://127.0.0.1:8028/docs` HTML references `https://cdn.jsdelivr.net/...` Swagger assets and `https://fastapi.tiangolo.com/img/favicon.png`; opening it in a browser would make non-local requests |
+| Current phase | RC `/docs` local-only release-blocker repair |
+| Overall status | RC `/docs` release blocker repaired; local app runtime/browser QA passed for `/`, `/admin/runs`, and `/docs` with no non-local browser requests |
+| Quality gate status | Required backend/frontend gates passed; local PostgreSQL, Alembic, demo reset, runtime smoke, and headless Chrome local-only QA passed |
+| Completion | Ready for user review; refresh the legacy `/docs` screenshot before final portfolio use if it still shows Swagger UI |
+| Main blocker | Resolved; backend `/docs` now serves local-only HTML linking `/openapi.json`, with FastAPI CDN-backed Swagger/ReDoc pages disabled |
+
+## Latest Update - 2026-06-11 RC Docs Local-Only Release Blocker Repair
+
+Repaired the RC release blocker where `/docs` was unsafe for strict local-only browser QA. The root cause was FastAPI's default Swagger UI HTML: it referenced remote Swagger assets from `cdn.jsdelivr.net` and a FastAPI favicon from `fastapi.tiangolo.com`. The Next.js `/docs` route only redirected to backend `/docs`; it did not introduce external assets.
+
+The repair disables FastAPI's generated Swagger/ReDoc pages and replaces backend `/docs` with a simple local-only HTML page that links to `/openapi.json`. The OpenAPI JSON endpoint remains available. The frontend `/docs` redirect remains unchanged and now lands on the local-only backend docs page.
+
+PowerShell sandbox note: the managed sandbox still failed to start PowerShell with `CreateProcessAsUserW failed: 5`, so local PowerShell commands were run through approved escalated PowerShell. Commands stayed local to the repo and local runtime services except for Docker/Chrome process operations needed for requested QA.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `backend/app/main.py` | Disabled generated FastAPI Swagger/ReDoc docs pages and added local-only `/docs` HTML response |
+| `tests/test_docs.py` | Added regression coverage for local-only `/docs` HTML and preserved `/openapi.json` |
+| `README.md` | Replaced stale `/docs` Swagger wording with local API docs wording |
+| `RUNBOOK.md` | Updated manual `/docs` QA instructions to require local-only docs and `/openapi.json` link |
+| `docs/DEMO_ASSETS.md` | Updated `/docs` capture guidance for the local-only docs page; retained the legacy screenshot filename |
+| `docs/assets/README.md` | Noted that the legacy `/docs` screenshot filename should be refreshed if it still shows Swagger UI |
+| `STATE.md` | Recorded this repair, validation, browser QA, and remaining risks |
+
+### Commands and gate results
+
+| Gate | Command or action | Result |
+|---|---|---|
+| Starting repo state | `git status --short` | Pass; no output |
+| Focused docs tests | `uv run pytest tests/test_docs.py` | Pass; 2 passed, 1 known FastAPI/Starlette `TestClient` deprecation warning |
+| Backend tests | `uv run pytest` | Pass; 69 passed, 1 known FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint, first run | `uv run ruff check .` | Fail; Ruff requested import-block blank-line cleanup in touched files only |
+| Backend lint, final run | `uv run ruff check .` | Pass; all checks passed |
+| Backend typecheck | `uv run mypy .` | Pass; no issues found in 32 source files |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| Frontend tests | `pnpm --dir apps/web test` | Pass; Vitest 5 files passed, 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes including `/docs` |
+| Local PostgreSQL | `docker compose up -d postgres` | Pass; `salesops-postgres` was running |
+| Alembic migrations | `uv run alembic upgrade head` | Pass; PostgreSQL migration context initialized and at head |
+| Demo reset | `uv run python -m backend.app.leads.demo_reset --apply` | Pass; deleted 4 runs, 4 leads, 8 attempts, and 18 audit records, then seeded 4 demo runs |
+| Port precheck | `Get-NetTCPConnection` on ports `8028` and `3042` | Pass; both ports were free before local runtime QA |
+| Playwright availability | `pnpm --dir apps/web exec playwright --version` | Expected unavailable; `playwright` command not found and no dependency was installed |
+| Existing CDP dependency | `uv run python -c "import websockets; print('websockets available')"` | Pass; existing `websockets` package available |
+| Runtime HTTP smoke, final run | Local backend on `127.0.0.1:8028` and frontend on `127.0.0.1:3042` | Pass; `/health`, `/`, `/admin/runs`, backend `/docs`, `/openapi.json`, and frontend `/docs` redirect worked locally |
+| Frontend `/docs` redirect | .NET `HttpClient` with redirects disabled | Pass; `GET http://127.0.0.1:3042/docs` returned `307` to `http://127.0.0.1:8028/docs` |
+| Backend docs HTML | `Invoke-WebRequest -Uri "http://127.0.0.1:8028/docs" -UseBasicParsing` plus forbidden-marker check | Pass; HTTP 200, contained `/openapi.json`, and matched no forbidden docs runtime URL markers |
+| OpenAPI JSON | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/openapi.json"` | Pass; title `SalesOps Workflow Automation Hub API` |
+| Browser QA | Headless Chrome CDP against `/`, `/admin/runs`, and `/docs` | Pass; expected text rendered, no console warnings/errors, no runtime exceptions, no HTTP 4xx/5xx browser responses, no non-local requests, and no forbidden docs HTML markers |
+| Source scan | Requested `Get-ChildItem ... Select-String` URL scan | Pass/limited; command completed, with matches limited to local URLs, tests/sentinel strings, generated `.pytest_cache` docs, documentation history, and the new negative-test markers |
+| Stale Swagger wording scan | `rg -n "Swagger UI|Swagger|swagger" README.md RUNBOOK.md docs` | Pass/limited; remaining matches are the legacy screenshot filename and explicit refresh notes |
+| Whitespace check before `STATE.md` update | `git diff --check` | Pass; only Git LF-to-CRLF working-copy warnings |
+| Repo state before `STATE.md` update | `git status --short` | Pass; expected changes in `README.md`, `RUNBOOK.md`, `backend/app/main.py`, `docs/DEMO_ASSETS.md`, `docs/assets/README.md`, and new `tests/test_docs.py` |
+
+Runtime script notes:
+
+- One runtime smoke attempt failed because `$home` conflicts with PowerShell's read-only `$HOME` variable; the cleanup block ran and ports were verified clear before retry.
+- One redirect-inspection attempt failed because `Invoke-WebRequest -MaximumRedirection 0` throws on this PowerShell version; the final pass used .NET `HttpClient` with redirects disabled.
+- No app failure was caused by either script issue.
+
+### Browser QA evidence
+
+| Route | Result |
+|---|---|
+| `http://127.0.0.1:3042/` | Pass; final URL stayed local, title `SalesOps Workflow Automation Hub`, expected `Lead intake form` and `CSV import` text rendered, 6 requests, no console warnings/errors, no exceptions, no non-local requests |
+| `http://127.0.0.1:3042/admin/runs` | Pass; final URL stayed local, title `SalesOps Workflow Automation Hub`, expected `Admin run history` and `run_demo_failed` text rendered, 15 requests, no console warnings/errors, no exceptions, no non-local requests |
+| `http://127.0.0.1:3042/docs` | Pass; redirected to `http://127.0.0.1:8028/docs`, title `SalesOps Workflow Automation Hub API Docs`, expected local docs and `OpenAPI contract` text rendered, 5 requests, no console warnings/errors, no exceptions, no non-local requests, no forbidden HTML markers |
+
+### Local-only docs assertions
+
+| Assertion | Result |
+|---|---|
+| Backend `/docs` no longer uses FastAPI default Swagger UI | Pass; `docs_url=None` and `redoc_url=None` disable generated external-asset docs pages |
+| Backend `/docs` has no `cdn.jsdelivr.net`, `fastapi.tiangolo.com`, `unpkg.com`, `cdnjs.cloudflare.com`, Google Fonts, `http://`, or `https://` references | Pass; covered by `tests/test_docs.py` and runtime HTML check |
+| `/openapi.json` remains available | Pass; backend test and runtime check returned title `SalesOps Workflow Automation Hub API` |
+| Next.js `/docs` remains the reviewer entrypoint | Pass; route still returns `307` to configured backend `/docs` |
+
+### Manual browser QA instructions
+
+Run from the repository root in PowerShell:
+
+```powershell
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/docs`
+
+Pass criteria:
+
+- `/docs` redirects to `http://127.0.0.1:8028/docs`.
+- `/docs` renders `SalesOps Workflow Automation Hub API Docs` and links to `/openapi.json`.
+- Browser console shows no warnings/errors.
+- Browser network requests stay on `127.0.0.1`, `localhost`, or local browser internals only; no CDN, FastAPI-site favicon, Google Fonts, or other non-local runtime URLs.
+- `/` still renders the lead intake form and CSV import.
+- `/admin/runs` still renders seeded run history, including `run_demo_failed`.
+
+### Remaining risks
+
+- The existing screenshot file `docs/assets/screenshots/salesops-docs-swagger.png` may still show the old Swagger UI capture. Text docs now mark the legacy filename and recommend refreshing it before final portfolio use.
+- The broad requested source scan intentionally matches historical `STATE.md` evidence, local URLs, tests, generated `.pytest_cache` docs, and negative-test sentinel strings. The repaired runtime `/docs` HTML and browser network evidence are the relevant release-blocker signals.
+- Docker PostgreSQL was left running because the requested runtime setup started it. Backend, frontend, and headless Chrome processes started by Codex were stopped after QA.
+- The known FastAPI/Starlette `TestClient` deprecation warning remains non-blocking.
+
+### Confirmation
+
+- Codex did not stage, commit, push, create a branch, rebase, reset, stash, deploy, add CI, call paid APIs, call real HubSpot/Slack/Google Sheets/OpenAI, print `.env`, print secrets, or call real external providers.
+- No production credentials, real provider calls, GitHub Actions, deployment config, migrations, schema changes, retry logic, lead form logic, or unrelated UI behavior were changed.
+
+### Suggested commit message
+
+```text
+Make API docs local-only for RC QA
+```
 
 ## Latest Update - 2026-06-11 RC Final Browser QA and Release-Readiness Sign-Off
 

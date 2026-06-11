@@ -22,7 +22,7 @@ Current screenshot set:
 - `salesops-admin-failed-detail.png` - selected failed run with sanitized detail.
 - `salesops-admin-filtered-detail.png` - filtered admin table with selected run detail preserved.
 - `salesops-admin-empty-filter.png` - no-match filtered admin state.
-- `salesops-docs-swagger.png` - FastAPI Swagger UI after the frontend `/docs` redirect.
+- `salesops-docs-swagger.png` - legacy filename for the local-only API docs page after the frontend `/docs` redirect; refresh before final portfolio use if the screenshot still shows Swagger UI.
 - `salesops-mobile-home.png` - mobile-width public intake layout.
 - `salesops-mobile-admin-runs.png` - mobile-width admin layout.
 

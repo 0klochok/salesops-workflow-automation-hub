@@ -74,7 +74,7 @@ Asset notes are in [docs/assets/README.md](docs/assets/README.md), and the optio
 
 Final still screenshots belong in `docs/assets/screenshots/`. Optional GIFs or short recordings belong in `docs/assets/demo/` and should stay untracked until intentionally selected for the portfolio. The exact capture checklist, suggested filenames, and desktop/mobile viewport recommendations are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md).
 
-Additional local captures for the filtered empty state, `/docs` Swagger redirect, and mobile-width layouts are also kept in `docs/assets/screenshots/` for final portfolio review.
+Additional local captures for the filtered empty state, `/docs` local API docs redirect, and mobile-width layouts are also kept in `docs/assets/screenshots/` for final portfolio review.
 
 ## Quick Start
 

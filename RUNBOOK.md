@@ -475,7 +475,7 @@ Recommended final stills:
 - `salesops-admin-failed-detail.png`: failed run detail with sanitized payload and suggested action.
 - `salesops-admin-filtered-detail.png`: selected run detail preserved while filters are active.
 - `salesops-admin-empty-filter.png`: optional no-match filter state.
-- `salesops-docs-swagger.png`: optional FastAPI Swagger UI after the frontend `/docs` redirect.
+- `salesops-docs-swagger.png`: optional local-only API docs page after the frontend `/docs` redirect. The filename is retained from the earlier Swagger capture.
 - `salesops-mobile-home.png`: optional mobile public intake layout.
 - `salesops-mobile-admin-runs.png`: optional mobile admin layout.
 
@@ -490,7 +490,7 @@ On `/admin/runs`, verify:
 - no demo reset, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `PUT`, `PATCH`, or `DELETE` controls are visible or triggered;
 - if the Next.js dev tools badge appears because the frontend is running under `next dev`, keep it closed or crop it out of final footage when desired. It is a local development indicator, not app behavior or an integration.
 
-On `/docs`, verify that the browser lands on the local FastAPI Swagger UI served by the backend and remains on `127.0.0.1`.
+On `/docs`, verify that the browser lands on the local-only FastAPI API docs page served by the backend, links to `/openapi.json`, and remains on `127.0.0.1` with no non-local requests.
 
 On `/`, verify:
 

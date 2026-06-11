@@ -24,7 +24,7 @@ Use local URLs only:
 - `http://127.0.0.1:3042/`
 - `http://127.0.0.1:3042/admin/runs`
 - `http://127.0.0.1:3042/docs`
-- `http://127.0.0.1:8028/docs` after the redirect lands on FastAPI Swagger UI
+- `http://127.0.0.1:8028/docs` after the redirect lands on the local-only API docs page
 
 ## Recommended Still Screenshots
 
@@ -37,7 +37,7 @@ Use local URLs only:
 | `docs/assets/screenshots/salesops-admin-failed-detail.png` | Included | Desktop | `run_demo_failed` selected detail | Sanitized intake payload, attempts, failure context, and suggested action |
 | `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Included | Desktop | Filtered admin state with selected detail preserved | Filters active while selected run detail remains inspectable |
 | `docs/assets/screenshots/salesops-admin-empty-filter.png` | Included | Desktop | No-match filtered admin state | The filtered empty state and reset path are understandable |
-| `docs/assets/screenshots/salesops-docs-swagger.png` | Included | Desktop | FastAPI Swagger UI after `/docs` redirect | Local API docs title, local `127.0.0.1:8028/docs` URL, and no external provider page |
+| `docs/assets/screenshots/salesops-docs-swagger.png` | Included; refresh recommended | Desktop | Local-only API docs page after `/docs` redirect; filename retained from the earlier Swagger capture | Local docs title, `/openapi.json` link, local `127.0.0.1:8028/docs` URL, and no external provider page |
 | `docs/assets/screenshots/salesops-mobile-home.png` | Included | Mobile | Public page at mobile width | Form and CSV controls stack cleanly without overlap or horizontal page overflow |
 | `docs/assets/screenshots/salesops-mobile-admin-runs.png` | Included | Mobile | Admin page at mobile width | Filters wrap cleanly and the table scrolls inside its container |
 
@@ -74,7 +74,7 @@ Desktop stills to capture:
 5. `/admin/runs?runId=run_demo_failed`: capture `salesops-admin-failed-detail.png` with sanitized failure detail visible.
 6. `/admin/runs?status=success&runId=run_demo_failed`: capture `salesops-admin-filtered-detail.png` with the selected-run-hidden notice and detail visible.
 7. `/admin/runs?q=no-such-run`: capture `salesops-admin-empty-filter.png` if an empty-state asset is wanted.
-8. `/docs`: follow the redirect and capture `salesops-docs-swagger.png` after the browser lands on `http://127.0.0.1:8028/docs`.
+8. `/docs`: follow the redirect and capture `salesops-docs-swagger.png` after the browser lands on `http://127.0.0.1:8028/docs` and shows the local-only API docs page.
 
 Mobile stills to capture:
 
