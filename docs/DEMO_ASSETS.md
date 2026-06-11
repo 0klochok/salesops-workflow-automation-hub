@@ -37,15 +37,19 @@ Use local URLs only:
 | `docs/assets/screenshots/salesops-admin-failed-detail.png` | Included | Desktop | `run_demo_failed` selected detail | Sanitized intake payload, attempts, failure context, and suggested action |
 | `docs/assets/screenshots/salesops-admin-filtered-detail.png` | Included | Desktop | Filtered admin state with selected detail preserved | Filters active while selected run detail remains inspectable |
 | `docs/assets/screenshots/salesops-admin-empty-filter.png` | Included | Desktop | No-match filtered admin state | The filtered empty state and reset path are understandable |
-| `docs/assets/screenshots/salesops-docs-swagger.png` | Included; refresh recommended | Desktop | Local-only API docs page after `/docs` redirect; filename retained from the earlier Swagger capture | Local docs title, `/openapi.json` link, local `127.0.0.1:8028/docs` URL, and no external provider page |
+| `docs/assets/screenshots/salesops-local-api-docs.png` | Included | Desktop | Local-only API docs page after `/docs` redirect | Local docs title, `/openapi.json` link, and no Swagger UI or external provider page |
 | `docs/assets/screenshots/salesops-mobile-home.png` | Included | Mobile | Public page at mobile width | Form and CSV controls stack cleanly without overlap or horizontal page overflow |
 | `docs/assets/screenshots/salesops-mobile-admin-runs.png` | Included | Mobile | Admin page at mobile width | Filters wrap cleanly and the table scrolls inside its container |
 
-The included screenshots cover the main page, CSV session dashboard, run history, failed detail, filtered detail, empty-filter state, `/docs` redirect target, and mobile-width public/admin layouts. The optional form-success screenshot is intentionally not part of the current portfolio set and should only be added if it improves the final story.
+The included screenshots cover the main page, CSV session dashboard, run history, failed detail, filtered detail, empty-filter state, the current local-only `/docs` page, and mobile-width public/admin layouts. The optional form-success screenshot is intentionally not part of the current portfolio set and should only be added if it improves the final story.
 
-## Release Audit Verification - 2026-06-09
+## Screenshot Refresh Verification - 2026-06-11
 
-Committed screenshot assets were verified during the final public portfolio release audit:
+The old `salesops-docs-swagger.png` capture was removed after `/docs` stopped using Swagger UI. The current docs screenshot is `docs/assets/screenshots/salesops-local-api-docs.png`, captured from `http://127.0.0.1:8028/docs` after the backend started locally. It shows the local-only API docs page and `/openapi.json` link, with no Swagger UI, CDN asset, provider dashboard, real account data, or external screenshot source.
+
+## Prior Release Audit Verification - 2026-06-09
+
+The 2026-06-09 release audit verified the then-current core screenshot set:
 
 - `docs/assets/screenshots/salesops-home.png`
 - `docs/assets/screenshots/salesops-csv-session-dashboard.png`
@@ -74,7 +78,7 @@ Desktop stills to capture:
 5. `/admin/runs?runId=run_demo_failed`: capture `salesops-admin-failed-detail.png` with sanitized failure detail visible.
 6. `/admin/runs?status=success&runId=run_demo_failed`: capture `salesops-admin-filtered-detail.png` with the selected-run-hidden notice and detail visible.
 7. `/admin/runs?q=no-such-run`: capture `salesops-admin-empty-filter.png` if an empty-state asset is wanted.
-8. `/docs`: follow the redirect and capture `salesops-docs-swagger.png` after the browser lands on `http://127.0.0.1:8028/docs` and shows the local-only API docs page.
+8. `/docs`: follow the redirect and capture `salesops-local-api-docs.png` after the browser lands on `http://127.0.0.1:8028/docs` and shows the local-only API docs page.
 
 Mobile stills to capture:
 

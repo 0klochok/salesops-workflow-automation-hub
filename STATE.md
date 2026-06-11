@@ -9,11 +9,101 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | RC `/docs` local-only release-blocker repair |
-| Overall status | RC `/docs` release blocker repaired; local app runtime/browser QA passed for `/`, `/admin/runs`, and `/docs` with no non-local browser requests |
-| Quality gate status | Required backend/frontend gates passed; local PostgreSQL, Alembic, demo reset, runtime smoke, and headless Chrome local-only QA passed |
-| Completion | Ready for user review; refresh the legacy `/docs` screenshot before final portfolio use if it still shows Swagger UI |
-| Main blocker | Resolved; backend `/docs` now serves local-only HTML linking `/openapi.json`, with FastAPI CDN-backed Swagger/ReDoc pages disabled |
+| Current phase | RC demo asset cleanup and local validation |
+| Overall status | Demo asset docs refreshed and new local API docs screenshot captured; automated gates passed; backend docs QA passed; exact frontend `3042` runtime QA is blocked by an existing stale Next dev process |
+| Quality gate status | Required backend/frontend automated gates passed; local PostgreSQL, Alembic, and demo reset passed; fallback frontend QA on `3043` passed; exact `3042` frontend QA needs a restart approval or manual restart |
+| Completion | Partially complete pending exact-port frontend runtime QA on `http://127.0.0.1:3042` |
+| Main blocker | Existing Node process `8120` on `127.0.0.1:3042` returns Next dev 500 errors after the required production build rewrote `.next`; Codex did not stop it because process-stop approval was rejected |
+
+## Latest Update - 2026-06-11 RC Demo Asset Cleanup
+
+Refreshed the demo asset inventory after the old Swagger UI screenshot was manually removed. The current `/docs` page is a local-only backend HTML page, not Swagger UI, so the docs now use the truthful screenshot filename `salesops-local-api-docs.png` and explicitly mark the old `salesops-docs-swagger.png` capture as removed legacy history.
+
+Captured `docs/assets/screenshots/salesops-local-api-docs.png` from `http://127.0.0.1:8028/docs` with local Chrome headless at `1440x1100`. Visual inspection confirmed it shows `SalesOps Workflow Automation Hub API Docs`, the `/openapi.json` link, and no Swagger UI or remote provider page.
+
+PowerShell sandbox note: sandboxed PowerShell still failed with `CreateProcessAsUserW failed: 5`, so local commands were run through approved escalated PowerShell. Commands stayed local to the repository, local Docker/PostgreSQL, local FastAPI/Next.js services, and local Chrome screenshot/QA tooling.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `docs/assets/screenshots/salesops-local-api-docs.png` | Added current local-only API docs screenshot |
+| `docs/DEMO_ASSETS.md` | Replaced stale Swagger-named screenshot guidance with the new local API docs screenshot and refresh note |
+| `docs/assets/README.md` | Updated current screenshot inventory and marked the old Swagger screenshot as removed legacy history |
+| `docs/DEMO_SCRIPT.md` | Expanded the existing asset list to include empty-filter, docs, and mobile screenshots |
+| `RUNBOOK.md` | Updated phase metadata and recommended final docs screenshot filename |
+| `STATE.md` | Recorded this cleanup, validation, manual QA, blocker, and remaining risk |
+
+### Required gate results
+
+| Gate | Command | Result |
+|---|---|---|
+| Repo status | `git status --short` | Pass; `M RUNBOOK.md`, `M docs/DEMO_ASSETS.md`, `M docs/DEMO_SCRIPT.md`, `M docs/assets/README.md`, `?? docs/assets/screenshots/salesops-local-api-docs.png` |
+| Focused docs tests | `uv run pytest tests/test_docs.py` | Pass; 2 passed, 1 known FastAPI/Starlette `TestClient` deprecation warning |
+| Backend tests | `uv run pytest` | Pass; 69 passed, 1 known FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint | `uv run ruff check .` | Pass; all checks passed |
+| Backend typecheck | `uv run mypy .` | Pass; no issues found in 32 source files |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| Frontend tests | `pnpm --dir apps/web test` | Pass; Vitest 5 files passed, 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes including `/docs` |
+| Whitespace check | `git diff --check` | Pass with Git line-ending warnings only for touched Markdown files; exit code 0 |
+
+### Runtime and manual QA
+
+| Check | Command or URL | Result |
+|---|---|---|
+| PostgreSQL | `docker compose up -d postgres` | Pass; `salesops-postgres` was already running |
+| Alembic | `uv run alembic upgrade head` | Pass; PostgreSQL migration context initialized and no pending migration output |
+| Demo reset | `uv run python -m backend.app.leads.demo_reset --apply` | Pass; deleted 4 runs, 4 leads, 8 attempts, and 18 audit records, then seeded 4 demo runs |
+| Backend server command | `uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028` | Not rerun; port `8028` was already occupied by Python process `5724` serving the expected local backend |
+| Frontend server command | `pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042` | Not rerun; port `3042` was already occupied by Node process `8120` |
+| Backend docs | `http://127.0.0.1:8028/docs` | Pass; HTTP 200, local docs title present, `/openapi.json` link present, 0 forbidden remote docs markers |
+| OpenAPI JSON | `http://127.0.0.1:8028/openapi.json` | Pass; title `SalesOps Workflow Automation Hub API` |
+| Frontend exact-port home | `http://127.0.0.1:3042/` | Blocked; existing Next dev server returned HTTP 500 after the required build rewrote `.next` |
+| Frontend exact-port admin | `http://127.0.0.1:3042/admin/runs` | Blocked; existing Next dev server returned HTTP 500 with stale `.next` module errors |
+| Frontend exact-port docs | `http://127.0.0.1:3042/docs` | Blocked; existing Next dev server returned HTTP 500 instead of redirecting |
+| Process-safety approval | `Stop-Process -Id 8120` | Rejected by approval reviewer because the user has not explicitly approved stopping the pre-existing process |
+| Fallback frontend server | `pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3043` | Pass; started on free port `3043` with backend base URL set to `http://127.0.0.1:8028`, then stopped after QA |
+| Fallback home QA | `http://127.0.0.1:3043/` | Pass; HTTP 200, `Lead intake form` and `CSV import` present; temporary screenshot visually confirmed |
+| Fallback admin QA | `http://127.0.0.1:3043/admin/runs` and `/api/leads/runs` | Pass; page HTTP 200 with admin heading; API HTTP 200 included `run_demo_failed`; temporary screenshot visually confirmed seeded run rows |
+| Fallback docs redirect | `http://127.0.0.1:3043/docs` | Pass; HTTP 307 to `http://127.0.0.1:8028/docs`; temporary screenshot visually confirmed local docs page |
+
+### Manual validation recommendation
+
+To finish the exact requested frontend QA, manually stop or approve stopping the existing Node process on `127.0.0.1:3042`, then restart:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/docs`
+
+Expected result: `/` renders the public intake and CSV import, `/admin/runs` renders seeded run history including `run_demo_failed`, `/docs` redirects to `http://127.0.0.1:8028/docs`, and no external provider or CDN request is needed for the docs page.
+
+### Remaining risks
+
+- Exact frontend QA on `3042` is not complete until the pre-existing broken Next dev process is restarted with approval or manually by the user.
+- Backend process `5724`, frontend process `8120`, and Docker PostgreSQL were pre-existing or requested local services and were left running. The fallback `3043` process started by Codex was stopped.
+- The known FastAPI/Starlette `TestClient` deprecation warning remains non-blocking.
+- `git diff --check` reports LF-to-CRLF working-copy warnings for touched Markdown files on Windows, with exit code 0.
+
+### Confirmation
+
+- Codex did not stage, commit, push, create a branch, rebase, reset, stash, deploy, add CI, call paid APIs, call real HubSpot/Slack/Google Sheets/OpenAI, print `.env`, print secrets, or call real external providers.
+- No production credentials, real provider calls, GitHub Actions, deployment config, migrations, schema changes, application features, retry logic, lead form logic, or unrelated UI behavior were changed.
+
+### Suggested commit message
+
+```text
+Refresh local demo assets for docs page
+```
 
 ## Latest Update - 2026-06-11 RC Docs Local-Only Release Blocker Repair
 

@@ -4,11 +4,11 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-10 |
-| Status | final portfolio readiness review |
+| Last updated | 2026-06-11 |
+| Status | RC demo asset cleanup and local validation |
 | Project | salesops-workflow-automation-hub-fresh |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | RC final documentation and release-readiness audit |
+| Current phase | RC demo asset and documentation refresh |
 
 ## 2. Operating Rules
 
@@ -475,7 +475,7 @@ Recommended final stills:
 - `salesops-admin-failed-detail.png`: failed run detail with sanitized payload and suggested action.
 - `salesops-admin-filtered-detail.png`: selected run detail preserved while filters are active.
 - `salesops-admin-empty-filter.png`: optional no-match filter state.
-- `salesops-docs-swagger.png`: optional local-only API docs page after the frontend `/docs` redirect. The filename is retained from the earlier Swagger capture.
+- `salesops-local-api-docs.png`: current local-only API docs page after the frontend `/docs` redirect.
 - `salesops-mobile-home.png`: optional mobile public intake layout.
 - `salesops-mobile-admin-runs.png`: optional mobile admin layout.
 

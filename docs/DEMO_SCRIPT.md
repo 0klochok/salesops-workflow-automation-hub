@@ -73,6 +73,10 @@ Screenshot assets are committed under `docs/assets/screenshots/`:
 - `salesops-admin-run-history.png`
 - `salesops-admin-failed-detail.png`
 - `salesops-admin-filtered-detail.png`
+- `salesops-admin-empty-filter.png`
+- `salesops-local-api-docs.png`
+- `salesops-mobile-home.png`
+- `salesops-mobile-admin-runs.png`
 
 Asset provenance and current recording notes are in `docs/assets/README.md` and `docs/assets/demo/README.md`. Recommended screenshot, GIF, and video shots are listed in `docs/DEMO_ASSETS.md`.
 

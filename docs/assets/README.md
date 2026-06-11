@@ -22,8 +22,10 @@ Current screenshot set:
 - `salesops-admin-failed-detail.png` - selected failed run with sanitized detail.
 - `salesops-admin-filtered-detail.png` - filtered admin table with selected run detail preserved.
 - `salesops-admin-empty-filter.png` - no-match filtered admin state.
-- `salesops-docs-swagger.png` - legacy filename for the local-only API docs page after the frontend `/docs` redirect; refresh before final portfolio use if the screenshot still shows Swagger UI.
+- `salesops-local-api-docs.png` - current local-only API docs page after the frontend `/docs` redirect.
 - `salesops-mobile-home.png` - mobile-width public intake layout.
 - `salesops-mobile-admin-runs.png` - mobile-width admin layout.
+
+The former `salesops-docs-swagger.png` asset was removed after `/docs` stopped using Swagger UI. Do not restore it for the current demo unless it is explicitly labeled as a legacy historical capture.
 
 The 3-5 minute demo script and before/after workflow explanation remain in `HANDOFF.md`.
