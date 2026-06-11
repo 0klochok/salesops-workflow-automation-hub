@@ -15,6 +15,112 @@
 | Completion | Repo is stable for portfolio handoff pending user review and manual commit/push |
 | Main blocker | None |
 
+## Latest Update - 2026-06-11 RC Final Manual Verification + Portfolio Release Evidence
+
+Performed a verification-only release evidence pass for the portfolio RC. This pass did not change app behavior, backend code, frontend code, package manifests, lockfiles, migrations, GitHub Actions, deployment config, provider configuration, secrets, demo/runtime data, commits, pushes, branches, rebases, resets, or stashes.
+
+PowerShell sandbox note: initial managed-sandbox shell startup failed with `CreateProcessAsUserW failed: 5`, so the requested local PowerShell commands were rerun through approved escalated PowerShell. No forbidden git write, deployment, CI, paid API, real-provider, or demo-data mutation command was run.
+
+### Previous RC audit confirmation
+
+| Check | Result |
+|---|---|
+| Latest `STATE.md` entry before this update | Pass; the previous latest entry was `2026-06-11 RC-FINAL Portfolio Release Evidence Audit` |
+| Previous audit accuracy | Pass; it records no runtime behavior changes, no GitHub Actions/deployment/provider changes, reviewer setup using `uv run python -m backend.app.leads.demo_reset --apply`, and skipped runtime mutation/browser checks |
+| Reviewer-facing demo reset guidance | Pass; `README.md`, `HANDOFF.md`, `docs/DEMO_SCRIPT.md`, and `RUNBOOK.md` use `uv run python -m backend.app.leads.demo_reset --apply` as the full reviewer reset path |
+| Remaining `demo_seed` references | Pass; `HANDOFF.md` and `RUNBOOK.md` frame `demo_seed` as a narrower optional refresh of the four known seed records, while asset docs use seed wording as deterministic demo-data context |
+| `.env.example` posture | Pass; placeholder-only local/mock settings, `CRM_PROVIDER=mock`, `SLACK_PROVIDER=mock`, `GOOGLE_SHEETS_PROVIDER=disabled`, and `example.invalid` placeholder URLs |
+
+### Commands run and results
+
+| Command | Result |
+|---|---|
+| `git status --short` | Pass; no output before validation |
+| `rg --files` | Pass; repository file inventory listed expected backend, frontend, docs, tests, Alembic, and asset paths |
+| `Get-Content -LiteralPath README.md -Raw` | Pass; README inspected |
+| `Get-Content -LiteralPath STATE.md -Raw` | Pass; previous latest entry inspected |
+| `rg -n "demo_reset\|demo_seed\|uv run python -m backend\.app\.leads\|seed\|reset" README.md HANDOFF.md docs/DEMO_SCRIPT.md RUNBOOK.md docs/DEMO_ASSETS.md docs/CASE_STUDY.md docs/assets/README.md docs/assets/demo/README.md .env.example` | Pass; full reset path is `demo_reset --apply`; `demo_seed` references are optional or contextual |
+| `git diff --check` | Pass; no output before `STATE.md` update |
+| `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| `pnpm --dir apps/web test -- --run` | Pass; Vitest `v3.2.4`, `5` test files passed, `56` tests passed |
+| `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| `pnpm --dir apps/web build` | Pass; Next.js `15.5.18` compiled successfully and generated `8` routes |
+| `uv run python -c "import backend.app.leads.demo_reset; print('demo_reset import OK')"` | Pass; printed `demo_reset import OK` |
+| `uv run python -m pytest` | Pass with existing warning; Python `3.12.13`, `67 passed`, `1` FastAPI/Starlette `TestClient` deprecation warning |
+| `uv run python -m ruff check .` | Pass; `All checks passed!` |
+| `uv run python -m mypy backend` | Pass; `Success: no issues found in 19 source files` |
+| Tracked content scan for token-shaped secret values, excluding `STATE.md` to avoid historical regex self-matches | Pass; `NO_MATCHES` |
+| Tracked content scan for private-key headers, excluding `STATE.md` to avoid historical regex self-matches | Pass; `NO_MATCHES` |
+| Tracked content scan for live provider/production endpoints, excluding `STATE.md` to avoid historical regex self-matches | Pass; `NO_MATCHES` |
+| Initial tracked content scan for accidental real-provider configuration | Failed as scanner syntax only; `git grep -E` rejected a PCRE lookahead with `Invalid preceding regular expression` |
+| Corrected tracked content scan for accidental real-provider configuration, excluding `STATE.md` to avoid historical regex self-matches | Pass; `NO_MATCHES` |
+| `Test-Path -LiteralPath ..github\workflows` | Pass; `False` for the literal task-provided path |
+| `Test-Path -LiteralPath .\.github\workflows` | Pass; `False` for the canonical repository workflow path |
+| `git ls-files -- .github .github/workflows` | Pass; no tracked workflow files |
+| `git status --short` | Pass; no output before this `STATE.md` update |
+
+### Skipped checks and exact reasons
+
+| Check | Status | Exact reason |
+|---|---|---|
+| `uv run python -m backend.app.leads.demo_reset --apply` | skipped | Explicitly not run because it mutates local demo/runtime data and the user did not approve demo-data mutation in this Codex session |
+| Docker/PostgreSQL startup | skipped | Not part of the requested safe local gate list for this pass; starting local services was unnecessary for the non-mutating verification evidence |
+| Alembic migration against local PostgreSQL | skipped | Not run because the local database runtime path was not needed for the requested safe gates and demo-data mutation was not approved |
+| Browser QA | skipped | No backend/frontend dev servers were started in this verification-only pass; browser QA should be run manually with the local-only checklist below |
+| Dependency install | skipped | Existing local dependencies were available; no dependency manifests or lockfiles changed |
+| GitHub Actions / CI execution | skipped | Explicitly forbidden; workflow absence was checked locally instead |
+| Deployment or staging validation | skipped | Explicitly forbidden and no deployment config was added or used |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, or external-provider smoke | skipped | Explicitly forbidden; the project remains local/mock-only by default |
+| Git staging, commit, push, branch, rebase, reset, stash, or destructive cleanup | skipped | Explicitly forbidden; Codex did not run any git write or destructive operation |
+
+### Manual browser QA checklist
+
+Run these steps from the repository root in PowerShell when you intentionally want to start local services and reset local demo data:
+
+```powershell
+if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
+uv sync
+pnpm install
+docker compose up -d postgres
+uv run alembic upgrade head
+uv run python -m backend.app.leads.demo_reset --apply
+uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/docs`
+
+Manual pass criteria:
+
+- public lead form renders and submits a synthetic lead through local Next.js and FastAPI only;
+- CSV import accepts a small synthetic CSV row and shows the same-session result;
+- `/admin/runs` shows seeded success, failed, queued, and retried runs;
+- date, source, status, owner, error-type, and search filters update the table and URL correctly;
+- selected run detail shows sanitized payload, attempts, failure detail, suggested action, and retry only for failed or queued selected runs;
+- `/docs` redirects to local FastAPI docs at `http://127.0.0.1:8028/docs`;
+- browser network activity stays on `127.0.0.1`, `localhost`, or local Next.js/FastAPI routes;
+- no secrets, real customer data, provider dashboards, live webhooks, real external provider calls, deployment actions, or unsafe admin mutation controls appear.
+
+### Remaining risks
+
+- Manual browser QA and the local PostgreSQL reset path were not rerun in this pass.
+- The content sentinel scans intentionally exclude `STATE.md` because historical evidence entries contain literal regex command text that self-matches; reviewer-facing docs and source/config files were scanned.
+- `uv run python -m pytest` still emits the known non-blocking FastAPI/Starlette `TestClient` deprecation warning.
+- The first accidental real-provider configuration scan failed because the scanner used unsupported regex syntax; the corrected ERE-compatible scan passed with `NO_MATCHES`.
+- Final tracked diff should remain limited to this `STATE.md` release evidence update until the user manually reviews, stages, commits, and pushes.
+
+### Suggested commit message
+
+```text
+Record RC final manual verification evidence
+```
+
 ## Latest Update - 2026-06-11 RC-FINAL Portfolio Release Evidence Audit
 
 Performed a final portfolio release evidence audit focused on reviewer setup, demo reset guidance, handoff consistency, local validation instructions, CI/deployment absence, paid/live-provider boundaries, and secret-like string hygiene. This pass did not change runtime behavior, app code, package manifests, lockfiles, migrations, GitHub Actions, deployment config, demo/runtime data, secrets, commits, or pushes.
