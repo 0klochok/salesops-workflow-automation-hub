@@ -15,6 +15,25 @@
 | Completion | Complete for this final documentation/demo-readiness pass |
 | Main blocker | None |
 
+## Local validation repair - Python 3.12
+
+- Installed Python 3.12 manually and made it discoverable to `uv`.
+- Confirmed backend validation now runs with:
+  - `uv run --no-python-downloads --python 3.12 --frozen pytest`
+  - `uv run --no-python-downloads --python 3.12 --frozen ruff check .`
+  - `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests`
+- Frontend validation passed:
+  - `pnpm --dir apps/web lint`
+  - `pnpm --dir apps/web test -- --run`
+  - `pnpm --dir apps/web typecheck`
+  - `pnpm --dir apps/web build`
+- Local Docker/PostgreSQL smoke passed:
+  - `docker compose config`
+  - `docker compose ps`
+  - `uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head`
+  - `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply`
+- Remaining blocker: none.
+
 ## Latest Update - 2026-06-11 Final Demo Docs Consistency Pass
 
 Audited `README.md`, `RUNBOOK.md`, `STATE.md`, `docs/DEMO_ASSETS.md`, `docs/DEMO_SCRIPT.md`, and `docs/assets/README.md` for the current local-only API docs evidence. The current docs evidence is `docs/assets/screenshots/salesops-local-api-docs.png`, and the backend `/docs` page is a local-only HTML page that links to `/openapi.json`.
