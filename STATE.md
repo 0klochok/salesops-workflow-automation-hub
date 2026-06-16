@@ -9,15 +9,167 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final local demo smoke and release-readiness correction pass |
-| Overall status | Local PostgreSQL/Alembic/demo reset/backend/frontend HTTP smoke passed; required backend/frontend quality gate passed; browser visual QA was blocked by unavailable browser-control tooling |
-| Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; Python app-importing smoke/test commands used an ignored noenv working directory to avoid reading the local ignored `.env`; `git diff --check` exits 0 with a Git LF-to-CRLF working-copy warning for `STATE.md` |
-| Completion | Complete for final local demo smoke and release-readiness correction pass |
+| Current phase | Final portfolio handoff/readiness polish |
+| Overall status | Reviewer docs aligned to the explicit backend typecheck command; required backend/frontend quality gate passed; local backend/frontend HTTP smoke passed; owner-completed manual browser QA remains the visual signal |
+| Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; app-importing test/smoke commands used `logs/noenv` plus explicit local/mock environment values to avoid reading the local ignored `.env`; Git reports LF-to-CRLF working-copy warnings for touched Markdown files while `git diff --check` exits 0 |
+| Completion | Complete for final portfolio handoff/readiness polish |
 | Main blocker | None |
+
+## Latest Update - 2026-06-16 Final Portfolio Handoff Readiness Polish
+
+Reviewed the current reviewer-facing docs and made the smallest correction needed for command consistency: `README.md`, `RUNBOOK.md`, and `TDD.md` now document the backend typecheck as `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests`, matching the project command list and the gate actually run.
+
+No application behavior, UI behavior, backend API behavior, persistence logic, seed data, tests, dependency manifests, lockfiles, migrations, screenshots, GitHub Actions, deployment config, provider integration, secret, or ignored `.env` file was changed. The before/after is documentation-only:
+
+- Before: reviewer validation examples used `mypy .` in some docs.
+- After: reviewer validation examples use the explicit backend target `mypy backend tests`.
+
+Manual browser QA was already completed by the project owner before this phase. Codex did not run browser automation in this pass; local HTTP smoke covered the documented backend/frontend routes and proxies.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Aligned local validation typecheck command with the project command |
+| `RUNBOOK.md` | Aligned backend command lists and portfolio handoff validation typecheck command |
+| `TDD.md` | Aligned current reviewer handoff validation and backend command examples |
+| `STATE.md` | Recorded this readiness polish, exact validation results, smoke evidence, skipped checks, caveats, manual steps, and suggested commit message |
+
+Pre-existing repository state note: `git status --short --branch` showed `M  STATE.md` staged before this pass edited `STATE.md`; the staged change recorded owner-completed manual browser QA. Codex did not stage, unstage, commit, reset, stash, rebase, or push.
+
+### Documentation inspection
+
+| Command | Result |
+|---|---|
+| `Get-Content -Path .\STATE.md -Tail 260` | Pass after approved escalation; showed the latest local smoke/browser-QA context |
+| `rg --files` | Pass; confirmed repository files and no nested `AGENTS.md` was needed beyond the top-level instructions already supplied |
+| `Get-Content -Path .\README.md -Raw` | Pass; reviewer path remains local-first, mock-only, and PowerShell-based |
+| `Get-Content -Path .\RUNBOOK.md -Raw` | Pass; local setup, smoke, manual QA, and recording path reviewed |
+| `Get-Content -Path .\docs\DEMO_SCRIPT.md -Raw` | Pass; concise reviewer path reviewed |
+| `Get-Content -Path .\HANDOFF.md -Raw` | Pass; handoff and future provider boundary reviewed |
+| `Get-Content -Path .\docs\DEMO_ASSETS.md -Raw` | Pass; capture checklist reviewed |
+| `Get-Content -Path .\docs\CASE_STUDY.md -Raw` | Pass; portfolio wording reviewed |
+| `Get-Content -Path .\package.json -Raw` | Pass; frontend workspace scripts checked |
+| `Get-Content -Path .\apps\web\package.json -Raw` | Pass; frontend lint/test/typecheck/build scripts checked |
+| `Get-Content -Path .\pyproject.toml -Raw` | Pass; backend Python/tooling configuration checked |
+| `Get-Content -Path .\compose.yml -Raw` | Pass; local PostgreSQL service checked |
+| `Get-Content -Path .\apps\web\src\app\docs\route.ts -Raw` | Pass; `/docs` redirect source checked |
+| `rg -n -i "production-ready|production ready|production service|deployed|deployment|github actions|\bci\b|live provider|real hubspot|real slack|api\.hubapi|hooks\.slack|api\.openai|paid api|webhook" README.md RUNBOOK.md HANDOFF.md docs\DEMO_SCRIPT.md docs\DEMO_ASSETS.md docs\CASE_STUDY.md CONTEXT.md DESIGN.md REQ.md TDD.md .env.example` | Pass; findings are out-of-scope caveats or placeholder-only local docs, not implemented production/CI/provider claims |
+| `rg -n -i "todo|fixme|tbd|placeholder|lorem|staging|prod smoke|provider dashboard|external provider|real provider|mock-only|local-only" README.md RUNBOOK.md HANDOFF.md docs\DEMO_SCRIPT.md docs\DEMO_ASSETS.md docs\CASE_STUDY.md CONTEXT.md DESIGN.md REQ.md TDD.md .env.example` | Pass; findings are legitimate placeholder-only or local/mock safety wording |
+| `rg -n "mypy \.|mypy backend tests" README.md RUNBOOK.md TDD.md HANDOFF.md docs\DEMO_SCRIPT.md docs\DEMO_ASSETS.md CONTEXT.md DESIGN.md REQ.md` | Pass after docs edit; only `mypy backend tests` remains in active docs |
+| `git diff -- README.md RUNBOOK.md TDD.md` | Pass; diff limited to replacing `mypy .` with `mypy backend tests` |
+
+### Required gate results
+
+| Gate | Command | Result |
+|---|---|---|
+| Whitespace | `git diff --check` | Pass; exit 0 with Git LF-to-CRLF working-copy warnings for `README.md`, `RUNBOOK.md`, and `TDD.md` |
+| Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
+| Backend tests | `uv --project "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub" run --no-python-downloads --python 3.12 --frozen pytest --rootdir "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub" "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub\tests"` from `logs/noenv` | Pass; Python 3.12.10, 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| Backend format check | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
+| Backend typecheck | `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; no issues found in 29 source files |
+| Frontend dependency install | `pnpm install --frozen-lockfile` | Pass; all 2 workspace projects already up to date with pnpm 11.5.0 |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| Frontend tests | `pnpm --dir apps/web test` | Pass; Vitest 3.2.4, 5 test files passed, 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes |
+
+The pytest command used the noenv equivalent instead of running from the repository root because a local ignored `.env` exists and `SettingsConfigDict(env_file=".env")` reads `.env` from the current working directory. No ignored `.env` contents were read, printed, edited, or screenshotted.
+
+### Local smoke results
+
+Smoke commands used `logs/noenv` plus explicit local/mock environment values where app imports were involved. PostgreSQL was started through `compose.yml` with `.env.example` only.
+
+| Check | Command or URL | Result |
+|---|---|---|
+| Port precheck | `Get-NetTCPConnection -LocalPort 8028,3042 -ErrorAction SilentlyContinue \| Select-Object LocalAddress,LocalPort,State,OwningProcess` | Pass; no listeners before smoke start |
+| PostgreSQL start | `docker compose --env-file "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub\.env.example" -f "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub\compose.yml" up -d postgres` | Pass; `salesops-postgres` running |
+| Alembic noenv first attempt | `uv --project $repo run --no-python-downloads --python 3.12 --frozen python -c "... command.upgrade(config, 'head')"` without `PYTHONPATH` | Expected local-command failure; `ModuleNotFoundError: No module named 'backend'` |
+| Alembic noenv corrected | Same command with `$env:PYTHONPATH = $repo` and explicit `APP_ENV`, `MOCK_MODE`, `CRM_PROVIDER`, `SLACK_PROVIDER`, `GOOGLE_SHEETS_PROVIDER`, and local `DATABASE_URL` | Pass; PostgreSQL migration context initialized and was at head |
+| Demo reset | `uv --project $repo run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` with explicit local/mock env | Pass; deleted 4 runs, 4 leads, 8 attempts, and 18 audit records; seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Backend first background start | `Start-Process -FilePath "uv" -ArgumentList @("--project", $repo, ...)` | Expected Windows quoting failure for path with spaces; corrected below |
+| Backend corrected background start | `Start-Process -FilePath "uv" -ArgumentList "--project `"$repo`" run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level info" -WindowStyle Hidden` | Pass; Uvicorn listened on `127.0.0.1:8028` with smoke PID `8036` |
+| Backend health | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health" -Method Get -TimeoutSec 10` | Pass; returned `status=ok` and service name |
+| Backend run history | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs" -Method Get -TimeoutSec 10` | Pass; returned seeded `run_demo_queued`, `run_demo_retried`, `run_demo_failed`, and `run_demo_success` |
+| Backend docs | `Invoke-WebRequest -Uri "http://127.0.0.1:8028/docs" -UseBasicParsing -TimeoutSec 10` | Pass; HTTP 200, local docs title present, `/openapi.json` link present |
+| Backend OpenAPI | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/openapi.json" -Method Get -TimeoutSec 10` | Pass; title `SalesOps Workflow Automation Hub API`, 6 paths |
+| Frontend background start | `Start-Process -FilePath "$env:APPDATA\npm\pnpm.cmd" -ArgumentList "--dir `"$repo\apps\web`" exec next dev --hostname 127.0.0.1 --port 3042" -WindowStyle Hidden` with backend-base env vars set to `http://127.0.0.1:8028` | Pass; Next.js listened on `127.0.0.1:3042` with smoke PID `20984` |
+| Frontend home | `Invoke-WebRequest -Uri "http://127.0.0.1:3042/" -UseBasicParsing -TimeoutSec 20` | Pass; HTTP 200 and page shell contained `Lead intake form` and `CSV import` |
+| Frontend admin | `Invoke-WebRequest -Uri "http://127.0.0.1:3042/admin/runs" -UseBasicParsing -TimeoutSec 20` | Pass; HTTP 200 and page shell contained `Admin run history` |
+| Frontend run-history proxy | `Invoke-RestMethod -Uri "http://127.0.0.1:3042/api/leads/runs" -Method Get -TimeoutSec 20` | Pass; returned the four canonical seeded run IDs |
+| Frontend run-detail proxy | `Invoke-RestMethod -Uri "http://127.0.0.1:3042/api/leads/runs/run_demo_failed" -Method Get -TimeoutSec 20` | Pass; returned `run_demo_failed` with `run_status=failed` |
+| Frontend docs redirect | `HttpClient` no-redirect `GET http://127.0.0.1:3042/docs` | Pass; HTTP 307 to `http://127.0.0.1:8028/docs` |
+| Smoke cleanup | `Stop-Process -Id 8036,20984 -ErrorAction SilentlyContinue` | Pass; no listeners remained on `8028` or `3042` afterward |
+
+No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, external provider, production credential, deployment, GitHub Actions workflow, commit, push, staging, reset, rebase, stash, or ignored `.env` content was used.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Browser automation / visual QA by Codex | Skipped | The project owner manually completed browser QA before this phase. This pass changed docs only and local HTTP smoke passed. |
+| Real provider, paid API, production API, webhook, or provider dashboard smoke | Skipped | Explicitly forbidden and outside the local portfolio demo boundary. |
+| GitHub Actions / CI / deployment validation | Skipped | No workflow or deployment config is part of the project; CI remains out of scope unless explicitly requested later. |
+| Commit, push, staging, reset, rebase, stash, branch operations, destructive cleanup | Skipped | Explicitly forbidden. Codex did not perform these actions. |
+| Ignored `.env` read/print/edit | Skipped | Explicitly forbidden. Validation used tracked `.env.example`, `logs/noenv`, and explicit local/mock environment values instead. |
+
+### Caveats
+
+- Sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell.
+- Git reports LF-to-CRLF working-copy warnings for touched Markdown files, but `git diff --check` exits 0.
+- The first noenv Alembic attempt and first background backend start exposed local command-construction issues only; corrected commands passed and app behavior was not changed.
+- Smoke wrote temporary stdout/stderr files under ignored `logs/` paths.
+- Docker PostgreSQL was left running, matching the local demo dependency behavior from the previous phase.
+
+### Manual verification steps
+
+The owner already completed browser QA before this phase. For a final manual reviewer check, use:
+
+```powershell
+docker compose up -d postgres
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
+
+In a second PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then verify:
+
+- `http://127.0.0.1:3042/` renders the public lead form and CSV import without overlap; use synthetic data only.
+- `http://127.0.0.1:3042/admin/runs` shows `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued`.
+- Status/source/search/date/owner/error-type filters work and update the URL.
+- `run_demo_failed` detail shows sanitized payload, attempts, failure context, and suggested action.
+- `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed` keeps selected detail visible while showing the selected-run-hidden notice.
+- `http://127.0.0.1:3042/docs` redirects to `http://127.0.0.1:8028/docs` and links to `http://127.0.0.1:8028/openapi.json`.
+- Browser requests stay local; no `.env`, provider dashboard, real customer data, real provider call, paid API, webhook, reset/edit/delete/send/archive/provider action, `PUT`, `PATCH`, or `DELETE` control is visible or triggered.
+
+### Remaining risks
+
+- Browser visual QA was not automated by Codex in this pass; owner-completed browser QA is the visual signal.
+- Existing staged `STATE.md` content predates this pass and was preserved.
+- Local demo smoke verifies route/proxy behavior over HTTP, not pixel-level layout.
+
+### Suggested commit message
+
+```text
+Polish portfolio handoff validation docs
+```
 
 ## Latest Update - 2026-06-16 Final Local Demo Smoke
 
 Ran the final local demo smoke path against Docker PostgreSQL, Alembic migrations, deterministic demo reset data, a local FastAPI backend on `127.0.0.1:8028`, and a local Next.js frontend on `127.0.0.1:3042`.
+
+Manual browser QA completed by project owner after Codex run:
+- Home page, lead form, CSV import shell, admin runs table, filters, detail panel, selected-run-hidden notice, horizontal drag/scroll, docs redirect, layout, and absence of reset/edit/delete/provider actions were checked manually.
+- Result: passed.
 
 No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, external provider, secret, GitHub Actions workflow, deployment, commit, push, staging, reset, rebase, stash, or `.env` content was used. A local ignored `.env` file exists, so app-importing commands were run from an ignored `logs/noenv` working directory with explicit local/mock environment variables and `uv --project` to avoid reading `.env`.
 

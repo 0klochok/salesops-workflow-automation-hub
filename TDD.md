@@ -32,7 +32,7 @@ Current reviewer handoff validation uses the lockfile-backed local gate below. S
 - `uv run --no-python-downloads --python 3.12 --frozen pytest`
 - `uv run --no-python-downloads --python 3.12 --frozen ruff check .`
 - `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .`
-- `uv run --no-python-downloads --python 3.12 --frozen mypy .`
+- `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests`
 - `pnpm install --frozen-lockfile`
 - `pnpm --dir apps/web lint`
 - `pnpm --dir apps/web test`
@@ -45,7 +45,7 @@ Current backend commands:
 uv run --no-python-downloads --python 3.12 --frozen pytest
 uv run --no-python-downloads --python 3.12 --frozen ruff check .
 uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
-uv run --no-python-downloads --python 3.12 --frozen mypy .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 ```
 
 Current backend persistence tests cover:

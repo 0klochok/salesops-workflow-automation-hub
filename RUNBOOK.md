@@ -74,7 +74,7 @@ uv sync --frozen
 uv run --no-python-downloads --python 3.12 --frozen pytest
 uv run --no-python-downloads --python 3.12 --frozen ruff check .
 uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
-uv run --no-python-downloads --python 3.12 --frozen mypy .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 docker compose up -d postgres
 uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
 uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
@@ -338,7 +338,7 @@ uv sync --frozen
 uv run --no-python-downloads --python 3.12 --frozen pytest
 uv run --no-python-downloads --python 3.12 --frozen ruff check .
 uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
-uv run --no-python-downloads --python 3.12 --frozen mypy .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
 pnpm --dir apps/web test
@@ -356,7 +356,7 @@ uv sync --frozen
 uv run --no-python-downloads --python 3.12 --frozen pytest
 uv run --no-python-downloads --python 3.12 --frozen ruff check .
 uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
-uv run --no-python-downloads --python 3.12 --frozen mypy .
+uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
 pnpm --dir apps/web test
