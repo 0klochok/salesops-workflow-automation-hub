@@ -89,11 +89,11 @@ From the repository root:
 
 ```powershell
 if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
-uv sync
-pnpm install
+uv sync --frozen
+pnpm install --frozen-lockfile
 docker compose up -d postgres
-uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
 ```
 
 The reset command is local/demo-only and dry-runs unless `--apply` is provided. With
@@ -105,7 +105,7 @@ smoke rows, then reseeds the four marked portfolio demo runs.
 Start the backend in one PowerShell window:
 
 ```powershell
-uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
 ```
 
 Start the frontend in another PowerShell window:
@@ -140,23 +140,26 @@ These checks are intended to run locally from PowerShell before treating the por
 Run from the repository root:
 
 ```powershell
-git status --short
-pnpm --dir apps/web lint
-pnpm --dir apps/web test -- --run
-pnpm --dir apps/web typecheck
-pnpm --dir apps/web build
+git status --short --branch
+git diff --check
+uv sync --frozen
 uv run --no-python-downloads --python 3.12 --frozen pytest
 uv run --no-python-downloads --python 3.12 --frozen ruff check .
-uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
-git diff --check
+uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
+uv run --no-python-downloads --python 3.12 --frozen mypy .
+pnpm install --frozen-lockfile
+pnpm --dir apps/web lint
+pnpm --dir apps/web test
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
 ```
 
 If Docker Desktop is available, also validate the documented local database demo path:
 
 ```powershell
 docker compose up -d postgres
-uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
 ```
 
 ## Documentation Map
@@ -175,7 +178,7 @@ uv run python -m backend.app.leads.demo_reset --apply
 
 Current status: portfolio-ready local demo, not a production service.
 
-Final manual browser QA passed on 2026-06-11. See [STATE.md](STATE.md) for the exact pass criteria, validation history, skipped-gate reasons, and remaining risks.
+See [STATE.md](STATE.md) for the latest pass criteria, validation history, skipped-gate reasons, manual browser verification steps, and remaining risks.
 
 Known boundaries:
 

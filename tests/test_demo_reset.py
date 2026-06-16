@@ -338,19 +338,11 @@ def test_demo_reset_restores_canonical_failed_run_after_retry_mutation(
         ({"GOOGLE_SHEETS_PROVIDER": "google"}, "GOOGLE_SHEETS_PROVIDER"),
         ({"DATABASE_URL": None}, "DATABASE_URL"),
         (
-            {
-                "DATABASE_URL": (
-                    "postgresql+psycopg://user:pass@db.example.com:5432/salesops_local"
-                )
-            },
+            {"DATABASE_URL": ("postgresql+psycopg://user:pass@db.example.com:5432/salesops_local")},
             "host",
         ),
         (
-            {
-                "DATABASE_URL": (
-                    "postgresql+psycopg://user:pass@localhost:5432/salesops_prod"
-                )
-            },
+            {"DATABASE_URL": ("postgresql+psycopg://user:pass@localhost:5432/salesops_prod")},
             "database",
         ),
         ({"DATABASE_URL": "mysql://user:pass@localhost:3306/salesops_local"}, "driver"),

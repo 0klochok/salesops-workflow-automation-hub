@@ -4,18 +4,18 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-10 |
+| Last updated | 2026-06-16 |
 | Owner | User |
-| Status | final portfolio readiness review |
-| Current phase | Frontend/admin retry hardening |
-| Repository | salesops-workflow-automation-hub-fresh |
+| Status | reviewer handoff documentation polish |
+| Current phase | QA/hardening and validation-first stabilization |
+| Repository | salesops-workflow-automation-hub |
 | Repository path | `repository root` |
 | Primary runtime | Local Windows 11 / PowerShell |
 | Git state | `main`; local validation first; Codex must not commit or push; check `git status --short` for current worktree state |
 
 ## 2. Project Summary
 
-This is a greenfield portfolio project for a code-first sales operations workflow automation demo. The implemented local demo captures leads, validates them, deduplicates them, simulates CRM upserts through an adapter, simulates Slack notifications through an adapter, records backup/audit data, and exposes a local-only admin dashboard for persisted runs, failure inspection, and guarded manual retry.
+This is an existing local-first portfolio project for a code-first sales operations workflow automation demo. The implemented local demo captures leads, validates them, deduplicates them, simulates CRM upserts through an adapter, simulates Slack notifications through an adapter, records backup/audit data, and exposes a local-only admin dashboard for persisted runs, failure inspection, and guarded manual retry.
 
 The fake client is a growth agency with 5 sales reps. Leads arrive from multiple forms and CSV uploads. The current manual process copies leads into a CRM and Slack, which causes duplicates, missed leads, slow response times, and weak auditability.
 
@@ -51,7 +51,7 @@ The current portfolio-readiness state keeps the project local-only and mock-safe
 - Use `.env.example` only for placeholders.
 - Local validation comes before GitHub Actions.
 - GitHub Actions are out of scope until local validation is stable and explicitly requested.
-- Use quoted PowerShell paths or `-LiteralPath` because the repo path contains spaces and Cyrillic characters.
+- Use quoted PowerShell paths or `-LiteralPath` because the repo path contains spaces.
 
 ## 5. Stack
 

@@ -17,17 +17,17 @@ Run from the repository root in PowerShell:
 
 ```powershell
 if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example" -Destination ".env" }
-uv sync
-pnpm install
+uv sync --frozen
+pnpm install --frozen-lockfile
 docker compose up -d postgres
-uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
 ```
 
 Start the backend in one PowerShell window:
 
 ```powershell
-uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
 ```
 
 Start the frontend in another PowerShell window:

@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-10 |
-| Status | final portfolio readiness review |
-| Scope | Architecture for greenfield portfolio demo |
-| Current phase | Backend/admin run-history and retry hardening |
+| Last updated | 2026-06-16 |
+| Status | reviewer handoff documentation polish |
+| Scope | Architecture for existing local-first portfolio demo |
+| Current phase | QA/hardening and validation-first stabilization |
 | Related docs | `REQ.md`, `CONTEXT.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `TDD.md`, `STATE.md` |
 
 ## 2. Design Objective

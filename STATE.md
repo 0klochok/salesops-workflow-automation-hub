@@ -9,11 +9,132 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Strict local demo verification and reviewer-readiness pass |
-| Overall status | Full automated backend/frontend gates passed; local PostgreSQL, Alembic, guarded demo reset, backend API smoke, frontend route/proxy smoke, and docs redirect smoke passed; direct visual browser smoke was skipped because the Browser control tool was not exposed |
-| Quality gate status | Pass with environment caveat: `py -3.12 --version` failed because the Windows Python launcher is not on PATH, but `uv` resolved Python 3.12.10 with `--no-python-downloads` and all Python 3.12 gates passed |
-| Completion | Complete for this strict local verification pass |
+| Current phase | Reviewer handoff documentation polish |
+| Overall status | Required backend/frontend gates passed after applying Ruff formatter-only cleanup to four existing Python files; reviewer docs now use the lockfile-backed local setup and exact gate commands |
+| Quality gate status | Pass with caveats: sandboxed PowerShell still failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; `git diff --check` exits 0 with Git LF-to-CRLF working-copy warnings for touched Markdown files |
+| Completion | Complete for this reviewer handoff documentation polish pass |
 | Main blocker | None |
+
+## Latest Update - 2026-06-16 Reviewer Handoff Documentation Polish
+
+Polished reviewer-facing documentation for the existing local demo without changing application behavior. The pass started as documentation-only, but the required `ruff format --check .` gate failed on four existing Python files. I ran the repository formatter on only those files and reran the backend gate successfully.
+
+No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, provider dashboard, production credential, deployment, GitHub Actions workflow, commit, push, staging, reset, rebase, stash, or secret exposure was used.
+
+PowerShell sandbox note: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so local commands were run through approved escalated PowerShell.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Reviewer setup now uses frozen installs, Python 3.12 frozen `uv` commands, exact required gate list, and a non-stale `STATE.md` validation pointer |
+| `RUNBOOK.md` | Corrected stale project metadata, clarified source fallback ports versus reviewer ports, aligned backend/frontend/manual validation commands, and removed stale path wording |
+| `HANDOFF.md` | Aligned local run sequence with frozen installs and frontend `/docs` redirect check |
+| `docs/DEMO_SCRIPT.md` | Aligned shortest reviewer setup path with frozen installs and Python 3.12 frozen `uv` commands |
+| `CONTEXT.md` | Corrected repository name, current phase/status, and existing-project wording |
+| `DESIGN.md` | Corrected current phase/status and removed greenfield wording from current scope |
+| `TDD.md` | Replaced stale validation counts with the current required gate and aligned test matrix commands |
+| `backend/app/leads/demo_reset.py` | Formatter-only cleanup from `ruff format`; no behavior change intended |
+| `backend/app/leads/persistence.py` | Formatter-only cleanup from `ruff format`; no behavior change intended |
+| `backend/app/leads/retry.py` | Formatter-only cleanup from `ruff format`; no behavior change intended |
+| `tests/test_demo_reset.py` | Formatter-only cleanup from `ruff format`; no behavior change intended |
+| `STATE.md` | Recorded this pass, required validation results, skipped checks, manual browser steps, and caveats |
+
+### Required gate results
+
+| Gate | Command | Result |
+|---|---|---|
+| Initial status | `git status --short --branch` | Pass; `## main...origin/main` with intended docs changes before this `STATE.md` entry |
+| Initial whitespace | `git diff --check` | Pass; exit 0 with Git LF-to-CRLF working-copy warnings for touched Markdown files |
+| Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
+| Frontend dependency install | `pnpm install --frozen-lockfile` | Pass; all 2 workspace projects already up to date with pnpm 11.5.0 |
+| Backend tests, first run | `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass; 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint, first run | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| Backend format, first run | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Fail; reported 4 files would be reformatted |
+| Backend formatter | `uv run --no-python-downloads --python 3.12 --frozen ruff format backend\app\leads\demo_reset.py backend\app\leads\persistence.py backend\app\leads\retry.py tests\test_demo_reset.py` | Pass; 4 files reformatted |
+| Backend tests, final run | `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass; 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint, final run | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| Backend format, final run | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
+| Backend typecheck, final run | `uv run --no-python-downloads --python 3.12 --frozen mypy .` | Pass; no issues found in 32 source files |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend tests | `pnpm --dir apps/web test` | Pass; Vitest 3.2.4, 5 test files passed, 56 tests passed |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes |
+| Final status | `git status --short --branch` | Pass; `## main...origin/main` with modified docs plus formatter-only Python/test files and no staged changes |
+| Final whitespace | `git diff --check` | Pass; exit 0 with Git LF-to-CRLF working-copy warnings for touched Markdown files |
+| Final docs-aware backend tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass; 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+
+### Documentation consistency checks
+
+| Check | Result |
+|---|---|
+| Command drift scan | Pass; active docs no longer contain stale `mypy backend tests`, `test -- --run`, `uv run pytest`, `localhost:3000`, `port 8000`, `salesops-workflow-automation-hub-fresh`, `greenfield`, or old path wording in current reviewer instructions |
+| Reviewer URL consistency | Pass; reviewer path uses backend `127.0.0.1:8028`, frontend `127.0.0.1:3042`, and `/docs` frontend redirect to backend docs |
+| Source fallback URL caveat | Pass; `RUNBOOK.md` explicitly documents that source-code fallback values still use backend port `8000` when no backend-base environment variable is set |
+| Placeholder/filler scan | Pass; no TODO/FIXME/TBD/lorem/placeholder-filler findings in active docs |
+| Local-demo caveat scan | Pass; real provider, paid API, production, GitHub Actions, CI, and deployment mentions remain out-of-scope caveats rather than claims of implemented live behavior |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Browser or visual QA | Skipped | This pass changed documentation plus formatter-only Python layout, with no frontend UI behavior or styling changes. Manual browser verification steps are listed below. |
+| Docker/PostgreSQL/Alembic/demo reset smoke | Skipped | Not part of the user's required command list for this pass. The documented commands were reviewed and updated for reviewer consistency. |
+| Real provider or paid API smoke | Skipped | Explicitly forbidden; project remained local-only and mock-only. |
+| GitHub Actions, deployment, hosted CI, commit, push, staging, reset, rebase, stash | Skipped | Explicitly forbidden; Codex did not run these actions. |
+| `.env` read or print | Skipped | `.env.example` was inspected; local `.env` contents were not read, printed, edited, or screenshotted. |
+
+### Manual browser verification steps
+
+Use these exact steps for final visual/browser verification:
+
+```powershell
+docker compose up -d postgres
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
+
+In a second PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then open and verify:
+
+- `http://127.0.0.1:3042/`: public lead form and CSV import render without overlap; submit only synthetic data and confirm validation, dedupe, mock CRM, and mock Slack outcomes.
+- `http://127.0.0.1:3042/admin/runs`: seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` render.
+- `http://127.0.0.1:3042/admin/runs?status=failed`: only `run_demo_failed` remains visible.
+- `http://127.0.0.1:3042/admin/runs?source=csv_upload`: CSV-sourced seeded runs remain visible.
+- `http://127.0.0.1:3042/admin/runs?q=atlas`: `run_demo_retried` remains visible.
+- `http://127.0.0.1:3042/admin/runs?owner=Maya%20Patel`: Maya Patel rows remain visible.
+- `http://127.0.0.1:3042/admin/runs?errorType=adapter`: adapter-error rows remain visible.
+- `http://127.0.0.1:3042/admin/runs?from=2026-06-01&to=2026-06-01`: all four canonical seeded runs remain visible.
+- `http://127.0.0.1:3042/admin/runs?q=no-such-run`: filtered empty state is clear and reset is available.
+- `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`: the selected-run-hidden notice appears while `run_demo_failed` detail remains inspectable.
+- `http://127.0.0.1:3042/docs`: redirects to `http://127.0.0.1:8028/docs`, shows the local-only API docs page, and links to `http://127.0.0.1:8028/openapi.json`.
+
+During browser verification, confirm requests stay on `127.0.0.1` or local Next.js static assets, no provider dashboard or `.env` content is visible, no real CRM/Slack/Google Sheets/OpenAI/paid API/webhook request occurs, and the admin UI exposes no demo reset, edit, delete, send, archive, provider-action, `PUT`, `PATCH`, or `DELETE` controls. If `Retry run` is clicked for a failed or queued selected run, rerun the guarded demo reset afterward to restore canonical screenshot state.
+
+### Remaining risks and caveats
+
+- Ruff formatter touched four Python files outside the docs set because the required format gate was failing before this pass. The diff is formatter-only and backend tests/lint/typecheck passed afterward.
+- Visual browser QA was not run in this pass because there were no frontend behavior or style changes.
+- Docker/PostgreSQL local smoke was not rerun in this pass; use the manual browser verification steps above for a full local demo check.
+- Git emits LF-to-CRLF working-copy warnings for touched Markdown files during diff/status checks, but `git diff --check` exits 0.
+
+### Confirmation
+
+Codex did not stage, commit, push, create a branch, reset, rebase, stash, discard changes, deploy, add CI, add GitHub Actions, call paid APIs, call real HubSpot/Slack/Google Sheets/OpenAI, print `.env`, print secrets, edit `.env`, or call real external providers.
+
+### Suggested commit message
+
+```text
+Polish reviewer handoff documentation
+```
 
 ## Latest Update - 2026-06-16 Strict Local Demo Verification
 

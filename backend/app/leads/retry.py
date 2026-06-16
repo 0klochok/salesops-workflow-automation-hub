@@ -21,9 +21,7 @@ def validate_retry_safety(settings: Settings) -> None:
     if settings.slack_provider.strip().lower() != "mock":
         raise RetrySafetyError("SLACK_PROVIDER must be mock for manual retry.")
     if settings.google_sheets_provider.strip().lower() not in {"disabled", "mock"}:
-        raise RetrySafetyError(
-            "GOOGLE_SHEETS_PROVIDER must be disabled or mock for manual retry."
-        )
+        raise RetrySafetyError("GOOGLE_SHEETS_PROVIDER must be disabled or mock for manual retry.")
 
 
 class RetryPolicy:

@@ -4,17 +4,17 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-11 |
-| Status | RC demo asset cleanup and local validation |
-| Project | salesops-workflow-automation-hub-fresh |
+| Last updated | 2026-06-16 |
+| Status | reviewer handoff documentation polish and local validation |
+| Project | salesops-workflow-automation-hub |
 | Primary environment | Windows 11 / PowerShell |
-| Current phase | RC demo asset and documentation refresh |
+| Current phase | reviewer handoff stabilization |
 
 ## 2. Operating Rules
 
 - Run commands from the repository root unless a section says otherwise.
 - Use PowerShell-compatible commands.
-- Use `-LiteralPath` or quoted paths because the repository path contains spaces and Cyrillic characters.
+- Use `-LiteralPath` or quoted paths because the repository path contains spaces.
 - Do not commit or push from Codex.
 - Use `uv` for backend dependencies and `pnpm` for frontend dependencies.
 - Do not call real external APIs without explicit approval.
@@ -54,7 +54,8 @@ Recent local validation uses Python 3.12 through `uv`, pnpm `11.5.0`, and the sc
 - `.env` is ignored and must contain only local values if created manually.
 - Real secrets must not be committed, logged, printed, or placed in docs.
 - CRM, Slack, and Google Sheets are mocked/optional unless explicitly approved.
-- Frontend local proxy defaults:
+- Source-code fallback values use FastAPI port `8000` if no backend-base environment variable is set. The reviewer/demo commands in this runbook explicitly use backend port `8028` and frontend port `3042` to avoid common local port collisions.
+- Frontend local proxy fallback defaults:
   - `BACKEND_API_BASE_URL=http://127.0.0.1:8000`
   - `NEXT_PUBLIC_BACKEND_API_BASE_URL=http://127.0.0.1:8000`
 - Local database default:
@@ -69,20 +70,21 @@ if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example
 ## 7. Backend Commands
 
 ```powershell
-uv sync
-uv run pytest
-uv run ruff check .
-uv run mypy backend tests
+uv sync --frozen
+uv run --no-python-downloads --python 3.12 --frozen pytest
+uv run --no-python-downloads --python 3.12 --frozen ruff check .
+uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
+uv run --no-python-downloads --python 3.12 --frozen mypy .
 docker compose up -d postgres
-uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_reset --apply
-uv run uvicorn backend.app.main:app --reload
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
 ```
 
 Manual backend smoke check while the server is running:
 
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/health"
+Invoke-RestMethod -Uri "http://127.0.0.1:8028/health"
 ```
 
 Manual lead intake smoke check while the server is running:
@@ -98,7 +100,7 @@ $payload = @{
     lead_score = 90
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/intake" -Method Post -ContentType "application/json" -Body $payload
+Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/intake" -Method Post -ContentType "application/json" -Body $payload
 ```
 
 Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`, `dedupe`, `crm`, and nullable `slack` fields. This endpoint uses mock adapters only and persists local lead, run, attempt, and audit records.
@@ -106,7 +108,7 @@ Expected response shape includes deterministic `lead_id`, `run_id`, `run_status`
 Manual persisted run-history lookup:
 
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs"
+Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs"
 ```
 
 Expected behavior:
@@ -119,7 +121,7 @@ Manual persisted run-detail lookup for a known run:
 
 ```powershell
 $runId = "run_demo_failed"
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/$runId"
+Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs/$runId"
 ```
 
 Expected behavior:
@@ -132,7 +134,7 @@ Manual failure detail lookup for a known failed run:
 
 ```powershell
 $runId = "<failed-run-id>"
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/$runId/failure"
+Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs/$runId/failure"
 ```
 
 Expected behavior:
@@ -145,7 +147,7 @@ Manual retry for a known failed or queued run:
 
 ```powershell
 $runId = "<failed-or-queued-run-id>"
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/leads/runs/$runId/retry" -Method Post
+Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs/$runId/retry" -Method Post
 ```
 
 Expected behavior:
@@ -159,7 +161,7 @@ Expected behavior:
 Reset and seed deterministic local demo runs:
 
 ```powershell
-uv run python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
 ```
 
 Expected behavior:
@@ -173,7 +175,7 @@ Expected behavior:
 - does not call real CRM, Slack, Google Sheets, OpenAI, paid APIs, webhooks, or external services.
 
 If you only need to refresh the four known seed records without removing old synthetic
-smoke rows, run `uv run python -m backend.app.leads.demo_seed`.
+smoke rows, run `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_seed`.
 
 ## 7.1 Local Database Commands
 
@@ -182,7 +184,7 @@ The local persistence foundation uses local PostgreSQL through Docker Compose. T
 ```powershell
 docker compose config
 docker compose up -d postgres
-uv run alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
 ```
 
 SQLite is used only in repository unit tests to validate SQLAlchemy mappings without requiring Docker for every test run.
@@ -215,20 +217,20 @@ Start PostgreSQL, apply migrations, and reset deterministic demo run data:
 
 ```powershell
 docker compose up -d postgres
-uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
 ```
 
 Start the backend API:
 
 ```powershell
-uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8010 --log-level debug
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level debug
 ```
 
 In a second PowerShell window, call the persisted run-history endpoint:
 
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8010/leads/runs"
+Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs"
 ```
 
 Expected run-history result:
@@ -240,7 +242,7 @@ Expected run-history result:
 Call a selected persisted run detail:
 
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8010/leads/runs/run_demo_failed"
+Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs/run_demo_failed"
 ```
 
 Expected run-detail result:
@@ -252,31 +254,35 @@ Expected run-detail result:
 ## 8. Frontend Commands
 
 ```powershell
-pnpm install
-pnpm --dir apps/web dev
+pnpm install --frozen-lockfile
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 pnpm --dir apps/web lint
-pnpm --dir apps/web test -- --run
+pnpm --dir apps/web test
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
 
-The frontend app runs at `http://localhost:3000` by default. It proxies local intake submissions through `POST /api/leads/intake`, persisted run history through `GET /api/leads/runs`, selected run detail through `GET /api/leads/runs/[runId]`, and selected-run retry through `POST /api/leads/runs/[runId]/retry` to the FastAPI backend. The `/admin/runs` screen is local-only, supports URL-backed status/source/search/date/owner/error-type filters client-side, shows retry only for failed or queued selected runs, and does not expose demo reset, edit, delete, submit, resubmit, rerun, send, archive, worker-start, background-job, `PUT`, `PATCH`, or `DELETE` actions.
+The reviewer frontend command above runs at `http://127.0.0.1:3042`. Running `pnpm --dir apps/web dev` directly uses the Next.js default port `3000`. The frontend proxies local intake submissions through `POST /api/leads/intake`, persisted run history through `GET /api/leads/runs`, selected run detail through `GET /api/leads/runs/[runId]`, and selected-run retry through `POST /api/leads/runs/[runId]/retry` to the FastAPI backend. The `/admin/runs` screen is local-only, supports URL-backed status/source/search/date/owner/error-type filters client-side, shows retry only for failed or queued selected runs, and does not expose demo reset, edit, delete, submit, resubmit, rerun, send, archive, worker-start, background-job, `PUT`, `PATCH`, or `DELETE` actions.
 
 ## 9. Manual Frontend Verification
 
 Start backend and frontend in separate PowerShell windows:
 
 ```powershell
-uv run uvicorn backend.app.main:app --reload
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
 ```
 
 ```powershell
-pnpm --dir apps/web dev
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 ```
 
 Submit a lead through the UI:
 
-1. Open `http://localhost:3000`.
+1. Open `http://127.0.0.1:3042/`.
 2. Fill required form fields with synthetic data, for example `ada@example.com`, `Ada`, `Lovelace`, `Example Co`, `example.com`, source `demo_form`, lead score `90`.
 3. Select `Submit lead`.
 4. Confirm the latest result shows `Success`, backend dedupe `unique`, CRM action, Slack sent/skipped, and a dashboard row.
@@ -302,8 +308,8 @@ grace@example.com,Grace,Hopper,Example Co,example.com,88,Director
 
 Test local-only persisted admin run history and retry:
 
-1. Reset local demo data with `uv run python -m backend.app.leads.demo_reset --apply` after PostgreSQL is running and migrations are applied.
-2. Open `http://localhost:3000/admin/runs`.
+1. Reset local demo data with `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` after PostgreSQL is running and migrations are applied.
+2. Open `http://127.0.0.1:3042/admin/runs`.
 3. Confirm the page shows persisted seeded runs such as `run_demo_success`, `run_demo_failed`, `run_demo_queued`, and `run_demo_retried`.
 4. Confirm the page shows persisted lead email/name/company identity, derived demo owner, run status, source, run-level error type, timestamps, attempt count, latest attempt summary, and failure-detail availability.
 5. Apply the status filter `failed` and confirm only `run_demo_failed` remains visible while the URL includes `status=failed`.
@@ -318,23 +324,26 @@ Test local-only persisted admin run history and retry:
 14. Confirm the viewport scrolls automatically to the beginning of the same-page `Run detail` section after the selected detail renders, and keyboard focus moves to the detail heading.
 15. Confirm the same-page detail panel shows the selected run, derived owner/error type, persisted attempts, sanitized intake payload, allowlisted mock/audit result data, and `Retry run` for failed or queued selected runs only.
 16. Click `Retry run` for `run_demo_failed` only when you are ready to mutate local demo data. Confirm the success message states that the local retry request succeeded, the table shows `Retry outcome: request succeeded and was recorded locally.`, the table refreshes to attempt 3/retried, and the detail panel shows the new retried attempt plus the no-separate-CRM/Slack-result note.
-17. Re-run `uv run python -m backend.app.leads.demo_seed` or `uv run python -m backend.app.leads.demo_reset --apply` if you need the canonical seeded failed state again after the retry smoke.
-18. Change filters so the selected run is hidden, for example open `http://localhost:3000/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the detail visible.
+17. Re-run `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_seed` or `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` if you need the canonical seeded failed state again after the retry smoke.
+18. Change filters so the selected run is hidden, for example open `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`, and confirm the page explicitly says the selected run is outside the current filtered list while keeping the detail visible.
 19. Confirm the browser Network tab shows local admin requests only: `GET /api/leads/runs`, `GET /api/leads/runs/<run-id>`, and, only after clicking retry, `POST /api/leads/runs/<run-id>/retry`.
 20. Confirm no demo reset control, edit action, delete action, send action, archive action, provider action, `PUT`, `PATCH`, `DELETE`, real external API call, or webhook is visible or triggered.
 
 ## 10. Current Local Validation
 
 ```powershell
-git status --short
-pnpm --dir apps/web lint
-pnpm --dir apps/web test -- --run
-pnpm --dir apps/web typecheck
-pnpm --dir apps/web build
+git status --short --branch
+git diff --check
+uv sync --frozen
 uv run --no-python-downloads --python 3.12 --frozen pytest
 uv run --no-python-downloads --python 3.12 --frozen ruff check .
-uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
-git diff --check
+uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
+uv run --no-python-downloads --python 3.12 --frozen mypy .
+pnpm install --frozen-lockfile
+pnpm --dir apps/web lint
+pnpm --dir apps/web test
+pnpm --dir apps/web typecheck
+pnpm --dir apps/web build
 git ls-files -- .github
 ```
 
@@ -344,12 +353,13 @@ Also run the current phase's tracked secret-pattern, CI/deploy-config, and live-
 
 ```powershell
 uv sync --frozen
-uv run pytest
-uv run ruff check .
-uv run mypy backend tests
+uv run --no-python-downloads --python 3.12 --frozen pytest
+uv run --no-python-downloads --python 3.12 --frozen ruff check .
+uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
+uv run --no-python-downloads --python 3.12 --frozen mypy .
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
-pnpm --dir apps/web test -- --run
+pnpm --dir apps/web test
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 docker compose config
@@ -370,9 +380,9 @@ For a local portfolio demo smoke with temporary ports:
 
 ```powershell
 docker compose up -d postgres
-uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_reset --apply
-uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level info
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level info
 ```
 
 In another PowerShell window:
@@ -419,14 +429,14 @@ if (-not (Test-Path -LiteralPath ".env")) { Copy-Item -LiteralPath ".env.example
 
 ```powershell
 docker compose up -d postgres
-uv run alembic upgrade head
-uv run python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
 ```
 
 5. Start the backend on a free local-only port. Port `8028` is the known-good recording example; choose another free local port if it is busy:
 
 ```powershell
-uv run uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
 ```
 
 6. Start the frontend in a second PowerShell window, pointed at that backend. Port `3042` is the known-good recording example; choose another free local port if it is busy:
@@ -589,7 +599,7 @@ Use these commands when validating the local PostgreSQL service beyond static Co
 docker compose up -d postgres
 docker compose ps
 docker compose logs --tail=100 postgres
-uv run alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
 ```
 
 Stop local containers manually when finished if you do not want them running:
@@ -603,12 +613,12 @@ docker compose stop postgres
 | Symptom | Likely cause | Action |
 |---|---|---|
 | Backend command fails because `uv` is missing | `uv` is not installed or not on PATH | Install `uv` locally, then rerun the command |
-| Health endpoint is unreachable | Uvicorn is not running or port 8000 is in use | Start the server or choose a free port |
+| Health endpoint is unreachable | Uvicorn is not running or the configured local backend port is in use | Start the server or choose a free port |
 | Lead intake returns 422 | Payload failed local Pydantic validation | Check required fields, email format, company domain, source, and `lead_score` range |
 | Lead intake returns a database configuration error | `DATABASE_URL` is missing or PostgreSQL is not available | Create local `.env`, start Docker PostgreSQL, and run Alembic migrations |
 | Failure detail returns 404 | The run ID does not exist in the configured local database | Check the run ID and `DATABASE_URL` |
 | Failure detail returns 409 | The run exists but has no failed attempt | Use a failed run ID; successful intake runs are not failure records |
-| Run history is empty | The configured local database has no persisted run records | Submit leads locally or run `uv run python -m backend.app.leads.demo_reset --apply` |
+| Run history is empty | The configured local database has no persisted run records | Submit leads locally or run `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` |
 | Retry returns 409 | The run is already `success` or `retried` | Retry only `failed` or `queued` local runs |
 | Frontend cannot submit | Backend is not running or base URL is wrong | Start backend or set `BACKEND_API_BASE_URL` in local ignored `.env` |
 | CSV row is not submitted | Client-side CSV validation failed | Check required headers and row-level validation messages |

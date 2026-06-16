@@ -4,10 +4,10 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-10 |
-| Status | final portfolio readiness review |
+| Last updated | 2026-06-16 |
+| Status | reviewer handoff documentation polish |
 | Applies to | salesops workflow automation hub |
-| Current phase | RC final documentation and release-readiness audit |
+| Current phase | QA/hardening and validation-first stabilization |
 | Related docs | `REQ.md`, `DESIGN.md`, `EXEC_PLAN.md`, `RUNBOOK.md`, `STATE.md` |
 
 ## 2. Local-First Validation Philosophy
@@ -24,24 +24,28 @@
 
 The current local demo has backend validation, dedupe, mock adapter, persistence, failure-detail, retry, seed-data, and frontend admin coverage. The `/admin/runs` page remains local-only, exposes manual retry only for failed or queued selected runs, and does not add reset controls, real integrations, auth, deployment, GitHub Actions, or database migrations.
 
-Latest RC audit gate status on 2026-06-10:
+Current reviewer handoff validation uses the lockfile-backed local gate below. See `STATE.md` for the latest exact pass/fail counts, skipped checks, manual browser verification steps, and remaining risks.
 
-- `pnpm --dir apps/web lint`: pass.
-- `pnpm --dir apps/web test -- --run`: pass, 5 files and 54 tests.
-- `pnpm --dir apps/web typecheck`: pass.
-- `pnpm --dir apps/web build`: pass, Next.js production build completed with the expected local API/admin routes.
-- `uv run --no-python-downloads --python 3.12 --frozen pytest`: pass, 66 tests with the existing FastAPI/Starlette `TestClient` deprecation warning.
-- `uv run --no-python-downloads --python 3.12 --frozen ruff check .`: pass.
-- `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests`: pass, 28 source files.
-- `git diff --check`: pass after final documentation edits.
-- Local smoke: pass after starting local PostgreSQL, applying migrations, running guarded demo reset, starting backend/frontend on `127.0.0.1`, loading `/` and `/admin/runs`, clicking the local `Retry run` action for `run_demo_failed`, confirming attempt 3/retried, confirming no failed browser requests or console/runtime errors, restoring canonical demo data, and stopping temporary smoke processes.
+- `git status --short --branch`
+- `git diff --check`
+- `uv sync --frozen`
+- `uv run --no-python-downloads --python 3.12 --frozen pytest`
+- `uv run --no-python-downloads --python 3.12 --frozen ruff check .`
+- `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .`
+- `uv run --no-python-downloads --python 3.12 --frozen mypy .`
+- `pnpm install --frozen-lockfile`
+- `pnpm --dir apps/web lint`
+- `pnpm --dir apps/web test`
+- `pnpm --dir apps/web typecheck`
+- `pnpm --dir apps/web build`
 
 Current backend commands:
 
 ```powershell
 uv run --no-python-downloads --python 3.12 --frozen pytest
 uv run --no-python-downloads --python 3.12 --frozen ruff check .
-uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
+uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
+uv run --no-python-downloads --python 3.12 --frozen mypy .
 ```
 
 Current backend persistence tests cover:
@@ -80,7 +84,7 @@ Current frontend commands:
 
 ```powershell
 pnpm --dir apps/web lint
-pnpm --dir apps/web test -- --run
+pnpm --dir apps/web test
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
@@ -122,17 +126,17 @@ Existing backend tests also cover:
 
 | Area | Primary behaviors | Test layer | Command |
 |---|---|---|---|
-| Validation tests | Required fields, email format, source values, invalid payload handling | Backend unit/API tests | `uv run pytest` |
-| Dedupe tests | Exact email match, company domain match, non-duplicate lead, ambiguous edge cases | Backend unit/integration tests | `uv run pytest` |
-| CRM adapter mock tests | Contact/deal create, update, duplicate, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
-| Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run pytest` |
-| Retry logic tests | Failed/queued run retry, new attempt creation, history preservation, status transitions, rejection of non-retryable runs | Backend unit/API tests | `uv run pytest` |
-| Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run pytest` |
-| Admin run history/detail/retry tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility, retry success refresh, retry proxy status/body preservation, no duplicate retry submissions, explicit 403/404/409 retry errors, no reset UI | Backend API tests, frontend component tests, and frontend route-handler tests | `uv run pytest`; `pnpm --dir apps/web test -- --run` |
-| Demo seed tests | Success/failed/queued/retried examples, repeatability, local-only deterministic records | Backend API/repository tests | `uv run pytest` |
-| Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test -- --run` |
-| CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test -- --run` |
-| Session dashboard tests | Filters, current-session results, duplicate hints | Frontend component tests | `pnpm --dir apps/web test -- --run` |
+| Validation tests | Required fields, email format, source values, invalid payload handling | Backend unit/API tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
+| Dedupe tests | Exact email match, company domain match, non-duplicate lead, ambiguous edge cases | Backend unit/integration tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
+| CRM adapter mock tests | Contact/deal create, update, duplicate, adapter failure, no live API calls | Backend unit/contract tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
+| Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
+| Retry logic tests | Failed/queued run retry, new attempt creation, history preservation, status transitions, rejection of non-retryable runs | Backend unit/API tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
+| Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
+| Admin run history/detail/retry tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility, retry success refresh, retry proxy status/body preservation, no duplicate retry submissions, explicit 403/404/409 retry errors, no reset UI | Backend API tests, frontend component tests, and frontend route-handler tests | `uv run --no-python-downloads --python 3.12 --frozen pytest`; `pnpm --dir apps/web test` |
+| Demo seed tests | Success/failed/queued/retried examples, repeatability, local-only deterministic records | Backend API/repository tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
+| Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test` |
+| CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test` |
+| Session dashboard tests | Filters, current-session results, duplicate hints | Frontend component tests | `pnpm --dir apps/web test` |
 | End-to-end demo smoke test | Submit/import lead, inspect dashboard, verify duplicate hint | Manual smoke | `RUNBOOK.md` steps |
 
 ## 5. Frontend Testing Expectations

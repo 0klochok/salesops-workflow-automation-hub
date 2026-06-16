@@ -93,9 +93,7 @@ def validate_demo_reset_safety(settings: Settings) -> None:
 
     host = (database_url.host or "").lower()
     if host not in LOCAL_RESET_DB_HOSTS:
-        raise DemoResetSafetyError(
-            f"DATABASE_URL host must be local; got {database_url.host!r}."
-        )
+        raise DemoResetSafetyError(f"DATABASE_URL host must be local; got {database_url.host!r}.")
 
     database_name = database_url.database or ""
     if database_name not in LOCAL_RESET_DB_NAMES:
@@ -218,9 +216,7 @@ def _delete_demo_reset_candidates(
     if candidates.run_ids:
         deleted_attempt_count = _rowcount(
             session.execute(
-                delete(RunAttemptRecord).where(
-                    RunAttemptRecord.run_id.in_(candidates.run_ids)
-                )
+                delete(RunAttemptRecord).where(RunAttemptRecord.run_id.in_(candidates.run_ids))
             )
         )
         deleted_run_count = _rowcount(

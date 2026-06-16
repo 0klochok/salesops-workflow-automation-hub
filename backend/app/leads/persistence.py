@@ -120,9 +120,7 @@ def sanitize_intake_payload(payload: dict[str, Any]) -> dict[str, Any]:
         if field_name not in payload:
             continue
         value = payload[field_name]
-        safe_payload[field_name] = (
-            sanitize_detail_text(value) if isinstance(value, str) else value
-        )
+        safe_payload[field_name] = sanitize_detail_text(value) if isinstance(value, str) else value
     return safe_payload
 
 
@@ -132,8 +130,7 @@ def format_lead_name(first_name: str, last_name: str) -> str:
 
 def derive_demo_owner(lead_id: str) -> str:
     checksum = sum(
-        (index + 1) * ord(character)
-        for index, character in enumerate(lead_id.strip().lower())
+        (index + 1) * ord(character) for index, character in enumerate(lead_id.strip().lower())
     )
     return DEMO_OWNER_NAMES[checksum % len(DEMO_OWNER_NAMES)]
 
@@ -452,10 +449,7 @@ class LeadPersistenceRepository:
         lead: LeadIntakeRequest,
         dedupe: DedupeResult,
     ) -> str:
-        if (
-            dedupe.status is DedupeStatus.DUPLICATE_EMAIL
-            and dedupe.matched_lead_id is not None
-        ):
+        if dedupe.status is DedupeStatus.DUPLICATE_EMAIL and dedupe.matched_lead_id is not None:
             return dedupe.matched_lead_id
 
         existing_lead_id = self._session.scalar(
