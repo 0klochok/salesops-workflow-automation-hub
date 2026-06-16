@@ -9,11 +9,116 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Reviewer handoff documentation polish |
-| Overall status | Required backend/frontend gates passed after applying Ruff formatter-only cleanup to four existing Python files; reviewer docs now use the lockfile-backed local setup and exact gate commands |
-| Quality gate status | Pass with caveats: sandboxed PowerShell still failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; `git diff --check` exits 0 with Git LF-to-CRLF working-copy warnings for touched Markdown files |
-| Completion | Complete for this reviewer handoff documentation polish pass |
+| Current phase | Final local demo smoke and release-readiness correction pass |
+| Overall status | Local PostgreSQL/Alembic/demo reset/backend/frontend HTTP smoke passed; required backend/frontend quality gate passed; browser visual QA was blocked by unavailable browser-control tooling |
+| Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; Python app-importing smoke/test commands used an ignored noenv working directory to avoid reading the local ignored `.env`; `git diff --check` exits 0 with a Git LF-to-CRLF working-copy warning for `STATE.md` |
+| Completion | Complete for final local demo smoke and release-readiness correction pass |
 | Main blocker | None |
+
+## Latest Update - 2026-06-16 Final Local Demo Smoke
+
+Ran the final local demo smoke path against Docker PostgreSQL, Alembic migrations, deterministic demo reset data, a local FastAPI backend on `127.0.0.1:8028`, and a local Next.js frontend on `127.0.0.1:3042`.
+
+No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, external provider, secret, GitHub Actions workflow, deployment, commit, push, staging, reset, rebase, stash, or `.env` content was used. A local ignored `.env` file exists, so app-importing commands were run from an ignored `logs/noenv` working directory with explicit local/mock environment variables and `uv --project` to avoid reading `.env`.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Recorded final local demo smoke commands, results, skipped browser reason, warnings, manual notes, and changed-file summary |
+
+No application code, tests, dependency manifests, lockfiles, migrations, screenshots, GitHub Actions, deployment config, or provider integrations were changed.
+
+### Local demo smoke results
+
+| Check | Command or action | Result |
+|---|---|---|
+| Initial git status | `git status --short --branch` | Pass; `## main...origin/main` with no working-tree changes |
+| Initial diff stat | `git diff --stat` | Pass; no output |
+| Initial diff | `git diff --` | Pass; no output |
+| Required docs read | `Get-Content` for `STATE.md`, `README.md`, `RUNBOOK.md`, `HANDOFF.md`, `docs/DEMO_SCRIPT.md`, `CONTEXT.md`, `DESIGN.md`, and `TDD.md` | Pass; latest `STATE.md` entry showed Docker/PostgreSQL and browser validation were the prior skipped gap |
+| Startup command inspection | `Get-Content` for `package.json`, `apps/web/package.json`, `pyproject.toml`, `compose.yml`, `alembic.ini`, `backend/app/main.py`, `backend/app/config.py`, and `apps/web/src/app/docs/route.ts` | Pass; documented reviewer commands match current repo scripts, ports, Compose service, app import path, and `/docs` redirect design |
+| Nested agent override check | `rg --files -g AGENTS.md` | Pass; only top-level `AGENTS.md` found |
+| `.env` existence-only check | `Test-Path -LiteralPath ".env"` | Pass with constraint; returned `True`, so `.env` contents were not read and app-importing smoke commands used noenv equivalents |
+| PostgreSQL start | `docker compose --env-file "$repo\.env.example" -f "$repo\compose.yml" up -d postgres` | Pass; `salesops-postgres` was already running |
+| Alembic direct noenv attempt | `uv --project $repo run --no-python-downloads --python 3.12 --frozen alembic -c "$repo\alembic.ini" upgrade head` from `logs/noenv` | Expected limitation; failed before migration because `script_location = alembic` is relative to the working directory |
+| Alembic upgrade equivalent | `uv --project $repo run --no-python-downloads --python 3.12 --frozen python -c "... Config(...); config.set_main_option('script_location', repo + '\\alembic'); command.upgrade(config, 'head')"` | Pass; PostgreSQL migration context initialized and was at head |
+| Demo reset | `uv --project $repo run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` with explicit local/mock env vars | Pass; deleted 4 runs, 4 leads, 9 attempts, and 19 audit records; seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| Backend first launch | `Start-Process uv ... --project $repo ... uvicorn ... --port 8028` | Expected quoting issue; initial launch failed before app startup because the repo path contains spaces |
+| Backend corrected launch | `Start-Process uv ... --project "$repo" ... uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level info` | Pass; Uvicorn listened on `127.0.0.1:8028` |
+| Frontend first launch | `Start-Process pnpm ... next dev --hostname 127.0.0.1 --port 3042` | Expected shim issue; direct `pnpm` shim was not a Win32 executable for `Start-Process` |
+| Frontend corrected launch | `Start-Process C:\Users\alex\AppData\Roaming\npm\pnpm.cmd ... next dev --hostname 127.0.0.1 --port 3042` | Pass; Next.js 15.5.18 was ready on `127.0.0.1:3042` |
+| Backend health | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health"` | Pass; returned `{"status":"ok","service":"salesops-workflow-automation-hub"}` |
+| Backend run history | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs"` | Pass; returned 4 seeded runs: `run_demo_queued`, `run_demo_retried`, `run_demo_failed`, `run_demo_success` |
+| Frontend home | `Invoke-WebRequest -Uri "http://127.0.0.1:3042/"` | Pass; HTTP 200 and raw page content included `Lead intake form` and `CSV import` |
+| Frontend admin | `Invoke-WebRequest -Uri "http://127.0.0.1:3042/admin/runs"` | Pass; HTTP 200 and raw page shell included `Admin run history` |
+| Frontend docs redirect | `Invoke-WebRequest -Uri "http://127.0.0.1:3042/docs" -MaximumRedirection 0` | Pass; HTTP 307 to `http://127.0.0.1:8028/docs` |
+| Backend docs and OpenAPI | `Invoke-WebRequest -Uri "http://127.0.0.1:8028/docs"` and `Invoke-WebRequest -Uri "http://127.0.0.1:8028/openapi.json"` | Pass; docs page and OpenAPI JSON returned HTTP 200 |
+| Smoke cleanup | `Stop-Process` for port-owning smoke PIDs on `8028` and `3042` | Pass; both ports were no longer listening afterward |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Browser visual QA | Skipped | The Browser plugin was present, but its required `node_repl js` control tool was not exposed after the required discovery attempts. `pnpm --dir apps/web exec playwright --version` also failed because Playwright is not installed as an executable in the project. No dependency was installed. |
+| Direct repo-root app-importing smoke commands | Limited | A local ignored `.env` exists and the app settings automatically read `.env` from the current working directory. To honor the no-`.env` rule, app-importing smoke commands used `logs/noenv`, explicit local/mock environment variables, and `uv --project $repo`. |
+| Real provider or paid API smoke | Skipped | Explicitly forbidden; project remained local-only and mock-only. |
+| GitHub Actions, deployment, hosted CI, commit, push, staging, reset, rebase, stash | Skipped | Explicitly forbidden; Codex did not run these actions. |
+
+### Known warnings
+
+- Sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`; requested commands were run through approved escalated PowerShell.
+- `git diff --check` exited 0 with a Git LF-to-CRLF working-copy warning for `STATE.md`.
+- PostgreSQL was already running before this smoke pass and was left running.
+- The raw HTTP response for `/admin/runs` verifies the server-rendered page shell. Client-rendered row/filter/detail visual behavior still needs manual browser verification because browser control was unavailable in this session.
+
+### Required quality gate results
+
+| Gate | Command | Result |
+|---|---|---|
+| Whitespace | `git diff --check` | Pass; exit 0 with Git LF-to-CRLF working-copy warning for `STATE.md` |
+| Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
+| Backend tests | `uv --project $repo run --no-python-downloads --python 3.12 --frozen pytest --rootdir $repo "$repo\tests"` from `logs/noenv` | Pass; 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| Backend format check | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
+| Backend typecheck | `uv run --no-python-downloads --python 3.12 --frozen mypy .` | Pass; no issues found in 32 source files |
+| Frontend dependency install | `pnpm install --frozen-lockfile` | Pass; all 2 workspace projects already up to date with pnpm 11.5.0 |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; ESLint exited 0 |
+| Frontend tests | `pnpm --dir apps/web test` | Pass; Vitest 3.2.4, 5 test files passed, 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes |
+
+The backend pytest command was run through the noenv equivalent above instead of directly from the repository root because a local ignored `.env` exists and the app settings automatically read `.env` from the current working directory. This preserved the required test coverage while honoring the no-`.env` rule.
+
+### Manual verification notes
+
+For final visual QA, run the documented backend/frontend commands in separate PowerShell windows with local/mock environment values, then open:
+
+- `http://127.0.0.1:3042/`
+- `http://127.0.0.1:3042/admin/runs`
+- `http://127.0.0.1:3042/admin/runs?status=failed`
+- `http://127.0.0.1:3042/admin/runs?source=csv_upload`
+- `http://127.0.0.1:3042/admin/runs?q=atlas`
+- `http://127.0.0.1:3042/admin/runs?owner=Maya%20Patel`
+- `http://127.0.0.1:3042/admin/runs?errorType=adapter`
+- `http://127.0.0.1:3042/admin/runs?from=2026-06-01&to=2026-06-01`
+- `http://127.0.0.1:3042/admin/runs?q=no-such-run`
+- `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`
+- `http://127.0.0.1:3042/docs`
+
+Confirm seeded rows, filters, detail panel, selected-run-hidden notice, local-only docs redirect, no layout overlap, no runtime overlay, and no visible reset/edit/delete/send/archive/provider actions. Do not show `.env`, provider dashboards, real customer data, or unrelated local files.
+
+### Remaining risks
+
+- Browser visual QA remains unverified in this session because the supported browser-control tool was unavailable.
+- Direct repo-root app-importing smoke commands were intentionally not used while an ignored local `.env` exists; no `.env` contents were read, printed, or modified.
+- Manual visual confirmation is still recommended before recording or portfolio handoff.
+
+### Suggested commit message
+
+```text
+Record final local demo smoke
+```
 
 ## Latest Update - 2026-06-16 Reviewer Handoff Documentation Polish
 
