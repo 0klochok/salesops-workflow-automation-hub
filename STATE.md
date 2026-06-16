@@ -9,11 +9,85 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final portfolio handoff/readiness polish |
-| Overall status | Reviewer docs aligned to the explicit backend typecheck command; required backend/frontend quality gate passed; local backend/frontend HTTP smoke passed; owner-completed manual browser QA remains the visual signal |
-| Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; app-importing test/smoke commands used `logs/noenv` plus explicit local/mock environment values to avoid reading the local ignored `.env`; Git reports LF-to-CRLF working-copy warnings for touched Markdown files while `git diff --check` exits 0 |
-| Completion | Complete for final portfolio handoff/readiness polish |
+| Current phase | Final release evidence record |
+| Overall status | Final release evidence recorded; no README/RUNBOOK/TDD correction was needed; current backend/frontend local validation gate passed; prior Docker/PostgreSQL, HTTP smoke, and owner manual browser QA evidence remains the release signal |
+| Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; app-importing pytest ran from `logs/noenv` with explicit mock/local environment values to avoid reading the ignored local `.env`; Git reports LF-to-CRLF working-copy warnings for touched Markdown while `git diff --check` exits 0 |
+| Completion | Complete for final release evidence record |
 | Main blocker | None |
+
+## Latest Update - 2026-06-16 Final Release Evidence Record
+
+Recorded final portfolio release audit evidence without changing product code. `README.md`, `RUNBOOK.md`, `TDD.md`, and the latest `STATE.md` entries were reviewed. No stale active README/RUNBOOK/TDD instruction requiring a docs correction was found before this entry: active docs use `mypy backend tests`, the documented reviewer path uses backend `127.0.0.1:8028` and frontend `127.0.0.1:3042`, GitHub Actions/CI remain absent or explicitly out of scope, and real providers/paid APIs remain excluded.
+
+This entry intentionally separates earlier smoke/browser evidence from the current validation rerun:
+
+- Automated backend checks passed in the previous final readiness gate: pytest, Ruff check, Ruff format check, and mypy were green.
+- Automated frontend checks passed in the previous final readiness gate: lint, Vitest, typecheck, and Next build were green.
+- Docker/PostgreSQL smoke passed in the previous final readiness gate: Compose started local PostgreSQL, Alembic reached head, and deterministic demo reset seeded the four synthetic demo runs.
+- Backend/frontend HTTP smoke passed in the previous final readiness gate: local backend and frontend routes, run-history proxy, run-detail proxy, docs redirect, backend docs, and `/openapi.json` were verified on local-only ports.
+- Browser automation was skipped in the previous final readiness gate because the Browser plugin control tool was unavailable and Playwright was not installed as a project executable; no browser automation dependency was installed.
+- User manual browser QA passed after the final audit: home page rendered correctly, CSV import shell rendered correctly, admin runs page rendered correctly, filters worked, `run_demo_failed` detail opened correctly, `/docs` redirected to backend docs correctly, `/openapi.json` worked, no real provider/paid API/reset/edit/delete/destructive controls were visible, and all requests stayed local.
+- The previous audit observed one transient first dynamic run-detail proxy `500`; the same run-detail request passed immediately on retry.
+- Docker PostgreSQL may still be running after the smoke path and should be stopped manually with `docker compose stop postgres` if it is not needed.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `STATE.md` | Added this final release evidence record and current validation results |
+
+No product code, backend behavior, frontend behavior, API contract, dependency, lockfile, migration, generated artifact, GitHub Actions workflow, deployment config, real provider integration, secret, local `.env` file, staged change, commit, or push was changed.
+
+### Current validation gate
+
+| Gate | Command | Result |
+|---|---|---|
+| Whitespace | `git diff --check` | Pass; exit 0 with Git LF-to-CRLF working-copy warning for `STATE.md` |
+| Staged whitespace | `git diff --cached --check` | Pass; no output |
+| Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
+| Backend tests | `uv --project "$repo" run --no-python-downloads --python 3.12 --frozen pytest --rootdir "$repo" "$repo\tests"` from `logs/noenv` with explicit mock/local env | Pass; Python 3.12.10, 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| Backend format check | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
+| Backend typecheck | `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; no issues found in 29 source files |
+| Frontend dependency install | `pnpm install --frozen-lockfile` | Pass; all 2 workspace projects already up to date with pnpm 11.5.0 |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| Frontend tests | `pnpm --dir apps/web test` | Pass; Vitest 3.2.4, 5 test files passed, 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes |
+
+Validation setup note: the first `New-Item -ItemType Directory -Force -LiteralPath "logs\noenv"` attempt failed because this PowerShell surface did not accept `-LiteralPath` for that parameter set. The retry with `New-Item -ItemType Directory -Force -Path "logs\noenv"` passed. No `.env` file was read, printed, copied, or edited.
+
+### Documentation and forbidden-pattern scan status
+
+| Scan | Command | Result |
+|---|---|---|
+| Active stale mypy target | `rg -n "mypy\s+\." README.md RUNBOOK.md TDD.md` | Pass; no matches, exit 1 |
+| GitHub Actions / CI requirement wording | `rg -n -i "GitHub Actions|\bCI\b" README.md RUNBOOK.md TDD.md` | Pass/limited; matches are absence, out-of-scope, or "not default until explicitly requested" wording, not active CI requirements |
+| Paid API / real-provider assumptions | `rg -n -i "paid API|paid APIs|real provider|real providers|real HubSpot|real Slack|real CRM|production API|webhook|provider dashboard|HubSpot|Slack|Google Sheets|OpenAI" README.md RUNBOOK.md TDD.md` | Pass/limited; matches are mock-only behavior, exclusions, or manual "do not show/call" guidance, not real-provider requirements |
+| Active local ports | `rg -n "localhost:3000|127\.0\.0\.1:3000|localhost:8000|127\.0\.0\.1:8000|127\.0\.0\.1:8028|127\.0\.0\.1:3042" README.md RUNBOOK.md TDD.md` | Pass/limited; reviewer/demo path uses backend `8028` and frontend `3042`; `8000` and `3000` appear only as source-code fallback/default-port caveats |
+| Destructive admin controls | `rg -n -i -g "!*.test.ts" -g "!*.test.tsx" "\b(edit|delete|archive|send|PUT|PATCH|DELETE|demo reset|reset run|provider action|destructive)\b" apps/web/src/app/admin apps/web/src/components/admin-run-history.tsx apps/web/src/app/api/leads/runs` | Pass; no matches, exit 1 |
+| `.env` read/print/edit/copy docs | `rg -n -i "(Copy-Item|Get-Content|Select-String|Set-Content|Add-Content).*\.env|\.env.*(Copy-Item|Get-Content|Select-String|Set-Content|Add-Content|read|print|edit|copy)" README.md RUNBOOK.md TDD.md` | Limited; README/RUNBOOK contain human setup helpers that copy `.env.example` to ignored `.env` and one RUNBOOK local verification command that selects `DATABASE_URL` without printing it. Codex did not execute them. |
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Browser automation by Codex | Skipped | Browser plugin control tool was unavailable in the previous audit and Playwright was not installed; installing browser automation dependencies is explicitly out of scope. |
+| Real provider, paid API, production API, webhook, or provider dashboard smoke | Skipped | Explicitly forbidden; the project remains local-first and mock-only. |
+| GitHub Actions / CI / deployment validation | Skipped | Explicitly out of scope; no workflow files are required or added. |
+| Commit, push, staging, reset, rebase, stash, branch operations, destructive cleanup | Skipped | Explicitly forbidden. Codex did not perform these actions. |
+| Ignored local `.env` read/print/edit/copy | Skipped | Explicitly forbidden for this phase; validation uses `.env.example` and explicit local/mock environment values where needed. |
+
+### Remaining manual checks
+
+- Stop Docker PostgreSQL manually with `docker compose stop postgres` if it is still running and not needed.
+- For a final visual check, use the documented local-only backend/frontend commands, then verify `/`, `/admin/runs`, filters, `run_demo_failed` detail, `/docs`, and `/openapi.json` with synthetic data only.
+
+### Suggested commit message
+
+```text
+Record final release evidence
+```
 
 ## Latest Update - 2026-06-16 Final Portfolio Handoff Readiness Polish
 
