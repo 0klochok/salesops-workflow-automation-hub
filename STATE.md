@@ -4,16 +4,140 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-11 |
+| Last updated | 2026-06-16 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final demo/docs consistency and portfolio-readiness pass |
-| Overall status | Active demo docs are consistent with the current local-only `/docs` page and `/openapi.json`; screenshot inventory matches disk; canonical `3042` frontend QA passed |
-| Quality gate status | Required backend/frontend automated gates passed; local PostgreSQL, Alembic, demo reset, backend docs QA, OpenAPI QA, and canonical frontend route QA passed |
-| Completion | Complete for this final documentation/demo-readiness pass |
+| Current phase | Strict local demo verification and reviewer-readiness pass |
+| Overall status | Full automated backend/frontend gates passed; local PostgreSQL, Alembic, guarded demo reset, backend API smoke, frontend route/proxy smoke, and docs redirect smoke passed; direct visual browser smoke was skipped because the Browser control tool was not exposed |
+| Quality gate status | Pass with environment caveat: `py -3.12 --version` failed because the Windows Python launcher is not on PATH, but `uv` resolved Python 3.12.10 with `--no-python-downloads` and all Python 3.12 gates passed |
+| Completion | Complete for this strict local verification pass |
 | Main blocker | None |
+
+## Latest Update - 2026-06-16 Strict Local Demo Verification
+
+Ran a strict local demo verification and reviewer-readiness pass from the repository root on Windows PowerShell. Commands stayed local to the repository, Docker/PostgreSQL, FastAPI/Next.js localhost services, and synthetic demo data. No real HubSpot, Slack, Google Sheets, OpenAI, CRM, webhook, paid API, production service, or secret was used.
+
+PowerShell sandbox note: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, matching prior local notes, so the requested local commands were run through approved escalated PowerShell.
+
+### Required gate results
+
+| Gate | Command | Result |
+|---|---|---|
+| Initial status | `git status --short --branch` | Pass; `## main...origin/main` and no working-tree changes |
+| Initial whitespace | `git diff --check` | Pass; no output |
+| Python launcher check | `py -3.12 --version` | Fail/environment caveat; `py` is not on PATH |
+| uv Python check | `uv run --no-python-downloads --python 3.12 --frozen python --version` | Pass; Python 3.12.10 |
+| Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
+| Backend tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass; 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| Backend typecheck | `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; no issues in 29 source files |
+| Frontend dependency install | `pnpm install --frozen-lockfile` | Pass; already up to date with pnpm 11.5.0 |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; ESLint exited 0 |
+| Frontend tests | `pnpm --dir apps/web test -- --run` | Pass; 5 test files and 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes |
+| Docker Compose config | `docker compose config` | Pass; rendered local PostgreSQL service only |
+| Local PostgreSQL start | `docker compose up -d postgres` | Pass; `salesops-postgres` was running |
+| Local PostgreSQL status | `docker compose ps` | Pass; container was healthy on port 5432 |
+| Alembic | `uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head` | Pass; PostgreSQL migration context initialized, no pending migration output |
+| Demo reset | `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` | Pass; seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+
+### Local API and route smoke
+
+Temporary local services used documented ports `127.0.0.1:8028` for FastAPI and `127.0.0.1:3042` for Next.js. Both ports were free before startup. Backend and frontend smoke processes started for this pass were stopped afterward; Docker PostgreSQL was left running.
+
+| Check | Command or URL | Result |
+|---|---|---|
+| Backend health | `GET http://127.0.0.1:8028/health` | Pass; `status=ok` |
+| Backend OpenAPI | `GET http://127.0.0.1:8028/openapi.json` | Pass; title `SalesOps Workflow Automation Hub API` |
+| Backend docs page | `GET http://127.0.0.1:8028/docs` | Pass; HTTP 200, local docs title present, `/openapi.json` link present, no `cdn`, `jsdelivr`, `unpkg`, or FastAPI remote asset marker |
+| Backend run history | `GET http://127.0.0.1:8028/leads/runs` | Pass; 4 canonical seeded runs after final reset |
+| Backend run detail | `GET http://127.0.0.1:8028/leads/runs/run_demo_failed` | Pass; selected run detail returned |
+| Backend failure detail | `GET http://127.0.0.1:8028/leads/runs/run_demo_failed/failure` | Pass; adapter error type and suggested action returned |
+| Backend intake | `POST http://127.0.0.1:8028/leads/intake` with synthetic `example.test` lead | Pass; local success response with mock CRM result and run id |
+| Frontend home route | `GET http://127.0.0.1:3042/` | Pass; HTTP 200 with `Lead intake form` and `CSV import` |
+| Frontend admin route | `GET http://127.0.0.1:3042/admin/runs` | Pass; HTTP 200 with `Admin run history` |
+| Frontend run-history proxy | `GET http://127.0.0.1:3042/api/leads/runs` | Pass; canonical 4 seeded runs after final reset and `run_demo_failed` present |
+| Frontend run-detail proxy | `GET http://127.0.0.1:3042/api/leads/runs/run_demo_failed` | Pass; `run_demo_failed` returned with `run_status=failed` |
+| Frontend intake proxy | `POST http://127.0.0.1:3042/api/leads/intake` with synthetic `example.test` lead | Pass; local success response through the proxy with mock CRM result |
+| Frontend docs redirect | `GET http://127.0.0.1:3042/docs` with redirects disabled | Pass; HTTP 307 to `http://127.0.0.1:8028/docs` |
+| Canonical seed restore | `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` | Pass; removed smoke rows and restored exactly 4 canonical seeded runs |
+
+The first frontend `/docs` redirect probe used `Invoke-WebRequest -MaximumRedirection 0`, which emitted a non-terminating redirection warning while still reporting HTTP 307. A clean `HttpClient` no-redirect check was run afterward and confirmed HTTP 307 to `http://127.0.0.1:8028/docs`.
+
+### Documentation accuracy check
+
+Reviewed `README.md`, `RUNBOOK.md`, `docs/DEMO_SCRIPT.md`, `docs/DEMO_ASSETS.md`, `TDD.md`, and `.env.example` for the requested reviewer-readiness topics:
+
+- Python 3.12 requirement is documented in `README.md`, and current backend validation commands use `uv run --no-python-downloads --python 3.12 --frozen ...`.
+- Local setup uses `uv`, `pnpm`, Docker PostgreSQL, Alembic, and the guarded demo reset.
+- Backend and frontend validation commands are documented.
+- Docker/PostgreSQL demo setup and local route smoke are documented.
+- Mock/no-paid-API mode, placeholder-only `.env.example`, and real-provider prohibitions are documented.
+
+No README, RUNBOOK, DEMO_SCRIPT, DEMO_ASSETS, TDD, `.env.example`, source-code, dependency, lockfile, migration, GitHub Actions, deployment, auth, or provider-integration correction was needed. This `STATE.md` entry is the only documentation update for the pass.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Direct in-app visual browser smoke | Skipped | Browser skill instructions were loaded, but `tool_search` for `node_repl js` returned no callable browser-control tool in this session. HTTP route/proxy smoke passed; manual browser steps are listed below. |
+| Real provider or paid API smoke | Skipped | Explicitly forbidden; project remained local-only and mock-only. |
+| GitHub Actions, deployment, hosted CI, commit, push, staging, reset, rebase, stash | Skipped | Explicitly forbidden; Codex did not run these actions. |
+| `.env` read or print | Skipped | `.env.example` was inspected; local `.env` values were not read or printed. |
+
+### Manual browser verification steps
+
+Use these exact steps for final visual/browser verification:
+
+```powershell
+docker compose up -d postgres
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
+
+In a second PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Then open and verify:
+
+- `http://127.0.0.1:3042/`: public lead form and CSV import render without overlap; submit only synthetic data and confirm validation, dedupe, mock CRM, and mock Slack outcomes.
+- `http://127.0.0.1:3042/admin/runs`: seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` render.
+- `http://127.0.0.1:3042/admin/runs?status=failed`: only `run_demo_failed` remains visible.
+- `http://127.0.0.1:3042/admin/runs?source=csv_upload`: CSV-sourced seeded runs remain visible.
+- `http://127.0.0.1:3042/admin/runs?q=atlas`: `run_demo_retried` remains visible.
+- `http://127.0.0.1:3042/admin/runs?owner=Maya%20Patel`: Maya Patel rows remain visible.
+- `http://127.0.0.1:3042/admin/runs?errorType=adapter`: adapter-error rows remain visible.
+- `http://127.0.0.1:3042/admin/runs?from=2026-06-01&to=2026-06-01`: all four canonical seeded runs remain visible.
+- `http://127.0.0.1:3042/admin/runs?q=no-such-run`: filtered empty state is clear and reset is available.
+- `http://127.0.0.1:3042/admin/runs?status=success&runId=run_demo_failed`: the selected-run-hidden notice appears while `run_demo_failed` detail remains inspectable.
+- `http://127.0.0.1:3042/docs`: redirects to `http://127.0.0.1:8028/docs`, shows the local-only API docs page, and links to `http://127.0.0.1:8028/openapi.json`.
+
+During browser verification, confirm requests stay on `127.0.0.1` or local Next.js static assets, no provider dashboard or `.env` content is visible, no real CRM/Slack/Google Sheets/OpenAI/paid API/webhook request occurs, and the admin UI exposes no demo reset, edit, delete, send, archive, provider-action, `PUT`, `PATCH`, or `DELETE` controls. If `Retry run` is clicked for a failed or queued selected run, rerun the guarded demo reset afterward to restore canonical screenshot state.
+
+### Remaining risks
+
+- The Windows `py` launcher is not available on PATH, so `py -3.12 --version` fails even though `uv` can run Python 3.12.10 and all Python 3.12 gates passed.
+- Visual browser QA was not directly automated in this session because the Browser control tool was not exposed.
+- Docker PostgreSQL remains running after this pass as the requested local dependency.
+
+### Confirmation
+
+Codex did not stage, commit, push, create a branch, reset, rebase, stash, discard changes, deploy, add CI, add GitHub Actions, call paid APIs, call real HubSpot/Slack/Google Sheets/OpenAI, print `.env`, print secrets, edit `.env`, or call real external providers.
+
+### Suggested commit message
+
+```text
+Record strict local demo verification
+```
 
 ## Local validation repair - Python 3.12
 
