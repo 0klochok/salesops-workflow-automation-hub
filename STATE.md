@@ -7695,3 +7695,51 @@ Document final portfolio recording checklist
 ```text
 Record final handoff documentation pass
 ```
+
+# Portfolio Listing Package - 2026-06-17
+
+## 1. Phase Name
+
+Portfolio Listing Package.
+
+## 2. Files Changed
+
+- `docs/PORTFOLIO_LISTING.md`: added a concise client-facing portfolio listing package with title, summary, problem, solution, feature bullets, stack, mock/local boundaries, demo proof points, platform descriptions, and real-client adaptation notes.
+- `STATE.md`: added this phase entry.
+
+## 3. Validation Commands Run
+
+| Command | Result |
+|---|---|
+| `git status --branch --short` | pass; working tree showed only `STATE.md` modified and `docs/PORTFOLIO_LISTING.md` untracked before final status |
+| `git diff --check` | pass; no whitespace errors; Git warned that `STATE.md` LF will be replaced by CRLF on next Git touch |
+| `uv sync --frozen` | pass; checked 42 packages |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | pass; 32 files already formatted |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass; no issues in 29 source files |
+| safe no-`.env` backend pytest equivalent | pass; ran from temp working directory with explicit local mock/test environment and `uv --project <repo> run --no-python-downloads --python 3.12 --frozen pytest <repo>\tests`; 69 passed, 1 known FastAPI/Starlette TestClient deprecation warning |
+| `pnpm install --frozen-lockfile` | pass; already up to date |
+| `pnpm --dir apps/web lint` | pass |
+| `pnpm --dir apps/web test -- --run` | pass; 5 files and 56 tests passed |
+| `pnpm --dir apps/web typecheck` | pass |
+| `pnpm --dir apps/web build` | pass; Next.js 15.5.18 production build completed |
+| `Test-Path -LiteralPath ".github\workflows"` | pass; returned `False` |
+| `git ls-files -- .env .env.example .github .github\workflows` | pass; only `.env.example` is tracked |
+| requested tracked secret-pattern `git grep` scan | completed; matches were placeholder/mock config references in `.env.example` and historical `STATE.md`, not live tokens or private keys |
+
+## 4. Skipped Checks And Reasons
+
+- Manual browser QA: skipped for this documentation-only portfolio listing package because no product code, UI behavior, routes, or runtime configuration changed.
+- Real provider/API checks: skipped because this project remains mock-only and local-first, and real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, and webhook calls are intentionally forbidden for this phase.
+
+## 5. Current Known Limitations
+
+- The project is not deployed and is not production SaaS.
+- Real CRM, Slack, Google Sheets, OpenAI, paid-provider, webhook, auth, billing, multi-tenant, and production-hardening work remains intentionally out of scope unless approved in a future phase.
+- The new portfolio listing is documentation-only and relies on the existing local demo, screenshots, case study, and reviewer scripts for proof.
+
+## 6. Suggested Commit Message
+
+```text
+Add portfolio listing package
+```
