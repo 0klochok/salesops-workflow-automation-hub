@@ -2,7 +2,7 @@
 
 SalesOps Workflow Automation Hub is a local-first portfolio demo for automating a growth agency's lead intake workflow. It accepts leads from a public form and CSV upload, validates and deduplicates them, simulates CRM contact/deal upsert behavior, simulates qualified-lead Slack notification, persists audit/run records, and gives reviewers a local-only admin dashboard for run history, failure detail, and guarded manual retry.
 
-The demo is built for a fake growth agency with 5 sales reps. It is intended for sales operations, revenue operations, and agency teams that need faster lead handoff, fewer duplicates, and clearer auditability without depending on spreadsheets or manual CRM/Slack updates.
+The demo is built around a synthetic growth agency scenario with 5 sales reps. It is intended for sales operations, revenue operations, and agency teams that need faster lead handoff, fewer duplicates, and clearer auditability without depending on spreadsheets or manual CRM/Slack updates.
 
 All demo data is synthetic. All CRM and Slack behavior is deterministic mock behavior. No paid APIs, real provider calls, live webhooks, production accounts, or real customer data are required to run or review the project locally.
 

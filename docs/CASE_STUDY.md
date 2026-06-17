@@ -2,7 +2,7 @@
 
 ## Business Problem
 
-A fake growth agency with 5 sales reps receives leads from website forms and CSV uploads. The manual process requires reps to check lead quality, look for duplicates, update CRM records, notify the team, and reconstruct failures from scattered notes. That creates duplicate records, delayed follow-up, missed qualified leads, and weak auditability.
+A synthetic growth agency scenario with 5 sales reps receives leads from website forms and CSV uploads. The manual process requires reps to check lead quality, look for duplicates, update CRM records, notify the team, and reconstruct failures from scattered notes. That creates duplicate records, delayed follow-up, missed qualified leads, and weak auditability.
 
 ## Solution
 
@@ -38,4 +38,4 @@ This is intentionally a local portfolio demo. It uses synthetic data, local Post
 
 ## Client Adaptation Opportunities
 
-A client could adapt this pattern for lead routing, inbound sales qualification, partner intake, event follow-up, operations QA, or any workflow that needs validation, dedupe, traceable external-system handoff, and failure review. Real CRM, Slack, Google Sheets, or other provider integrations should be added only in a separate approved phase behind the existing adapter boundaries, with mock-first tests and explicit credential handling.
+A client could adapt this pattern for lead routing, inbound sales qualification, partner intake, event follow-up, operations QA, or other sales/admin workflows that need validation, dedupe, auditable handoff steps, and failure review. Real CRM, Slack, Google Sheets, or other provider integrations should be added only in a separate approved phase behind the existing adapter boundaries, with mock-first tests and explicit credential handling.

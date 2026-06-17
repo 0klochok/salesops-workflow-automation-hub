@@ -9,10 +9,10 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final portfolio publishing readiness audit |
-| Overall status | Public-facing materials audited for posting readiness; local-first, mock-only, synthetic-data boundaries confirmed; only `STATE.md` documentation changed |
-| Quality gate status | Required static docs, git, safety, secret/token, path, and link gates passed or produced expected boundary-only matches; backend/frontend/runtime gates skipped with docs-only reason |
-| Completion | Complete for final portfolio publishing readiness audit, subject to user manual recording/posting review |
+| Current phase | Freelance platform posting copy preference pass |
+| Overall status | Public-facing freelance posting copy tightened for buyer-facing clarity while preserving local-first, mock-only, synthetic-data boundaries |
+| Quality gate status | Required docs, git, forbidden-claim, token-shaped secret, absolute-path, AGENTS, and workflow-absence checks passed or produced expected boundary-only matches; backend/frontend/runtime gates skipped with docs-only reason |
+| Completion | Complete for freelance platform posting copy preference pass, subject to user manual posting review |
 | Main blocker | None |
 
 ## Owner manual browser QA completed on 2026-06-17.
@@ -28,6 +28,97 @@ Verified:
 - No paid API/provider behavior is triggered.
 
 Result: manual browser QA passed.
+
+## Latest Update - 2026-06-17 Freelance Platform Posting Copy Preference Pass
+
+Performed a docs-only publication-readiness pass on the scoped freelance platform and portfolio materials. The pass tightened buyer-facing wording, replaced informal "fake agency" phrasing with a synthetic scenario, and reduced language that could imply live-provider connection is a default next step. The project remains described as a local-first, mock-only portfolio demo that uses synthetic data and deterministic mock CRM/Slack behavior.
+
+### Phase summary
+
+- Kept the positioning focused on workflow automation, sales/admin operations, CSV intake, validation, duplicate checks, local admin review, synthetic data, and safe handoff boundaries.
+- Tightened platform snippets to sound more buyer-facing and less vague while avoiding claims about production deployment, OAuth/auth, enterprise readiness, real customer data, guaranteed business outcomes, paid APIs, or live provider integrations.
+- Preserved the existing safety boundary: no real HubSpot, Slack, Google Sheets, OpenAI, CRM, paid API, production API, webhook, provider dashboard, OAuth, real credential, or customer-data usage is required or claimed.
+- Did not edit backend, frontend, package, lockfile, migration, runtime config, generated asset, screenshot, `.env`, GitHub Actions, deployment, provider integration, staged file, commit, push, reset, rebase, stash, or branch state.
+
+### Files inspected
+
+- `AGENTS.md`
+- `README.md`
+- `HANDOFF.md`
+- `STATE.md`
+- `docs/PORTFOLIO_LISTING.md`
+- `docs/FREELANCE_PLATFORM_SNIPPETS.md`
+- `docs/DEMO_SCRIPT.md`
+- `docs/CASE_STUDY.md`
+
+### Files changed
+
+- `README.md`: changed "fake growth agency" to a synthetic growth agency scenario.
+- `docs/PORTFOLIO_LISTING.md`: tightened Upwork, Contra, and Fiverr/Gig descriptions around buyer-facing workflow value and local mock-only review.
+- `docs/FREELANCE_PLATFORM_SNIPPETS.md`: tightened platform descriptions and clarified that real integration work would be a separate approved phase.
+- `docs/CASE_STUDY.md`: changed "fake growth agency" to a synthetic scenario and made client adaptation wording more sales/admin workflow focused.
+- `STATE.md`: added this phase record and updated meta status.
+
+### Scope check
+
+- Documentation/copy-only change.
+- No runtime/backend/frontend/package/lock/migration/config/asset file changed.
+- No GitHub Actions, deployment config, live provider integration, paid API, real secret, `.env`, staged change, commit, push, reset, rebase, stash, or branch operation was created or performed.
+- No real HubSpot, Slack, Google Sheets, OpenAI, CRM, production API, webhook, OAuth, provider-dashboard, paid-API, or customer-data call/check was run.
+
+### Checks run
+
+| Command or check | Result |
+|---|---|
+| `git status --branch --short` | Pass before edits; `## main...origin/main` and clean worktree |
+| `rg --files` | Pass; repository inventory inspected |
+| `rg --files -g AGENTS.md` | Pass; only top-level `AGENTS.md` found |
+| Required scoped docs read | Pass; all files listed under Files inspected were read |
+| Preliminary forbidden-claim scan | Pass/expected matches; matches were existing safety boundaries, explicit exclusions, or approved future-phase language, not overclaims |
+| Copy diff review | Pass; diff limited to wording in README, portfolio listing, freelance snippets, and case study |
+| Final `git status --branch --short` | Pass; modified files are `README.md`, `STATE.md`, `docs/CASE_STUDY.md`, `docs/FREELANCE_PLATFORM_SNIPPETS.md`, and `docs/PORTFOLIO_LISTING.md` only |
+| Final `git diff --check` | Pass; no whitespace errors; Git warned that the edited Markdown files will be normalized from LF to CRLF the next time Git touches them |
+| Final `git diff --name-only` | Pass; changed file list matches this phase; Git emitted the same LF-to-CRLF normalization warnings |
+| Final `git ls-files --others --exclude-standard` | Pass; no untracked files |
+| Final `Test-Path -LiteralPath ".github\workflows"` | Pass; returned `False` |
+| Final forbidden-claim scan | Pass/expected matches; matches were safety boundaries, explicit exclusions, local/mock wording, or historical STATE records, not claims of production deployment, OAuth/auth support, enterprise readiness, live-provider usage, paid APIs, or real customer data |
+| Final token-shaped secret scan | Pass; no token-shaped OpenAI, Slack, GitHub, AWS, Google, SendGrid, or private-key values found |
+| Final absolute local path scan | Pass; no Windows user path or Unix home/system absolute local path found in the scoped docs |
+
+### Skipped checks with reasons
+
+- Backend pytest/Ruff/mypy were skipped because no backend source, schema, persistence, migration, dependency, package, runtime config, or API behavior changed.
+- Frontend lint/tests/typecheck/build were skipped because no frontend source, route, component, UI behavior, package, lockfile, or runtime behavior changed.
+- Docker/PostgreSQL/browser QA was skipped because no runtime behavior, database path, seed data, screenshot, UI, or asset changed.
+- Real CRM, Slack, HubSpot, Salesforce, Google Sheets, OpenAI, paid API, production API, OAuth, webhook, deployment, live-provider, and provider-dashboard checks were skipped because they are explicitly forbidden for this local mock-only portfolio phase.
+- GitHub Actions/CI, deployment, staging, commit, push, reset, rebase, stash, branch creation, and cleanup actions were skipped because they are out of scope or explicitly forbidden.
+
+### Remaining risks
+
+- This was a static documentation copy pass, not a fresh end-to-end runtime smoke test; runtime confidence relies on prior validation until the user chooses to rerun the full local gate.
+- Broad claim scans intentionally match safety-boundary and historical STATE wording, so scan review depends on classifying those matches rather than expecting zero output.
+- Final platform posting tone may still need manual user preference edits for each marketplace profile.
+
+### Final git status
+
+Final status after this docs-only pass:
+
+```text
+## main...origin/main
+ M README.md
+ M STATE.md
+ M docs/CASE_STUDY.md
+ M docs/FREELANCE_PLATFORM_SNIPPETS.md
+ M docs/PORTFOLIO_LISTING.md
+```
+
+No files are staged.
+
+### Suggested commit message
+
+```text
+Tighten freelance platform posting copy
+```
 
 ## Latest Update - 2026-06-17 Final Portfolio Publishing Readiness Audit
 

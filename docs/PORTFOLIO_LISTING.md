@@ -68,15 +68,15 @@ This project turns that manual handoff into a traceable local workflow. A FastAP
 
 ### Upwork Version
 
-I built a local-first SalesOps workflow automation demo that turns form and CSV leads into validated, deduplicated, auditable workflow runs. It uses FastAPI, Next.js, PostgreSQL, and mock CRM/Slack adapters to show how a client intake process could be automated safely before connecting real providers. The demo includes a local admin run-history dashboard with filters, sanitized failure detail, and guarded retry behavior.
+I built a local-first SalesOps workflow automation demo for teams that receive leads from forms and CSVs. It validates submissions, checks duplicates, records auditable run history, and uses mock CRM/Slack adapters to show the handoff shape without live providers. The demo includes a local admin review dashboard with filters, sanitized failure detail, and guarded retry behavior.
 
 ### Contra Version
 
-A portfolio-ready SalesOps automation case study for lead intake, dedupe, mock CRM handoff, mock Slack notification, and local run-history review. Built with FastAPI, Next.js, TypeScript, PostgreSQL, and synthetic data, it demonstrates how I design traceable automation workflows before moving into real provider integrations.
+A portfolio-ready SalesOps automation case study for lead intake, dedupe, mock CRM handoff, mock Slack notification, and local run-history review. Built with FastAPI, Next.js, TypeScript, PostgreSQL, and synthetic data, it demonstrates traceable workflow automation with clear provider boundaries.
 
 ### Fiverr/Gig Version
 
-I can build a custom lead intake automation workflow that validates submissions, checks duplicates, records run history, and prepares CRM/team notification handoffs. This demo shows the pattern locally with FastAPI, Next.js, PostgreSQL, and mock integrations so the workflow can be reviewed safely before adding real tools like a CRM or Slack.
+I can build custom lead intake automation workflows for sales/admin teams: validation, duplicate checks, run-history evidence, and CRM/team-notification handoff design. This demo shows the pattern locally with FastAPI, Next.js, PostgreSQL, and mock integrations so the workflow can be reviewed safely without live customer systems.
 
 ## How I Would Adapt This For A Real Client
 

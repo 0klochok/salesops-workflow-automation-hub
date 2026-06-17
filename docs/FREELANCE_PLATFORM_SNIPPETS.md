@@ -4,13 +4,13 @@ Use these snippets for freelance profiles, proposals, portfolio pages, or market
 
 ## Upwork-Style Project Description
 
-I built SalesOps Workflow Automation Hub as a local-first portfolio demo for lead intake automation. It shows how form and CSV leads can move through validation, dedupe checks, mock CRM handoff, mock Slack notification, local persistence, failure detail, and guarded retry without connecting to live providers.
+I built SalesOps Workflow Automation Hub as a local-first portfolio demo for sales/admin lead intake. It shows how form and CSV submissions can move through validation, duplicate checks, local persistence, mock CRM handoff, mock Slack notification, failure review, and guarded retry without connecting to live providers.
 
-The demo uses FastAPI, Next.js, TypeScript, PostgreSQL, SQLAlchemy, Alembic, Pydantic, Tailwind CSS, and TanStack Table. All data is synthetic, all CRM/Slack behavior is deterministic mock behavior, and the project is intended to demonstrate automation architecture and reviewer-ready workflow proof rather than a deployed client system.
+The demo uses FastAPI, Next.js, TypeScript, PostgreSQL, SQLAlchemy, Alembic, Pydantic, Tailwind CSS, and TanStack Table. All data is synthetic, all CRM/Slack behavior is deterministic mock behavior, and the project demonstrates workflow automation structure, failure visibility, and safe handoff boundaries rather than a deployed client system.
 
 ## Fiverr/Contra-Style Version
 
-Local-first SalesOps automation demo for form and CSV lead intake, validation, dedupe, mock CRM/Slack handoff, and local admin run-history review. Built with FastAPI, Next.js, TypeScript, and PostgreSQL using synthetic data only. Mock-only and not connected to live providers.
+Local-first SalesOps automation demo for cleaner form and CSV lead intake, validation, dedupe evidence, mock CRM/Slack handoff, and local admin run-history review. Built with FastAPI, Next.js, TypeScript, and PostgreSQL using synthetic data only. Mock-only and not connected to live providers.
 
 ## Proof Points
 
@@ -27,7 +27,7 @@ Local-first SalesOps automation demo for form and CSV lead intake, validation, d
 
 - How I structure a workflow automation project around clear intake, validation, dedupe, provider boundaries, persistence, and auditability.
 - How a local admin surface can expose run status, source, owner, error type, attempts, failure detail, and retry history.
-- How mock adapters can prove the shape of CRM and team-notification handoffs before any real integration phase.
+- How mock adapters can prove the shape of CRM and team-notification handoffs before a separate approved integration phase.
 - How synthetic demo data and local setup instructions make a portfolio project reviewable without secrets or third-party accounts.
 
 ## What This Demo Does Not Claim
