@@ -9,11 +9,68 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Manual browser QA closure and final public-demo readiness record |
-| Overall status | Automated backend, frontend, Docker/PostgreSQL, demo reset, HTTP/API smoke, and safety checks passed; in-app browser automation could not start in the Windows sandbox, so fresh browser visual QA is skipped for this phase |
-| Quality gate status | Required local automated gates passed; browser automation skipped with exact process-launch reason; no code changes, no staged files, no commits, no pushes, no real provider calls |
-| Completion | Partial for browser closure: local-demo readiness is validated by automated and HTTP checks, but fresh manual/browser visual QA still requires user confirmation |
-| Main blocker | In-app browser automation failed twice before page checks with `windows sandbox failed: runner error: CreateProcessAsUserW failed: 5` |
+| Current phase | Owner-confirmed manual browser QA closure |
+| Overall status | Owner-confirmed manual browser QA passed; automated backend, frontend, Docker/PostgreSQL, demo reset, HTTP/API smoke, and safety checks previously passed; in-app browser automation remains skipped with the Windows sandbox process-launch failure reason |
+| Quality gate status | Required documentation-only closure checks passed; browser automation skipped with exact process-launch reason; no code changes, no staged files, no commits, no pushes, no real provider calls |
+| Completion | Complete for owner-confirmed manual browser QA closure; browser automation did not run and remains recorded as skipped |
+| Main blocker | In-app browser automation failed twice before page checks with `windows sandbox failed: runner error: CreateProcessAsUserW failed: 5`; owner manual browser QA passed separately |
+
+## Latest Update - 2026-06-17 Owner-Confirmed Manual Browser QA Closure
+
+### Phase summary
+
+- Recorded the owner's manual browser QA result in `STATE.md` only.
+- Owner confirmed manual browser QA successfully passed on 2026-06-17.
+- Preserved the prior in-app browser automation status as skipped/blocked; Codex did not rerun or mark browser automation as passed.
+- Did not change functional code, package files, lockfiles, migrations, config, `.env`, GitHub Actions, deployment config, providers, or external integrations.
+- Did not stage, commit, push, reset, rebase, stash, or call real HubSpot, Slack, Google Sheets, OpenAI, paid, production, webhook, OAuth, or provider APIs.
+
+### Files inspected
+
+- `STATE.md`
+- Repository status with `git status --short --branch`
+
+### Files changed
+
+- `STATE.md`: updated current meta and added this owner-confirmed manual browser QA closure record only.
+
+### Owner-confirmed manual browser QA result
+
+| Check | Result |
+|---|---|
+| Home page loads without visual breakage | Pass; owner-confirmed manual browser QA |
+| Admin page loads | Pass; owner-confirmed manual browser QA |
+| Run history appears | Pass; owner-confirmed manual browser QA |
+| Run detail opens | Pass; owner-confirmed manual browser QA |
+| Filters work | Pass; owner-confirmed manual browser QA |
+| Reset filters works | Pass; owner-confirmed manual browser QA |
+| Selected-run scroll/focus behavior works | Pass; owner-confirmed manual browser QA |
+| Horizontal overflow behaves correctly | Pass; owner-confirmed manual browser QA |
+| No broken layout after horizontal drag/scroll | Pass; owner-confirmed manual browser QA |
+| Network tab shows only local backend/proxy calls | Pass; owner-confirmed manual browser QA |
+| No calls to paid APIs | Pass; owner-confirmed manual browser QA |
+| No unexpected external provider requests | Pass; owner-confirmed manual browser QA |
+| No secrets or real customer data visible | Pass; owner-confirmed manual browser QA |
+
+### Browser automation status
+
+| Check | Result |
+|---|---|
+| In-app browser automation | Skipped/blocked; did not pass; preserved reason: `windows sandbox failed: runner error: CreateProcessAsUserW failed: 5` |
+
+### Skipped checks with reasons
+
+- Browser automation remains skipped because the prior in-app browser automation failed before page checks with `windows sandbox failed: runner error: CreateProcessAsUserW failed: 5`.
+- Backend pytest/Ruff/mypy were skipped because this phase changed `STATE.md` only and did not touch backend source, schemas, persistence, migrations, dependencies, runtime config, or API behavior.
+- Frontend lint/tests/typecheck/build were skipped because this phase changed `STATE.md` only and did not touch frontend source, routes, components, UI behavior, package files, lockfiles, or runtime behavior.
+- Docker/PostgreSQL/local server smoke was skipped because this phase changed documentation state only and owner manual browser QA was already confirmed.
+- Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, OAuth, webhook, provider-dashboard, and external-service checks were skipped because they are explicitly forbidden for this mock-only local portfolio phase.
+- GitHub Actions, CI, deployment, staging, auth, provider integration, staging/production smoke, commits, pushes, staging, reset, rebase, stash, and branch history actions were skipped because they are out of scope or explicitly forbidden.
+
+### Remaining risks
+
+- Browser automation is still not validated and must remain recorded as skipped, not passed.
+- This closure records the owner-provided manual browser result; Codex did not independently perform browser automation in this phase.
 
 ## Latest Update - 2026-06-17 Manual Browser QA Closure Attempt And Final Public-Demo Readiness Record
 
