@@ -259,7 +259,7 @@ $env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
 $env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
 pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
 pnpm --dir apps/web lint
-pnpm --dir apps/web test
+pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
@@ -341,7 +341,7 @@ uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
 uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
-pnpm --dir apps/web test
+pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 git ls-files -- .github
@@ -359,7 +359,7 @@ uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
 uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
-pnpm --dir apps/web test
+pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 docker compose config

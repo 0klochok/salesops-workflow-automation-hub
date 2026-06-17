@@ -35,7 +35,7 @@ Current reviewer handoff validation uses the lockfile-backed local gate below. S
 - `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests`
 - `pnpm install --frozen-lockfile`
 - `pnpm --dir apps/web lint`
-- `pnpm --dir apps/web test`
+- `pnpm --dir apps/web test -- --run`
 - `pnpm --dir apps/web typecheck`
 - `pnpm --dir apps/web build`
 
@@ -84,7 +84,7 @@ Current frontend commands:
 
 ```powershell
 pnpm --dir apps/web lint
-pnpm --dir apps/web test
+pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```
@@ -132,11 +132,11 @@ Existing backend tests also cover:
 | Slack notifier mock tests | Qualified notification, unqualified skip, formatting, adapter failure, no live API calls | Backend unit/contract tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
 | Retry logic tests | Failed/queued run retry, new attempt creation, history preservation, status transitions, rejection of non-retryable runs | Backend unit/API tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
 | Persistence tests | Lead/run/attempt/audit persistence, persisted snapshots, failed-run details | Backend repository tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
-| Admin run history/detail/retry tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility, retry success refresh, retry proxy status/body preservation, no duplicate retry submissions, explicit 403/404/409 retry errors, no reset UI | Backend API tests, frontend component tests, and frontend route-handler tests | `uv run --no-python-downloads --python 3.12 --frozen pytest`; `pnpm --dir apps/web test` |
+| Admin run history/detail/retry tests | Persisted run list, deterministic sorting, latest attempt summaries, failure availability, selected run detail visibility, retry success refresh, retry proxy status/body preservation, no duplicate retry submissions, explicit 403/404/409 retry errors, no reset UI | Backend API tests, frontend component tests, and frontend route-handler tests | `uv run --no-python-downloads --python 3.12 --frozen pytest`; `pnpm --dir apps/web test -- --run` |
 | Demo seed tests | Success/failed/queued/retried examples, repeatability, local-only deterministic records | Backend API/repository tests | `uv run --no-python-downloads --python 3.12 --frozen pytest` |
-| Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test` |
-| CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test` |
-| Session dashboard tests | Filters, current-session results, duplicate hints | Frontend component tests | `pnpm --dir apps/web test` |
+| Lead form tests | Schema-aligned inputs, success/error states, local proxy payload | Frontend component tests | `pnpm --dir apps/web test -- --run` |
+| CSV import tests | Valid rows, invalid rows, mixed batches, row-level errors, local-only parsing | Frontend unit/component tests | `pnpm --dir apps/web test -- --run` |
+| Session dashboard tests | Filters, current-session results, duplicate hints | Frontend component tests | `pnpm --dir apps/web test -- --run` |
 | End-to-end demo smoke test | Submit/import lead, inspect dashboard, verify duplicate hint | Manual smoke | `RUNBOOK.md` steps |
 
 ## 5. Frontend Testing Expectations

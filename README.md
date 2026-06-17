@@ -149,7 +149,7 @@ uv run --no-python-downloads --python 3.12 --frozen ruff format --check .
 uv run --no-python-downloads --python 3.12 --frozen mypy backend tests
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
-pnpm --dir apps/web test
+pnpm --dir apps/web test -- --run
 pnpm --dir apps/web typecheck
 pnpm --dir apps/web build
 ```

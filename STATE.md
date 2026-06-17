@@ -9,11 +9,122 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final release evidence record |
-| Overall status | Final release evidence recorded; no README/RUNBOOK/TDD correction was needed; current backend/frontend local validation gate passed; prior Docker/PostgreSQL, HTTP smoke, and owner manual browser QA evidence remains the release signal |
+| Current phase | Repository release finalization / portfolio handoff review |
+| Overall status | Ready for final portfolio presentation after doc-only command correction; active reviewer docs are internally consistent with the supported local demo route and mock-only provider boundary |
 | Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; app-importing pytest ran from `logs/noenv` with explicit mock/local environment values to avoid reading the ignored local `.env`; Git reports LF-to-CRLF working-copy warnings for touched Markdown while `git diff --check` exits 0 |
-| Completion | Complete for final release evidence record |
+| Completion | Complete for repository release finalization / portfolio handoff review |
 | Main blocker | None |
+
+## Latest Update - 2026-06-16 Repository Release Finalization / Portfolio Handoff Review
+
+Performed a validation-first final handoff review for `README.md`, `RUNBOOK.md`, `TDD.md`, and the active top entries in `STATE.md`. The working tree started clean with `git status --short` returning no output, and both required whitespace checks were clean before doc edits.
+
+One active documentation drift was found and corrected: frontend test examples in `README.md`, `RUNBOOK.md`, and `TDD.md` used `pnpm --dir apps/web test`, while the repository command and current release gate require the explicit non-watch command `pnpm --dir apps/web test -- --run`.
+
+Historical `STATE.md` entries still preserve older commands such as `mypy .` and old 3000/8000 smoke evidence. Those are historical validation records, not active reviewer instructions. The current reviewer path remains backend `127.0.0.1:8028`, frontend `127.0.0.1:3042`, `/`, `/admin/runs`, `/docs` frontend redirect to backend `/docs`, and backend `/openapi.json`.
+
+### Files changed
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Aligned local validation frontend test command with the current required gate |
+| `RUNBOOK.md` | Aligned frontend command lists and full handoff validation command with the current required gate |
+| `TDD.md` | Aligned current frontend test command and test matrix entries with the current required gate |
+| `STATE.md` | Recorded this release finalization review, validation, skipped checks, risks, and next action |
+
+No product code, backend behavior, frontend behavior, UI behavior, API contract, dependency, lockfile, migration, generated asset, GitHub Actions workflow, deployment config, real provider integration, secret, ignored `.env` file, staged change, commit, or push was changed.
+
+### Documentation consistency and route review
+
+| Check | Result |
+|---|---|
+| `README.md`, `RUNBOOK.md`, `TDD.md`, active `STATE.md` review | Pass after doc correction; active commands and reviewer flow now agree |
+| Actual frontend scripts | Pass; `apps/web/package.json` exposes `lint`, `test`, `typecheck`, and `build`; root `frontend:test` already uses `pnpm --dir apps/web test -- --run` |
+| Actual backend tooling | Pass; `pyproject.toml` scopes mypy to `backend` and `tests`; active docs use `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` |
+| Actual frontend routes | Pass; source contains `/`, `/admin/runs`, `/docs`, and `/api/leads/...` route/proxy files |
+| Actual backend routes | Pass; source exposes `/health`, `/leads/intake`, `/leads/runs`, selected run detail, failure detail, retry, `/docs`, and `/openapi.json` |
+| Seeded demo filter examples | Pass; `backend/app/leads/demo_seed.py` supports documented `run_demo_success`, `run_demo_failed`, `run_demo_retried`, `run_demo_queued`, `csv_upload`, `atlas`, `adapter`, fixed `2026-06-01` dates, and derived owner `Maya Patel` for failed/queued rows |
+| GitHub Actions / workflow files | Pass; `.github\workflows` does not exist and `git ls-files -- .github .github\workflows` returned no tracked workflow files |
+
+### Search results
+
+| Scan | Command | Result |
+|---|---|---|
+| Active stale command/port scan excluding historical `STATE.md` | `rg -n "localhost:3000|127\.0\.0\.1:3000|localhost:8000|127\.0\.0\.1:8000|mypy\s+\." README.md RUNBOOK.md TDD.md HANDOFF.md docs` | Pass/limited; only RUNBOOK source-code fallback defaults for `127.0.0.1:8000` remain |
+| Active production/CI requirement scan | `rg -n -i "production-ready|production ready|deploy|deployment|staging|prod smoke|real provider smoke|GitHub Actions|\bCI\b" README.md RUNBOOK.md TDD.md HANDOFF.md docs` | Pass/limited; matches are explicit absence, out-of-scope, or do-not-claim guidance |
+| Provider/API boundary scan | `rg -n -i "paid API|paid APIs|real provider|real providers|production API|production APIs|webhook|webhooks|real HubSpot|real Slack|real CRM|HubSpot|Slack|Google Sheets|OpenAI|provider dashboard|live provider|production credential" README.md RUNBOOK.md TDD.md STATE.md HANDOFF.md docs` | Pass/limited; matches are mock-only behavior, exclusions, or future approval-gated guidance |
+| Active route scan | `rg -n "/admin/runs|/docs|/openapi\.json|/api/leads|/leads/(intake|runs)|127\.0\.0\.1:8028|127\.0\.0\.1:3042" README.md RUNBOOK.md TDD.md HANDOFF.md docs\DEMO_SCRIPT.md docs\DEMO_ASSETS.md docs\CASE_STUDY.md` | Pass; reviewer routes are supported local routes |
+| Frontend test command verification | `rg -n "pnpm --dir apps/web test" README.md RUNBOOK.md TDD.md` | Pass; all active matches now include `-- --run` |
+
+### Required validation results
+
+| Gate | Command | Result |
+|---|---|---|
+| Initial Git status | `git status --short` | Pass; no output before edits |
+| Initial whitespace | `git diff --check` | Pass; no output before edits |
+| Initial staged whitespace | `git diff --cached --check` | Pass; no output before edits |
+| Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
+| Backend tests | `uv --project $repo run --no-python-downloads --python 3.12 --frozen pytest --rootdir $repo "$repo\tests"` from `logs/noenv` with explicit local/mock env | Pass; Python 3.12.10, 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+| Backend lint | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| Backend format check | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
+| Backend typecheck | `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; no issues found in 29 source files |
+| Frontend dependency install | `pnpm install --frozen-lockfile` | Pass; all 2 workspace projects already up to date with pnpm 11.5.0 |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| Frontend tests | `pnpm --dir apps/web test -- --run` | Pass; Vitest 3.2.4, 5 test files passed, 56 tests passed |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes |
+
+Validation setup note: `logs/noenv` was created or reused as an ignored working directory for app-importing pytest. No ignored `.env` contents were read, printed, copied, edited, or screenshotted.
+
+### Skipped or limited checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Live browser visual QA by Codex | Skipped | This pass changed active validation docs only; full automated gate passed, and prior local HTTP/browser/manual QA remains recorded in the latest historical entries |
+| Docker/PostgreSQL live smoke rerun | Skipped | Not required for the doc-only command correction; previous local Docker/PostgreSQL, route, docs redirect, and owner manual browser QA evidence remains the release signal |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, provider dashboard, or external provider smoke | Skipped | Explicitly forbidden and outside the local mock-only portfolio boundary |
+| GitHub Actions / CI / deployment validation | Skipped | Explicitly out of scope; workflow absence was checked locally instead |
+| Commit, push, staging, reset, rebase, stash, branch operations, destructive cleanup | Skipped | Explicitly forbidden. Codex did not perform these actions. |
+| Ignored `.env` read/print/edit/copy | Skipped | Explicitly forbidden. Validation used tracked docs, source, and explicit local/mock environment variables only. |
+
+### Remaining risks and manual recommendation
+
+- Browser visual QA was not rerun in this pass because the only active correction was documentation command text. Use the documented local demo path for one final human visual review before recording or presentation if desired.
+- Historical `STATE.md` entries intentionally preserve older commands and old local ports as evidence from earlier phases; use the meta block and newest entries as current truth.
+- Git may continue to report LF-to-CRLF working-copy warnings for edited Markdown on Windows; `git diff --check` is the release signal for whitespace errors.
+
+Manual reviewer path remains:
+
+```powershell
+docker compose up -d postgres
+uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head
+uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply
+uv run --no-python-downloads --python 3.12 --frozen uvicorn backend.app.main:app --host 127.0.0.1 --port 8028
+```
+
+In a second PowerShell window:
+
+```powershell
+$env:BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+$env:NEXT_PUBLIC_BACKEND_API_BASE_URL = "http://127.0.0.1:8028"
+pnpm --dir apps/web exec next dev --hostname 127.0.0.1 --port 3042
+```
+
+Open `http://127.0.0.1:3042/`, `http://127.0.0.1:3042/admin/runs`, and `http://127.0.0.1:3042/docs`; use synthetic data only and confirm requests stay local.
+
+### Confirmation
+
+- Product code was untouched.
+- Active docs are internally consistent after the doc-only correction.
+- Reviewer/demo instructions use supported local routes and local mock flows.
+- No instruction requires GitHub Actions, paid APIs, production APIs, webhooks, or real providers.
+- Repository is ready for final portfolio presentation, subject to optional final human visual review.
+
+### Suggested commit message
+
+```text
+Finalize portfolio handoff validation docs
+```
 
 ## Latest Update - 2026-06-16 Final Release Evidence Record
 
