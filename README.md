@@ -169,6 +169,7 @@ uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.
 - [RUNBOOK.md](RUNBOOK.md): setup, local smoke checks, troubleshooting, and manual QA.
 - [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): concise local reviewer checklist and asset inventory.
 - [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md): optional screenshot, GIF, and video capture checklist.
+- [docs/PORTFOLIO_LISTING.md](docs/PORTFOLIO_LISTING.md): concise client-facing portfolio listing package.
 - [docs/CASE_STUDY.md](docs/CASE_STUDY.md): concise portfolio case study for reviewers and clients.
 - [TDD.md](TDD.md): test strategy and coverage matrix.
 - [HANDOFF.md](HANDOFF.md): reviewer demo sequence and future credential boundary notes.

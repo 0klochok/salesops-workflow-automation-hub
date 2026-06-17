@@ -7743,3 +7743,52 @@ Portfolio Listing Package.
 ```text
 Add portfolio listing package
 ```
+
+# Portfolio Publishing Readiness Pass - 2026-06-17
+
+## 1. Phase Summary
+
+- Created a concise freelance/profile publishing snippet package for SalesOps Workflow Automation Hub.
+- Kept the package explicitly local-first, mock-only, synthetic-data based, and clear that it is not a real deployed client system.
+- Added the missing README documentation-map link to the existing portfolio listing package.
+- No product code, dependencies, lockfiles, migrations, generated assets, GitHub Actions, secrets, `.env` files, provider integrations, commits, staging, or pushes were changed.
+
+## 2. Files Changed
+
+- `docs/FREELANCE_PLATFORM_SNIPPETS.md`: new Upwork-style description, shorter Fiverr/Contra-style version, proof points, demo-showing boundaries, non-claim boundaries, and suggested tags/keywords.
+- `README.md`: added one minimal link to `docs/PORTFOLIO_LISTING.md` in the documentation map.
+- `STATE.md`: added this phase record.
+
+## 3. Gates Run
+
+| Command | Result |
+|---|---|
+| `git status --branch --short` | pass before edits; branch `main...origin/main` with no working-tree changes |
+| `rg --files` | pass; repository inventory inspected before edits |
+| `rg --files -g AGENTS.md` | pass; only top-level `AGENTS.md` found |
+| required docs inspection | pass; inspected `README.md`, `RUNBOOK.md`, `HANDOFF.md`, latest `STATE.md`, `docs/PORTFOLIO_LISTING.md`, `docs/CASE_STUDY.md`, `docs/DEMO_SCRIPT.md`, `docs/DEMO_ASSETS.md`, and `.env.example` |
+| `git status --branch --short` | pass after edits; only `README.md`, `STATE.md`, and untracked `docs/FREELANCE_PLATFORM_SNIPPETS.md` were present |
+| `git diff --check` | pass; no whitespace errors; Git warned that `README.md` and `STATE.md` LF will be replaced by CRLF on next Git touch |
+| forbidden overclaim `Select-String` scan | pass/limited; matches in changed/portfolio docs were explicit safety boundaries, mock-only exclusions, or "does not claim" language, not claims of deployed, production, real-provider, paid-API, CI, OAuth, or customer-data capability |
+| secret-pattern `Select-String` scan | pass; broad docs scan excluding historical `STATE.md` self-references returned no matches and included the new freelance snippets doc |
+| `git diff --cached --name-only` | pass; no staged files |
+
+## 4. Skipped Gates With Reasons
+
+- Full backend tests/lint/typecheck were skipped because this phase changed documentation only and did not touch backend source, migrations, runtime configuration, schemas, or dependencies.
+- Full frontend lint/tests/typecheck/build were skipped because this phase changed documentation only and did not touch frontend source, routes, UI behavior, package files, or lockfiles.
+- Docker/PostgreSQL smoke checks were skipped because no persistence, migration, seed, runtime, or product behavior changed.
+- Real provider/API checks were skipped because this repository remains mock-only and local-first, and real CRM, Slack, HubSpot, Salesforce, Google Sheets, OpenAI, Anthropic, Gemini, paid API, production API, webhook, OAuth, and customer-data checks are intentionally out of scope.
+- Manual browser QA was skipped because no rendered product behavior, screenshots, or runtime flows changed.
+
+## 5. Remaining Manual Checks
+
+- Review `docs/FREELANCE_PLATFORM_SNIPPETS.md` for preferred personal tone before posting on Upwork, Fiverr, Contra, LinkedIn, or a portfolio site.
+- Optionally review the README documentation map placement for preference; the change is intentionally one link only.
+- Optionally run the full local quality gate before a manual commit if the user wants a fresh all-green repository checkpoint.
+
+## 6. Suggested Commit Message
+
+```text
+Add freelance platform publishing snippets
+```
