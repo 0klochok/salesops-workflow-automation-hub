@@ -45,7 +45,7 @@ This project turns that manual handoff into a traceable local workflow. A FastAP
 - The database is local PostgreSQL for the demo, with SQLite used only where tests justify a local fallback.
 - The admin dashboard is local-only and does not expose production admin controls.
 - `.env.example` contains placeholders only; real secrets are not required.
-- GitHub Actions, deployment config, hosted automation, live webhooks, and production infrastructure are intentionally absent.
+- OAuth flows, GitHub Actions, deployment config, hosted automation, live webhooks, and production infrastructure are intentionally absent.
 
 ## What The Demo Proves
 
@@ -61,7 +61,7 @@ This project turns that manual handoff into a traceable local workflow. A FastAP
 - Not a production SaaS product.
 - Not a real HubSpot, Slack, Google Sheets, OpenAI, or live-provider integration.
 - Not based on paid API usage.
-- Not a production security, auth, billing, or multi-tenant system.
+- Not a production security, authentication/OAuth, billing, or multi-tenant system.
 - Not a replacement for a client-specific CRM implementation without a separate approved integration phase.
 
 ## Freelance Platform Descriptions

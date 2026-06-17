@@ -7951,3 +7951,88 @@ Add freelance platform publishing snippets
 ```text
 Record portfolio publishing package finalization
 ```
+
+# Manual Portfolio Posting QA + Copy Tightening - 2026-06-17
+
+## 1. Phase Summary
+
+- Performed a strict final review of public-facing portfolio posting materials for conservative, client-safe publication.
+- Kept the project positioned as local-first, mock-only, synthetic-data based, not deployed, not production-ready, no CI/GitHub Actions, no OAuth, no paid APIs, and no live CRM/Slack/OpenAI/Google Sheets/provider behavior.
+- Tightened `docs/PORTFOLIO_LISTING.md` to explicitly state that OAuth flows are absent and that the project is not a production authentication/OAuth system.
+- No code, package files, lockfiles, migrations, screenshots/assets, `.env`, deployment config, GitHub Actions, commits, staging, pushes, reset, rebase, or stash actions were changed or performed.
+
+## 2. Files Inspected
+
+- `README.md`
+- `RUNBOOK.md`
+- `HANDOFF.md`
+- `.env.example`
+- `docs/PORTFOLIO_LISTING.md`
+- `docs/FREELANCE_PLATFORM_SNIPPETS.md`
+- `docs/DEMO_SCRIPT.md`
+- `docs/DEMO_ASSETS.md`
+- `docs/CASE_STUDY.md`
+- `docs/assets/README.md`
+- `docs/assets/demo/README.md`
+- `STATE.md` latest entries
+- `AGENTS.md`
+
+## 3. Files Changed
+
+- `docs/PORTFOLIO_LISTING.md`: added explicit OAuth absence to the local/mock boundary and clarified that the project is not a production authentication/OAuth system.
+- `STATE.md`: added this phase record.
+
+## 4. Gates Run
+
+| Command or check | Result |
+|---|---|
+| `git status --branch --short` | pass before edits; `## main...origin/main` and clean worktree |
+| `git diff --name-only` | pass before edits; no output |
+| `git ls-files --others --exclude-standard` | pass before edits; no output |
+| `rg --files` | pass; repository inventory inspected |
+| `rg --files -g AGENTS.md` | pass; only top-level `AGENTS.md` found |
+| `Test-Path -LiteralPath ".github\workflows"` | pass; returned `False` |
+| Required public-material reads | pass; files listed above were inspected |
+| `Select-String` forbidden-claim scan over public docs | pass/limited; matches were negative safety boundaries, explicit exclusions, future approval-gated language, or broad `CI` false positives inside ordinary words, not claims of deployment, production readiness, live providers, paid API usage, OAuth capability, or customer-data processing |
+| `Select-String` secret-like scan over public docs and `.env.example` | pass/limited; matches were safety wording, the documented non-production local database URL, and explicit placeholders such as `CRM_API_TOKEN=placeholder-not-a-real-secret`, `HUBSPOT_PRIVATE_APP_TOKEN=placeholder-not-a-real-secret`, and `SLACK_WEBHOOK_URL=https://example.invalid/not-a-real-webhook` |
+| Refined token-shaped `Select-String` secret scan | pass; no output for token/key shapes such as OpenAI, Slack, GitHub, AWS, Google, SendGrid, or private-key patterns |
+| `Select-String` absolute local path scan | pass; no Windows or Unix user-home absolute paths found in scanned public docs, `.env.example`, or `STATE.md` |
+| Markdown link/image inventory for changed docs | pass; `docs/PORTFOLIO_LISTING.md` has four relative links and no images; `docs/FREELANCE_PLATFORM_SNIPPETS.md` has no Markdown links/images |
+| Link target `Test-Path` checks | pass; `docs/CASE_STUDY.md`, `docs/DEMO_SCRIPT.md`, `docs/DEMO_ASSETS.md`, and `README.md` all returned `True` |
+| `git diff -- docs\PORTFOLIO_LISTING.md` | pass; diff limited to two OAuth/authentication boundary wording lines |
+| Final `git status --branch --short` | pass; `STATE.md` and `docs/PORTFOLIO_LISTING.md` modified only |
+| Final `git diff --check` | pass; no whitespace errors; Git warned that `STATE.md` and `docs/PORTFOLIO_LISTING.md` LF will be replaced by CRLF the next time Git touches them |
+| Final `git diff --name-only` | pass; `STATE.md` and `docs/PORTFOLIO_LISTING.md` only |
+| Final `git ls-files --others --exclude-standard` | pass; no output |
+
+## 5. Skipped Checks With Reasons
+
+- Backend pytest/Ruff/mypy were skipped because no backend source, schema, migration, dependency, package, or runtime configuration file changed.
+- Frontend lint/tests/typecheck/build were skipped because no frontend source, route, component, package, lockfile, or runtime behavior changed.
+- Docker/PostgreSQL/browser QA was skipped because no runtime behavior, screenshots, local database path, UI behavior, or screenshot assets changed.
+- Real CRM, Slack, HubSpot, Salesforce, Google Sheets, OpenAI, paid API, production API, OAuth, webhook, deployment, live-provider, and provider-dashboard checks were skipped because they are explicitly forbidden for this local mock-only portfolio phase.
+- GitHub Actions/CI, deployment, staging, commit, push, reset, rebase, stash, and cleanup actions were skipped because they are out of scope or explicitly forbidden.
+
+## 6. Remaining Risks
+
+- This was a documentation QA pass, not a fresh runtime smoke test; runtime confidence relies on prior recorded validation until the user chooses to rerun the full local gate.
+- Broad `Select-String` scans intentionally match safety-boundary wording and placeholders, so scan review depends on classifying those matches rather than expecting zero output.
+- Platform-specific posting tone may still need manual adjustment for the user's preferred profile voice, but the current claims are conservative and bounded.
+
+## 7. Final Git Status Summary
+
+Final `git status --branch --short` after this phase showed:
+
+```text
+## main...origin/main
+ M STATE.md
+ M docs/PORTFOLIO_LISTING.md
+```
+
+No files are staged.
+
+## 8. Suggested Commit Message
+
+```text
+Tighten portfolio posting copy
+```
