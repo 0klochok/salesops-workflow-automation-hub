@@ -4,16 +4,74 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-16 |
+| Last updated | 2026-06-17 |
 | Owner | User |
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Repository release finalization / portfolio handoff review |
-| Overall status | Ready for final portfolio presentation after doc-only command correction; active reviewer docs are internally consistent with the supported local demo route and mock-only provider boundary |
-| Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; app-importing pytest ran from `logs/noenv` with explicit mock/local environment values to avoid reading the ignored local `.env`; Git reports LF-to-CRLF working-copy warnings for touched Markdown while `git diff --check` exits 0 |
-| Completion | Complete for repository release finalization / portfolio handoff review |
+| Current phase | Final portfolio recording rehearsal QA |
+| Overall status | Ready for final portfolio recording rehearsal after checklist review and local quality gate; active reviewer docs remain local-only and mock-safe |
+| Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; exact root-level pytest was not run because an ignored local `.env` exists and backend settings use `env_file=".env"`, so an equivalent `uv --project ... pytest` command ran from `apps/web` without reading root `.env` and passed |
+| Completion | Complete for final portfolio recording rehearsal QA |
 | Main blocker | None |
+
+## Latest Update - 2026-06-17 Final Portfolio Recording Rehearsal QA
+
+Performed a validation-first recording rehearsal QA pass without changing product code. `RUNBOOK.md` section `10.2 Final Local Portfolio Recording Checklist` and the latest active `STATE.md` checkpoint were reviewed. The runbook checklist is accurate for the current local reviewer route, uses synthetic/mock-safe data, and does not claim that Codex performed automated browser QA; it explicitly frames browser visual QA as a manual procedure. Historical `STATE.md` entries preserve prior smoke/manual/browser evidence and should not be read as claims that browser QA was rerun in this pass.
+
+No backend behavior, frontend behavior, UI behavior, API contract, dependency, lockfile, migration, generated asset, GitHub Actions workflow, deployment config, real provider integration, secret, ignored `.env` contents, staged change, commit, or push was changed.
+
+### Required validation results
+
+| Gate | Command | Result |
+|---|---|---|
+| Repository root | `git rev-parse --show-toplevel` | Pass; resolved to `C:/Users/alex/Documents/Coding Projects/Protfolio Projects/salesops-workflow-automation-hub` |
+| Initial git status | `git status --short --branch` | Pass; `## main...origin/main` |
+| Whitespace | `git diff --check` | Pass; no output |
+| Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
+| Backend tests, safe equivalent | `uv --project "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub" run --no-python-downloads --python 3.12 --frozen pytest --rootdir "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub" "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub\tests"` from `apps/web` | Pass; 69 passed, 1 existing Starlette/FastAPI `TestClient` deprecation warning |
+| Backend lint | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| Backend format check | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
+| Backend typecheck | `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; no issues found in 29 source files |
+| Frontend dependency install | `pnpm install --frozen-lockfile` | Pass; all 2 workspace projects already up to date with pnpm 11.5.0 |
+| Frontend lint | `pnpm --dir apps/web lint` | Pass; `eslint .` exited 0 |
+| Frontend tests | `pnpm --dir apps/web test -- --run` | Pass; 5 files passed, 56 tests passed |
+| Frontend build | `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 compiled successfully and generated 8 routes |
+| Frontend typecheck | `pnpm --dir apps/web typecheck` | Pass; `tsc --noEmit` exited 0 |
+| Workflow directory | `Test-Path -LiteralPath ".github\workflows"` | Pass; `False` |
+| Tracked env/workflow paths | `git ls-files -- .env .env.example .github .github\workflows` | Pass; only `.env.example` is tracked |
+
+### Skipped or adjusted checks
+
+| Check | Status | Reason |
+|---|---|---|
+| Exact root-level `uv run --no-python-downloads --python 3.12 --frozen pytest` | Adjusted | An ignored root `.env` exists, and `backend/app/config.py` declares `env_file=".env"`. Running app-importing pytest from the repository root would read that file. The safe equivalent above ran from `apps/web`, where `.env` is absent, while keeping the project root and test path explicit. |
+| App startup and browser visual QA by Codex | Skipped | Not required to complete the requested static/local gate, and starting the app was only requested if needed for recording rehearsal. No browser QA was performed or claimed in this pass. Use `RUNBOOK.md` section `10.2` for the exact manual recording rehearsal steps. |
+| Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook, provider dashboard, or external provider smoke | Skipped | Explicitly forbidden and outside the local mock-only portfolio boundary. |
+| GitHub Actions / CI / deployment validation | Skipped | Explicitly out of scope; workflow absence was checked locally instead. |
+| Commit, push, staging, reset, rebase, stash, branch operations, destructive cleanup | Skipped | Explicitly forbidden. Codex did not perform these actions. |
+| Ignored `.env` read/print/edit/copy | Skipped | Explicitly forbidden. Only file presence was checked; contents were not read or printed. |
+
+### Manual browser QA instructions
+
+Use the runbook's pre-recording commands to start local PostgreSQL, apply migrations, seed synthetic data, run FastAPI on `127.0.0.1:8028`, and run Next.js on `127.0.0.1:3042` with `BACKEND_API_BASE_URL` and `NEXT_PUBLIC_BACKEND_API_BASE_URL` set to `http://127.0.0.1:8028`.
+
+Then verify:
+
+- `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health" -Method Get -TimeoutSec 10` returns `status=ok`.
+- `Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs" -Method Get -TimeoutSec 10` returns seeded synthetic runs.
+- `http://127.0.0.1:3042/` renders the public lead form and CSV import without overlap.
+- `http://127.0.0.1:3042/admin/runs` renders seeded run history.
+- The CSV textarea and file-picker paths accept only synthetic CSV rows and show local session results.
+- `View details` opens the same-page run detail panel, including `run_demo_failed`.
+- Horizontal scroll/drag stays inside the admin table scroller, with the top rail and table body synchronized and no page-level horizontal overflow.
+- The final reviewer/demo route list in `RUNBOOK.md` works locally, including `/`, `/admin/runs`, `/docs`, the documented filter URLs, filtered empty state, and selected-run-hidden detail URL.
+
+### Suggested commit message
+
+```text
+Record final recording rehearsal QA
+```
 
 ## Latest Update - 2026-06-16 Repository Release Finalization / Portfolio Handoff Review
 
