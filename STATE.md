@@ -9,10 +9,10 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Manual browser recording rehearsal QA reconciliation |
-| Overall status | User-reported manual browser recording rehearsal QA passed successfully; active reviewer docs remain local-only and mock-safe |
-| Quality gate status | Codex static/test/build validation, user manual browser QA, skipped real provider/API checks, and skipped CI/deployment checks are tracked separately in the latest entries |
-| Completion | Complete for user manual browser QA state reconciliation, subject to current local validation gate results |
+| Current phase | Final portfolio publishing QA pass |
+| Overall status | Portfolio-facing docs inspected; local-first, mock-only, synthetic-data boundaries confirmed; only `STATE.md` documentation changed |
+| Quality gate status | Static docs/link/safety scans passed or produced expected boundary-only matches; backend/frontend runtime gates skipped with docs-only reason |
+| Completion | Complete for final portfolio publishing QA pass, subject to user manual recording/posting review |
 | Main blocker | None |
 
 ## Owner manual browser QA completed on 2026-06-17.
@@ -28,6 +28,86 @@ Verified:
 - No paid API/provider behavior is triggered.
 
 Result: manual browser QA passed.
+
+## Latest Update - 2026-06-17 Final Portfolio Publishing QA Pass
+
+Performed a final portfolio publishing QA pass for the SalesOps Workflow Automation Hub docs. The inspection stayed documentation-only and did not change product behavior, backend code, frontend code, package files, lockfiles, migrations, generated assets, `.env` files, GitHub Actions, deployment config, provider integrations, staged files, commits, or pushes.
+
+### Phase summary
+
+- Confirmed the portfolio-facing docs consistently present the project as a local-first portfolio demo using deterministic mock CRM/Slack/provider behavior and synthetic data.
+- Confirmed the docs do not claim real client deployment, production readiness, paid API usage, live CRM/OAuth integration, GitHub Actions/CI deployment, real Slack delivery, or real customer-data processing.
+- Found local absolute Windows path literals in historical `STATE.md` validation records and replaced them with neutral repo-root placeholders for publishing safety.
+- Added this current state entry with files inspected, gates run, skipped gates, remaining manual checks, and final git status.
+
+### Files inspected
+
+- `README.md`
+- `STATE.md`
+- `RUNBOOK.md`
+- `HANDOFF.md`
+- `docs/PORTFOLIO_LISTING.md`
+- `docs/CASE_STUDY.md`
+- `docs/DEMO_SCRIPT.md`
+- `docs/DEMO_ASSETS.md`
+- `docs/FREELANCE_PLATFORM_SNIPPETS.md`
+- `.env.example`
+
+### Files changed
+
+- `STATE.md`: updated current meta, recorded this final portfolio publishing QA pass, and redacted historical local absolute path literals to repo-root placeholders.
+
+### Gates run
+
+| Command | Result |
+|---|---|
+| `rg --files` | Pass; repository inventory returned expected backend, frontend, docs, lockfiles, screenshots, and config files |
+| `rg --files -g AGENTS.md` | Pass; only top-level `AGENTS.md` found |
+| `git status --branch --short` | Pass before edit; `## main...origin/main` with no working-tree entries |
+| `git diff --check` | Pass before edit; no whitespace errors |
+| `git diff --name-only` | Pass before edit; no output |
+| `git ls-files --others --exclude-standard` | Pass before edit; no output |
+| Required docs inspection | Pass; all requested portfolio-facing docs and `.env.example` were read |
+| Forbidden-claim `Select-String` scan | Pass/expected matches; matches are mock-only boundaries, explicit exclusions, or future approval-gated guidance, not overclaims |
+| Secret-like `Select-String` scan | Pass/expected matches; matches are docs safety wording, local demo `DATABASE_URL` references, and placeholder `.env.example` tokens, not real secrets |
+| Absolute-path `Select-String` scan | Initially found historical `STATE.md` local absolute path literals; fixed in this entry by replacing them with repo-root placeholders, and final post-redaction scan returned no matches |
+| README link check | Pass; README relative documentation and screenshot links resolve to existing repository paths |
+| Final `git diff --check` | Pass; no whitespace errors; Git warned that `STATE.md` LF will be replaced by CRLF the next time Git touches it |
+| Final `git diff --name-only` | Pass; only `STATE.md` |
+| Final `git ls-files --others --exclude-standard` | Pass; no output |
+| Final `git status --branch --short` | Pass; `## main...origin/main` and ` M STATE.md` |
+
+### Skipped gates with reasons
+
+| Gate | Status | Reason |
+|---|---|---|
+| Backend pytest/Ruff/mypy | Skipped | This pass changed documentation only and did not touch backend source, schemas, persistence, migrations, runtime config, dependencies, or lockfiles |
+| Frontend lint/tests/typecheck/build | Skipped | This pass changed documentation only and did not touch frontend source, routes, UI behavior, package files, dependencies, or lockfiles |
+| Docker/PostgreSQL/local server smoke | Skipped | No runtime, database, migration, seed, or product behavior changed |
+| Manual browser QA by Codex | Skipped | This was a static publishing documentation QA pass; manual recording/browser checks remain documented in `RUNBOOK.md` and `docs/DEMO_SCRIPT.md` |
+| Real provider/API checks | Skipped | Explicitly forbidden; the project remains local-first, mock-only, and synthetic-data based |
+| GitHub Actions/CI/deployment checks beyond local absence/docs scan | Skipped | GitHub Actions, CI, deployment, hosted automation, staging, commits, and pushes are out of scope |
+
+### Remaining manual checks
+
+- Manually review the final portfolio listing, case study, freelance snippets, screenshots, and any planned public profile copy before posting.
+- If recording or refreshing screenshots, follow `RUNBOOK.md` section `10.2` and `docs/DEMO_ASSETS.md`; show only local pages, synthetic data, and mock behavior.
+- Before a manual commit, optionally rerun the full local quality gate from `README.md` if a fresh all-green runtime checkpoint is desired.
+
+### Final git status
+
+Final status after this docs-only state edit:
+
+```text
+## main...origin/main
+ M STATE.md
+```
+
+### Suggested commit message
+
+```text
+Record final portfolio publishing QA pass
+```
 
 ## Latest Update - 2026-06-17 Manual Browser Recording Rehearsal QA Reconciliation
 
@@ -52,11 +132,11 @@ No backend behavior, frontend behavior, UI behavior, API contract, dependency, l
 
 | Gate | Command | Result |
 |---|---|---|
-| Repository root | `git rev-parse --show-toplevel` | Pass; resolved to `C:/Users/alex/Documents/Coding Projects/Protfolio Projects/salesops-workflow-automation-hub` |
+| Repository root | `git rev-parse --show-toplevel` | Pass; resolved to repository root |
 | Initial git status | `git status --short --branch` | Pass; `## main...origin/main` |
 | Whitespace | `git diff --check` | Pass; no output |
 | Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
-| Backend tests, safe equivalent | `uv --project "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub" run --no-python-downloads --python 3.12 --frozen pytest --rootdir "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub" "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub\tests"` from `apps/web` | Pass; 69 passed, 1 existing Starlette/FastAPI `TestClient` deprecation warning |
+| Backend tests, safe equivalent | `uv --project "<repository root>" run --no-python-downloads --python 3.12 --frozen pytest --rootdir "<repository root>" "<repository root>\tests"` from `apps/web` | Pass; 69 passed, 1 existing Starlette/FastAPI `TestClient` deprecation warning |
 | Backend lint | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
 | Backend format check | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
 | Backend typecheck | `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; no issues found in 29 source files |
@@ -335,7 +415,7 @@ Pre-existing repository state note: `git status --short --branch` showed `M  STA
 |---|---|---|
 | Whitespace | `git diff --check` | Pass; exit 0 with Git LF-to-CRLF working-copy warnings for `README.md`, `RUNBOOK.md`, and `TDD.md` |
 | Backend dependency sync | `uv sync --frozen` | Pass; checked 42 packages |
-| Backend tests | `uv --project "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub" run --no-python-downloads --python 3.12 --frozen pytest --rootdir "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub" "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub\tests"` from `logs/noenv` | Pass; Python 3.12.10, 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
+| Backend tests | `uv --project "<repository root>" run --no-python-downloads --python 3.12 --frozen pytest --rootdir "<repository root>" "<repository root>\tests"` from `logs/noenv` | Pass; Python 3.12.10, 69 passed, 1 existing FastAPI/Starlette `TestClient` deprecation warning |
 | Backend lint | `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
 | Backend format check | `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
 | Backend typecheck | `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; no issues found in 29 source files |
@@ -354,7 +434,7 @@ Smoke commands used `logs/noenv` plus explicit local/mock environment values whe
 | Check | Command or URL | Result |
 |---|---|---|
 | Port precheck | `Get-NetTCPConnection -LocalPort 8028,3042 -ErrorAction SilentlyContinue \| Select-Object LocalAddress,LocalPort,State,OwningProcess` | Pass; no listeners before smoke start |
-| PostgreSQL start | `docker compose --env-file "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub\.env.example" -f "C:\Users\alex\Documents\Coding Projects\Protfolio Projects\salesops-workflow-automation-hub\compose.yml" up -d postgres` | Pass; `salesops-postgres` running |
+| PostgreSQL start | `docker compose --env-file "<repository root>\.env.example" -f "<repository root>\compose.yml" up -d postgres` | Pass; `salesops-postgres` running |
 | Alembic noenv first attempt | `uv --project $repo run --no-python-downloads --python 3.12 --frozen python -c "... command.upgrade(config, 'head')"` without `PYTHONPATH` | Expected local-command failure; `ModuleNotFoundError: No module named 'backend'` |
 | Alembic noenv corrected | Same command with `$env:PYTHONPATH = $repo` and explicit `APP_ENV`, `MOCK_MODE`, `CRM_PROVIDER`, `SLACK_PROVIDER`, `GOOGLE_SHEETS_PROVIDER`, and local `DATABASE_URL` | Pass; PostgreSQL migration context initialized and was at head |
 | Demo reset | `uv --project $repo run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` with explicit local/mock env | Pass; deleted 4 runs, 4 leads, 8 attempts, and 18 audit records; seeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
@@ -469,7 +549,7 @@ No application code, tests, dependency manifests, lockfiles, migrations, screens
 | Backend first launch | `Start-Process uv ... --project $repo ... uvicorn ... --port 8028` | Expected quoting issue; initial launch failed before app startup because the repo path contains spaces |
 | Backend corrected launch | `Start-Process uv ... --project "$repo" ... uvicorn backend.app.main:app --host 127.0.0.1 --port 8028 --log-level info` | Pass; Uvicorn listened on `127.0.0.1:8028` |
 | Frontend first launch | `Start-Process pnpm ... next dev --hostname 127.0.0.1 --port 3042` | Expected shim issue; direct `pnpm` shim was not a Win32 executable for `Start-Process` |
-| Frontend corrected launch | `Start-Process C:\Users\alex\AppData\Roaming\npm\pnpm.cmd ... next dev --hostname 127.0.0.1 --port 3042` | Pass; Next.js 15.5.18 was ready on `127.0.0.1:3042` |
+| Frontend corrected launch | `Start-Process pnpm.cmd ... next dev --hostname 127.0.0.1 --port 3042` | Pass; Next.js 15.5.18 was ready on `127.0.0.1:3042` |
 | Backend health | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health"` | Pass; returned `{"status":"ok","service":"salesops-workflow-automation-hub"}` |
 | Backend run history | `Invoke-RestMethod -Uri "http://127.0.0.1:8028/leads/runs"` | Pass; returned 4 seeded runs: `run_demo_queued`, `run_demo_retried`, `run_demo_failed`, `run_demo_success` |
 | Frontend home | `Invoke-WebRequest -Uri "http://127.0.0.1:3042/"` | Pass; HTTP 200 and raw page content included `Lead intake form` and `CSV import` |
