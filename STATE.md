@@ -7872,3 +7872,82 @@ Add portfolio listing package
 ```text
 Add freelance platform publishing snippets
 ```
+
+# Portfolio Publishing Package Finalization - 2026-06-17
+
+## 1. Phase Summary
+
+- Performed a final local-only publishing readiness pass for the public SalesOps Workflow Automation Hub portfolio materials.
+- Kept the review documentation-only and local-first; no runtime code, package file, lockfile, migration, `.env`, deployment config, CI file, generated asset, provider integration, commit, staging action, or push was changed.
+- Confirmed the public copy remains conservative: local-first, mock-only, synthetic-data based, not deployed, not production SaaS, no real CRM/Slack/Google Sheets/OpenAI/provider API calls, no paid API usage, no OAuth/live-provider behavior, and no GitHub Actions/CI claim.
+
+## 2. Files Inspected
+
+- `README.md`
+- `RUNBOOK.md`
+- `HANDOFF.md`
+- `docs/PORTFOLIO_LISTING.md`
+- `docs/CASE_STUDY.md`
+- `docs/DEMO_SCRIPT.md`
+- `docs/DEMO_ASSETS.md`
+- `docs/FREELANCE_PLATFORM_SNIPPETS.md`
+- `.env.example`
+- `STATE.md` latest entries
+- `docs/assets/README.md`
+- `docs/assets/demo/README.md`
+- `AGENTS.md` scope discovery
+
+## 3. Files Changed
+
+- `STATE.md`: added this phase record only.
+
+## 4. Checks Run
+
+| Command or check | Result |
+|---|---|
+| `git status --branch --short` | pass before edits; `## main...origin/main` and clean worktree |
+| `git diff --check` | pass before edits; no whitespace errors |
+| `git diff --name-only` | pass before edits; no output |
+| `git ls-files --others --exclude-standard` | pass before edits; no output |
+| `rg --files` | pass; repository inventory inspected |
+| `rg --files -g AGENTS.md` | pass; only top-level `AGENTS.md` found |
+| Required public-materials read | pass; files listed above were inspected |
+| Forbidden public-claim `Select-String` scan | pass/limited; matches were negative safety boundaries, explicit exclusions, or historical `STATE.md` entries, not claims of production deployment, real-provider integration, paid API use, OAuth, CI, or live-provider behavior |
+| Secret-like `Select-String` scan | pass/limited; only `.env.example` placeholder token variables matched: `CRM_API_TOKEN=placeholder-not-a-real-secret` and `HUBSPOT_PRIVATE_APP_TOKEN=placeholder-not-a-real-secret` |
+| Absolute local path `Select-String` scan | pass; no Windows or Unix user-home absolute paths found in scanned public docs |
+| Relative Markdown link/image inventory | pass by practical review; README and docs relative links/images point to existing repository files or committed screenshot assets |
+| `git status --branch --short` after `STATE.md` update | pass; `## main...origin/main` and ` M STATE.md` only |
+| `git diff --check` after `STATE.md` update | pass; no whitespace errors; Git warned that `STATE.md` LF will be replaced by CRLF the next time Git touches it |
+| `git diff --name-only` after `STATE.md` update | pass; `STATE.md` only; same LF-to-CRLF warning |
+| `git ls-files --others --exclude-standard` after `STATE.md` update | pass; no output |
+| `Test-Path -LiteralPath '.github\workflows'` | pass; `False` |
+
+## 5. Skipped Checks With Reasons
+
+- Backend pytest/Ruff/mypy were skipped because no backend source, schema, migration, dependency, package, or runtime configuration file changed.
+- Frontend lint/tests/typecheck/build were skipped because no frontend source, route, component, package, lockfile, or runtime behavior changed.
+- Docker/PostgreSQL/browser QA was skipped because no runtime behavior, screenshots, local database path, or UI behavior changed in this phase.
+- Real CRM, Slack, HubSpot, Salesforce, Google Sheets, OpenAI, paid API, production API, OAuth, webhook, deployment, and live-provider checks were skipped because they are explicitly forbidden for this local mock-only portfolio phase.
+- GitHub Actions/CI, deployment, staging, commit, push, reset, rebase, stash, and cleanup actions were skipped because they are out of scope or explicitly forbidden.
+
+## 6. Remaining Manual Publishing Steps
+
+- Review `docs/PORTFOLIO_LISTING.md` and `docs/FREELANCE_PLATFORM_SNIPPETS.md` for platform-specific tone before manually posting.
+- Use the committed screenshots in `docs/assets/screenshots/` unless the user intentionally refreshes them through the local-only capture workflow in `docs/DEMO_ASSETS.md`.
+- If refreshing screenshots or recording video, run the local PostgreSQL/backend/frontend demo path from `RUNBOOK.md`, use synthetic data only, and avoid `.env`, provider dashboards, private tabs, secrets, or unrelated local files.
+- The user should manually stage, commit, and push only after reviewing the final diff and any optional full local gate they choose to run.
+
+## 7. Final Git Status
+
+`git status --branch --short` after this phase showed:
+
+```text
+## main...origin/main
+ M STATE.md
+```
+
+## 8. Suggested Commit Message
+
+```text
+Record portfolio publishing package finalization
+```
