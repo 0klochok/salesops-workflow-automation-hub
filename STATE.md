@@ -9,11 +9,156 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final docs-only publication package check for marketplace/portfolio use |
-| Overall status | Docs-only publication package check completed with no public copy changes needed beyond this STATE record; local-first, mock-only, synthetic-data boundaries preserved |
-| Quality gate status | Required git, AGENTS, workflow-absence, forbidden-claim, token-shaped secret, and local/private-path scans passed or produced expected boundary-only/historical synthetic matches; backend/frontend/runtime gates skipped with docs-only reason |
-| Completion | Complete for final docs-only publication package check, subject to user manual posting review |
-| Main blocker | None |
+| Current phase | Manual browser QA closure and final public-demo readiness record |
+| Overall status | Automated backend, frontend, Docker/PostgreSQL, demo reset, HTTP/API smoke, and safety checks passed; in-app browser automation could not start in the Windows sandbox, so fresh browser visual QA is skipped for this phase |
+| Quality gate status | Required local automated gates passed; browser automation skipped with exact process-launch reason; no code changes, no staged files, no commits, no pushes, no real provider calls |
+| Completion | Partial for browser closure: local-demo readiness is validated by automated and HTTP checks, but fresh manual/browser visual QA still requires user confirmation |
+| Main blocker | In-app browser automation failed twice before page checks with `windows sandbox failed: runner error: CreateProcessAsUserW failed: 5` |
+
+## Latest Update - 2026-06-17 Manual Browser QA Closure Attempt And Final Public-Demo Readiness Record
+
+### Phase summary
+
+- Ran a validation-first closure pass for the remaining browser/manual QA gap.
+- Confirmed the repository started this phase on `main...origin/main` with a clean working tree, no staged files, and no untracked non-ignored files.
+- Re-ran locked backend and frontend automated gates, local PostgreSQL migration/reset, non-mutating local HTTP/API smoke checks, and safety scans.
+- Started backend and frontend on the documented local ports for smoke checks, then stopped only those helper processes started during this phase.
+- Attempted in-app browser automation after reading the required browser-control skill instructions; browser automation failed twice before page checks because the Windows sandbox could not launch the browser-control process.
+- Did not change backend code, frontend code, package files, lockfiles, migrations, config, screenshots, `.env`, GitHub Actions, deployment config, auth, providers, or external integrations.
+- Did not stage, commit, push, reset, rebase, stash, or call real HubSpot, Slack, Google Sheets, OpenAI, paid, production, webhook, OAuth, or provider APIs.
+
+### Files inspected
+
+- `AGENTS.md`
+- `STATE.md`
+- `README.md`
+- `RUNBOOK.md`
+- `.env.example`
+- `backend/app/config.py`
+- `compose.yml`
+- `apps/web/src/app/page.tsx`
+- `apps/web/src/app/admin/runs/page.tsx`
+- `apps/web/src/app/docs/route.ts`
+- `apps/web/src/app/api/leads/intake/route.ts`
+- `apps/web/src/app/api/leads/runs/route.ts`
+- `apps/web/src/app/api/leads/runs/[runId]/route.ts`
+- `apps/web/src/app/api/leads/runs/[runId]/retry/route.ts`
+- `apps/web/src/lib/intake-api.ts`
+- `apps/web/src/lib/run-history-api.ts`
+- `apps/web/src/components/admin-run-history.tsx`
+
+### Files changed
+
+- `STATE.md`: added this phase record and updated current meta only.
+
+No functional code files were changed because no blocking defect was found before browser automation failed.
+
+### Automated gates and local runtime checks
+
+| Command or check | Result |
+|---|---|
+| `git status --short --branch` | Pass before edits; `## main...origin/main` with no pending files |
+| `git diff --name-only` | Pass before edits; no output |
+| `git diff --cached --name-only` | Pass before edits; no output |
+| `git ls-files --others --exclude-standard` | Pass before edits; no output |
+| `rg --files` | Pass; repository inventory inspected |
+| `rg --files -g "AGENTS.md"` | Pass; only top-level `AGENTS.md` found |
+| `Test-Path -LiteralPath ".github\workflows"` | Pass; returned `False` |
+| `git diff --check` | Pass before edits |
+| local `.env` existence check | Pass; ignored `.env` already existed and was not printed |
+| local `.env` database shape check | Pass; `DATABASE_URL` points at local development PostgreSQL; value not printed |
+| `uv sync --frozen` | Pass; checked 42 packages |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | Pass; 69 passed, 1 existing FastAPI/Starlette TestClient deprecation warning |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | Pass; all checks passed |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | Pass; 32 files already formatted |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | Pass; no issues in 29 source files |
+| `pnpm install --frozen-lockfile` | Pass; already up to date with pnpm 11.5.0 |
+| `pnpm --dir apps/web lint` | Pass |
+| `pnpm --dir apps/web test -- --run` | Pass; 5 test files and 56 tests passed |
+| `pnpm --dir apps/web typecheck` | Pass |
+| `pnpm --dir apps/web build` | Pass; Next.js 15.5.18 production build completed |
+| `docker compose config` | Pass |
+| `docker compose up -d postgres` | Pass; `salesops-postgres` running |
+| Docker health check for `salesops-postgres` | Pass; health reported `healthy` |
+| `uv run --no-python-downloads --python 3.12 --frozen alembic upgrade head` | Pass |
+| `uv run --no-python-downloads --python 3.12 --frozen python -m backend.app.leads.demo_reset --apply` | Pass; deleted 4 demo runs and reseeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| backend helper on `127.0.0.1:8028` | Pass; started for smoke and stopped after browser automation was skipped |
+| frontend helper on `127.0.0.1:3042` | Pass after retrying with `pnpm.cmd`; started for smoke and stopped after browser automation was skipped |
+| backend `GET /health` | Pass; status `ok`, service `salesops-workflow-automation-hub` |
+| backend `GET /openapi.json` | Pass; title `SalesOps Workflow Automation Hub API` |
+| backend `GET /leads/runs` | Pass; exactly 4 seeded demo runs present |
+| backend `GET /leads/runs/run_demo_failed` | Pass; status `failed`, failure detail available |
+| backend `GET /leads/runs/run_demo_failed/failure` | Pass; adapter error type and suggested action present |
+| frontend `GET /` | Pass; HTTP 200 and app title present |
+| frontend `GET /admin/runs?status=failed&runId=run_demo_failed` | Pass; HTTP 200 and admin heading present |
+| frontend `GET /docs` without redirects | Pass; HTTP 307 to `http://127.0.0.1:8028/docs` |
+| frontend `GET /api/leads/runs` | Pass; exactly 4 seeded demo runs present through the local proxy |
+| frontend `GET /api/leads/runs/run_demo_failed` | Pass; status `failed`, failure detail available through the local proxy |
+| backend/frontend helper cleanup | Pass; stopped phase-started helper processes; ports `8028` and `3042` closed |
+
+### Browser QA status
+
+| Check | Result |
+|---|---|
+| Browser-control skill instructions read | Pass |
+| In-app browser automation availability | Skipped/blocked; first connection attempt failed before page checks with `windows sandbox failed: runner error: CreateProcessAsUserW failed: 5` |
+| In-app browser automation retry | Skipped/blocked; second connection attempt failed with the same `CreateProcessAsUserW failed: 5` process-launch error |
+| Home page visual/runtime browser check | Skipped; browser automation unavailable in this phase |
+| Admin runs page visual/runtime browser check | Skipped; browser automation unavailable in this phase |
+| Docs redirect/page browser check | Skipped; browser automation unavailable in this phase |
+| Run selection/detail browser check | Skipped; browser automation unavailable in this phase |
+| Failed-run detail browser check | Skipped; browser automation unavailable in this phase |
+| Filters browser check | Skipped; browser automation unavailable in this phase |
+| Horizontal overflow browser check | Skipped; browser automation unavailable in this phase |
+| Selected-run focus/scroll browser check | Skipped; browser automation unavailable in this phase |
+| Browser network local-only verification | Skipped; browser automation unavailable in this phase |
+
+No new user-confirmed manual browser QA results were provided during this phase. The historical owner-confirmed manual QA section below remains unchanged, but this phase does not add a fresh manual browser pass.
+
+### Safety checks
+
+| Command or check | Result |
+|---|---|
+| Token-shaped secret scan over tracked text files excluding lockfiles/binary assets | Pass; no OpenAI, Slack, GitHub, AWS, Google, SendGrid, or private-key-shaped hits |
+| Private/local path scan over tracked text files | Pass; no Windows user-home, Unix home, UNC, file-URI, or VS Code URI paths |
+| Phone-like contact-data scan over tracked text files | Pass; no hits |
+| Email-domain scan over tracked text files | Pass/limited; domains are synthetic/fixture-only: `acme-sales.com`, `db.example.com`, `example-growth-agency-demo.test`, `example.com`, `example.test`, and `marked-sales.local` |
+| tracked env/workflow entries | Pass; only `.env.example` is tracked |
+| Broad public-claim scan | Pass/limited by manual classification; matches were generic CRM/Slack workflow wording, AGENTS guidance, historical `STATE.md` scan records, or explicit exclusions, not unsafe public-demo claims |
+| Refined live endpoint/provider/token scan excluding historical `STATE.md` and lockfiles | Pass; no tracked live endpoint, OAuth secret, service-role, or token/provider patterns |
+| `.env.example` provider defaults | Pass; `MOCK_MODE=true`, `CRM_PROVIDER=mock`, `SLACK_PROVIDER=mock`, and `GOOGLE_SHEETS_PROVIDER=disabled` |
+
+### Skipped checks with reasons
+
+- Browser automation was skipped after two failed in-app browser connection attempts with `windows sandbox failed: runner error: CreateProcessAsUserW failed: 5`.
+- Fresh manual browser visual QA was not performed by Codex because browser automation was unavailable and no new user-confirmed manual results were provided during this phase.
+- Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, OAuth, webhook, provider-dashboard, and external-service checks were skipped because they are explicitly forbidden for this mock-only local portfolio phase.
+- GitHub Actions, CI, deployment, staging, auth, provider integration, staging/production smoke, commits, pushes, staging, reset, rebase, stash, and branch history actions were skipped because they are out of scope or explicitly forbidden.
+- `docker compose stop postgres` was skipped because the local PostgreSQL service is part of the documented demo path and stopping it could disturb the user's local environment.
+
+### Remaining risks
+
+- Fresh browser-level visual interaction remains unverified in this phase. The user still needs to perform or provide manual browser QA for layout, filters, selected-run detail scroll/focus, horizontal overflow, and Network-tab local-only checks.
+- Automated HTTP checks validate route reachability, local proxy wiring, seeded run data, and docs redirect behavior, but they do not replace visual browser QA.
+- The broad public-claim scan produces expected false positives that require manual classification rather than a zero-match interpretation.
+- Local PostgreSQL remains running.
+
+### Final expected git status
+
+Expected final status after this `STATE.md` update:
+
+```text
+## main...origin/main
+ M STATE.md
+```
+
+No files should be staged.
+
+### Suggested commit message
+
+```text
+Record browser QA closure attempt
+```
 
 ## Owner manual browser QA completed on 2026-06-17.
 
