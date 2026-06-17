@@ -9,10 +9,10 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final marketplace readiness QA pass for docs/snippets |
-| Overall status | Docs-only marketplace readiness QA completed with no public copy changes needed beyond this STATE record; local-first, mock-only, synthetic-data boundaries preserved |
-| Quality gate status | Required git, AGENTS, workflow-absence, forbidden-claim, token-shaped secret, and absolute-path scans passed or produced expected boundary-only matches; backend/frontend/runtime gates skipped with docs-only reason |
-| Completion | Complete for final marketplace readiness docs/snippets QA pass, subject to user manual posting review |
+| Current phase | Final docs-only publication package check for marketplace/portfolio use |
+| Overall status | Docs-only publication package check completed with no public copy changes needed beyond this STATE record; local-first, mock-only, synthetic-data boundaries preserved |
+| Quality gate status | Required git, AGENTS, workflow-absence, forbidden-claim, token-shaped secret, and local/private-path scans passed or produced expected boundary-only/historical synthetic matches; backend/frontend/runtime gates skipped with docs-only reason |
+| Completion | Complete for final docs-only publication package check, subject to user manual posting review |
 | Main blocker | None |
 
 ## Owner manual browser QA completed on 2026-06-17.
@@ -28,6 +28,82 @@ Verified:
 - No paid API/provider behavior is triggered.
 
 Result: manual browser QA passed.
+
+## Latest Update - 2026-06-17 Final Docs-Only Publication Package Check
+
+Performed a final docs-only publication package check for marketplace and portfolio use. The scoped public-facing and handoff materials remain conservative: they describe the project as a local-first, mock-only, synthetic-data portfolio demo and do not claim real client work, guaranteed results, production deployment, enterprise security/compliance, paid API usage, real provider calls, or live revenue impact. No public copy changes were needed outside this required `STATE.md` record.
+
+### Scope
+
+- Reviewed public-facing docs and handoff docs only, plus repo instructions and state/history as requested.
+- Did not inspect or change backend, frontend, runtime, package, config, migration, database, deployment, CI, generated asset, or provider-integration files beyond repository-wide scan coverage.
+- Did not stage, commit, push, reset, rebase, stash, create GitHub Actions, call paid APIs, or call real external providers.
+
+### Files inspected
+
+- `README.md`
+- `HANDOFF.md`
+- `docs/PORTFOLIO_LISTING.md`
+- `docs/FREELANCE_PLATFORM_SNIPPETS.md`
+- `docs/CASE_STUDY.md`
+- `docs/DEMO_SCRIPT.md`
+- `AGENTS.md` for repository instructions
+- `STATE.md` for status/history
+
+### Files changed
+
+- `STATE.md`: updated current meta and added this phase record only.
+
+### Checks run
+
+| Command or check | Result |
+|---|---|
+| `git status --branch --short` | Pass before edit; `## main...origin/main` with clean worktree |
+| `git diff --check` | Pass before edit; no whitespace errors |
+| `git diff --name-only` | Pass before edit; no output |
+| `git ls-files --others --exclude-standard` | Pass before edit; no output |
+| `rg --files -g "AGENTS.md"` | Pass; only top-level `AGENTS.md` found |
+| `Test-Path -LiteralPath ".github\workflows"` | Pass; returned `False` |
+| Required scoped docs read | Pass; all files listed under Files inspected were read |
+| Forbidden-claim scan across `README.md`, `HANDOFF.md`, `AGENTS.md`, `STATE.md`, and `docs` | Pass/expected matches; matches were safety boundaries, explicit exclusions, local/mock wording, future approval-gated adaptation notes, or historical `STATE.md` records, not unsafe public claims |
+| Token-shaped secret scan across the repository | Pass; no token-shaped OpenAI, Slack, GitHub, AWS, Google, SendGrid, OAuth-token, webhook, JWT-like, or private-key values found; scan excluded lockfiles, `.git`, `node_modules`, `.next`, `.venv`, `dist`, `build`, `coverage`, and `htmlcov` |
+| Local-path/private-path scan across `README.md`, `HANDOFF.md`, `AGENTS.md`, `STATE.md`, and `docs` | Pass/expected historical matches; no real Windows user path, Unix home path, UNC path, file URI, VS Code URI, or personal contact data found; broad scan matches were historical synthetic `example.com`/`example.test` emails and an `$env:APPDATA` command reference in `STATE.md` |
+| Final `git status --branch --short` | Pass; `## main...origin/main` with ` M STATE.md` only |
+| Final `git diff --check` | Pass; no whitespace errors; Git warned that `STATE.md` LF will be replaced by CRLF the next time Git touches it |
+| Final `git diff --name-only` | Pass; `STATE.md` only; Git emitted the same LF-to-CRLF warning |
+| Final `git ls-files --others --exclude-standard` | Pass; no output |
+
+### Skipped checks with reasons
+
+- Backend pytest/Ruff/mypy were skipped because this phase changed documentation state only and did not touch backend source, schemas, persistence, migrations, dependencies, runtime config, or API behavior.
+- Frontend lint/tests/typecheck/build were skipped because this phase changed documentation state only and did not touch frontend source, routes, components, UI behavior, package files, lockfiles, or runtime behavior.
+- Docker/PostgreSQL checks were skipped because no database, migration, seed, persistence, or local runtime behavior changed.
+- Browser checks were skipped because no UI, route, screenshot, asset, or runtime behavior changed.
+- Real provider/API checks were skipped because real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, webhooks, provider dashboards, and external service calls are explicitly forbidden for this local mock-only phase.
+- GitHub Actions/CI, deployment, staging, commit, push, reset, rebase, stash, branch creation, and cleanup actions were skipped because they are out of scope or explicitly forbidden.
+
+### Remaining risks
+
+- This was a static documentation publication check, not a fresh runtime smoke test; runtime confidence relies on prior validation until the user chooses to rerun the full local gate.
+- Broad claim and private-data scans intentionally match safety-boundary wording and historical `STATE.md` evidence, so the pass depends on classifying those matches rather than expecting zero output.
+- Marketplace-specific tone may still need user preference edits before manual posting, but the current public claims are conservative and bounded.
+
+### Final status
+
+Final status after this docs-only phase:
+
+```text
+## main...origin/main
+ M STATE.md
+```
+
+No files should be staged or untracked.
+
+### Suggested commit message
+
+```text
+Record final docs publication package check
+```
 
 ## Latest Update - 2026-06-17 Final Marketplace Readiness QA Pass For Docs/Snippets
 
