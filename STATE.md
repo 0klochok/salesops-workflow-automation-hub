@@ -7636,3 +7636,48 @@ Browser automation was unavailable in that checkpoint because the Windows sandbo
 ```text
 Document final portfolio recording checklist
 ```
+
+# Final Portfolio Handoff Documentation Pass - 2026-06-17
+
+## 1. Objective
+
+- Perform a final reviewer/client handoff documentation pass for the local SalesOps Workflow Automation Hub portfolio project.
+- Keep the phase documentation-only unless a blocking documentation/runtime mismatch is found.
+- Confirm that reviewer-facing docs explain the local-first mock workflow, stack, setup, validation, browser QA expectations, skipped real-provider work, and CI/deployment boundary.
+
+## 2. Documentation Reviewed
+
+| Path | Result |
+|---|---|
+| `README.md` | Clearly explains the project purpose, mock/local SalesOps workflow, backend/frontend stack, quick start, local backend/frontend commands, validation commands, screenshots, intentionally mocked integrations, and no-real-provider boundary |
+| `RUNBOOK.md` | Clearly documents PowerShell setup, backend/frontend commands, tests/lint/typecheck/build, manual browser QA, local PostgreSQL demo flow, troubleshooting, skipped provider/API work, and CI/deployment out-of-scope posture |
+| `HANDOFF.md` | Provides the short reviewer handoff, 3-5 minute demo path, mock boundaries, local run sequence, credential handling rules, and future live-provider approval boundary |
+| `docs/DEMO_SCRIPT.md` | Provides the concise reviewer checklist for local public intake, CSV import, admin run history, filters, failure detail, `/docs`, and mock-only safety |
+| `docs/DEMO_ASSETS.md` | Documents local-only screenshot/GIF/video capture targets, viewport guidance, synthetic-data rules, and forbidden secrets/provider-dashboard capture |
+| `docs/CASE_STUDY.md` | Explains the business problem, solution, workflow, stack, validation posture, mock boundary, and client adaptation path |
+| `docs/assets/README.md` and `docs/assets/demo/README.md` | Document current committed screenshot evidence and the optional future recording location |
+| `STATE.md` | Latest entries already record final recording readiness, local validation history, safety posture, and Git-safety constraints |
+
+## 3. Changes
+
+- Added this state entry so the final handoff pass records its reviewed docs and browser-QA skip reason.
+- No product code, dependencies, lockfiles, migrations, generated assets, GitHub Actions, secrets, or `.env` files were changed.
+- No README, RUNBOOK, handoff, demo, or case-study content change was needed because the existing docs already covered the required reviewer/client handoff information.
+
+## 4. Manual Browser QA
+
+| Check | Status | Reason |
+|---|---|---|
+| Manual browser QA | skipped | The user explicitly instructed Codex not to perform browser QA unless asked. The manual procedure remains documented in `RUNBOOK.md` section `9. Manual Frontend Verification`, `RUNBOOK.md` section `10.2 Final Local Portfolio Recording Checklist`, and `docs/DEMO_SCRIPT.md`. |
+
+## 5. Safety Notes
+
+- This phase keeps the project in mock/local/demo mode.
+- Real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, provider dashboards, live webhooks, and external provider checks remain intentionally skipped unless the user explicitly approves exact real usage in a later phase.
+- GitHub Actions, CI, deployment config, hosted automation, commits, pushes, staging, reset, rebase, stash, discard, and history rewriting remain out of scope for Codex.
+
+## 6. Suggested Commit Message
+
+```text
+Record final handoff documentation pass
+```
