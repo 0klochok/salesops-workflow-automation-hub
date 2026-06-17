@@ -7513,3 +7513,55 @@ No real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, webhook
 ```text
 Record final portfolio release audit
 ```
+
+# Final Portfolio Recording Readiness Docs Checkpoint - 2026-06-17
+
+## 1. Objective
+
+- Prepare the repository docs for final portfolio recording readiness.
+- Prefer documentation-only changes and leave backend/frontend product behavior untouched.
+- Confirm the existing recording checklist covers local startup, required browser routes, visual checks, synthetic-data safety, and intentionally skipped real-provider/API work.
+
+## 2. Documentation Reviewed
+
+| Path | Result |
+|---|---|
+| `README.md` | Quick Start, route list, validation commands, safety boundaries, and demo-doc links matched current repo scripts and local-only posture |
+| `RUNBOOK.md` | Existing section `10.2 Final Local Portfolio Recording Checklist` already covered startup commands, `/`, `/admin/runs`, `/docs`, synthetic data, and skipped paid/provider/API work; updated to call out horizontal scroll/drag verification explicitly |
+| `docs/DEMO_SCRIPT.md` | Existing concise reviewer checklist covered local startup, public intake, CSV import, admin run history, filters, details, docs redirect, and mock-only safety |
+| `docs/DEMO_ASSETS.md` | Existing capture checklist covered screenshot/video targets, local-only URLs, synthetic data, and no real providers or credentials |
+
+No README command update was needed. No product code, dependencies, lockfiles, migrations, generated assets, GitHub Actions, secrets, or `.env` files were changed.
+
+## 3. Recorded Final Local Validation Checkpoint
+
+The prior final local checkpoint reported the repository clean and validation-ready before this documentation pass:
+
+| Gate | Result |
+|---|---|
+| `git status --short` | clean |
+| `uv sync --frozen` | pass |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass; `69 passed` |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | pass |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass |
+| `pnpm install --frozen-lockfile` | pass |
+| `pnpm --dir apps/web lint` | pass |
+| `pnpm --dir apps/web test -- --run` | pass; `56 tests` |
+| `pnpm --dir apps/web build` | pass |
+| `pnpm --dir apps/web typecheck` | pass after sequential rerun |
+| Local route QA | pass on backend `127.0.0.1:8028` and frontend `127.0.0.1:3042` |
+
+Browser automation was unavailable in that checkpoint because the Windows sandbox process launch failed with `CreateProcessAsUserW failed: 5`; no files were changed during that validation checkpoint.
+
+## 4. Safety Notes
+
+- Use synthetic demo data only for final recording and screenshots.
+- Real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, production webhooks, provider dashboards, and real credentials remain intentionally skipped.
+- Codex must not stage, commit, push, reset, rebase, stash, or discard changes; the user reviews, stages, commits, and pushes manually.
+
+## 5. Suggested Commit Message
+
+```text
+Document final portfolio recording checklist
+```

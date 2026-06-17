@@ -4,7 +4,7 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-06-16 |
+| Last updated | 2026-06-17 |
 | Status | reviewer handoff documentation polish and local validation |
 | Project | salesops-workflow-automation-hub |
 | Primary environment | Windows 11 / PowerShell |
@@ -494,6 +494,7 @@ On `/admin/runs`, verify:
 - seeded success, failed, queued, and retried rows render;
 - status, source, search, date, owner, and error-type filters work and update the URL;
 - `Reset filters` is visually secondary, aligns with the filter group, wraps cleanly on narrow layouts, and clears active filters;
+- horizontal table scrolling works with trackpad/mouse drag or scrollbar interaction, the top rail and table body stay synchronized, and page-level horizontal overflow stays absent;
 - selected detail opens on the same page;
 - `?status=success&runId=run_demo_failed` shows the selected-run-hidden notice while keeping detail visible;
 - admin interactions issue local `GET` requests for `/api/leads/runs` and `/api/leads/runs/<run-id>`, plus `POST /api/leads/runs/<run-id>/retry` only when `Retry run` is clicked for a failed or queued selected run;
@@ -532,6 +533,7 @@ Visually pass the check only when:
 - seeded success, failed, queued, and retried admin rows render with readable status, source, owner, error type, attempts, and failure-detail values;
 - status, source, search, date, owner, and error-type filters update the URL and visible rows correctly;
 - the filtered empty state, same-page detail panel, and selected-run-hidden notice are visible in the documented scenarios;
+- horizontal scroll/drag on the admin table works inside the table container, including the top scroll rail when visible;
 - controls wrap cleanly at narrow widths, with table overflow contained in the table scroller rather than the whole page;
 - the admin UI remains local-only, shows `Retry run` only for failed or queued selected runs, and exposes no demo reset, edit, delete, submit, resubmit, rerun, send, archive, worker, background-job, `PUT`, `PATCH`, or `DELETE` controls.
 
