@@ -8371,3 +8371,135 @@ No files are staged.
 ```text
 Tighten portfolio posting copy
 ```
+
+# Final Local Runtime/Public-Demo Smoke Gate - 2026-06-17
+
+## 1. Phase Summary
+
+- Ran the final local validation and runtime/public-demo smoke gate for the SalesOps Workflow Automation Hub portfolio project.
+- Kept the project local-first, mock-only, and synthetic-data based.
+- Did not commit, push, stage files, add GitHub Actions, call real external providers, use paid APIs, add dependencies, change migrations, or change backend/frontend/package/config/deployment files.
+- Used local PostgreSQL, FastAPI, and Next.js on `127.0.0.1` only.
+- Restored the local demo database to the canonical four seeded demo runs after smoke intake submissions.
+
+## 2. Files Inspected
+
+- `AGENTS.md`
+- `STATE.md`
+- `README.md`
+- `RUNBOOK.md`
+- `pyproject.toml`
+- `package.json`
+- `apps/web/package.json`
+- `.env.example`
+- `backend/app/config.py`
+- `compose.yml`
+- `backend/app/leads/demo_reset.py`
+
+## 3. Files Changed
+
+- `STATE.md`: added this phase record only.
+
+No backend source, frontend source, package file, lockfile, config file, migration, deployment file, generated asset, `.env`, or GitHub Actions file was changed.
+
+## 4. Backend Validation
+
+| Command | Result |
+|---|---|
+| `uv sync --frozen` | pass; checked 42 packages |
+| `uv run --no-python-downloads --python 3.12 --frozen pytest` | pass; 69 passed, 1 known Starlette/FastAPI TestClient deprecation warning |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff check .` | pass; all checks passed |
+| `uv run --no-python-downloads --python 3.12 --frozen ruff format --check .` | pass; 32 files already formatted |
+| `uv run --no-python-downloads --python 3.12 --frozen mypy backend tests` | pass; no issues in 29 source files |
+
+## 5. Frontend Validation
+
+| Command | Result |
+|---|---|
+| `pnpm install --frozen-lockfile` | pass; already up to date with pnpm 11.5.0; no upgrade performed |
+| `pnpm --dir apps/web lint` | pass |
+| `pnpm --dir apps/web test -- --run` | pass; 5 test files and 56 tests passed |
+| `pnpm --dir apps/web typecheck` | pass |
+| `pnpm --dir apps/web build` | pass; Next.js 15.5.18 production build completed |
+
+## 6. Runtime Smoke
+
+| Command or check | Result |
+|---|---|
+| `Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort 8028 -State Listen -ErrorAction SilentlyContinue` | pass; no listener before smoke |
+| `Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort 3042 -State Listen -ErrorAction SilentlyContinue` | pass; no listener before smoke |
+| `docker compose config` | pass |
+| `docker compose up -d postgres` | pass; local `salesops-postgres` service was running |
+| local PostgreSQL health wait through `docker inspect --format '{{.State.Health.Status}}' salesops-postgres` | pass; container became `healthy` |
+| local Alembic migration command with local mock environment and local `DATABASE_URL` | pass; `alembic upgrade head` completed |
+| local demo reset command with local mock environment and local `DATABASE_URL` | pass; reseeded `run_demo_success`, `run_demo_failed`, `run_demo_retried`, and `run_demo_queued` |
+| hidden local backend helper on `127.0.0.1:8028` | pass; started and later stopped |
+| `Invoke-RestMethod -Uri "http://127.0.0.1:8028/health"` | pass; returned `{"status":"ok","service":"salesops-workflow-automation-hub"}` |
+| backend `GET /openapi.json` | pass; title `SalesOps Workflow Automation Hub API` |
+| backend `GET /leads/runs` | pass; seeded run IDs present |
+| backend `GET /leads/runs/run_demo_failed` | pass; status `failed`, sanitized detail available |
+| backend `GET /leads/runs/run_demo_failed/failure` | pass; returned adapter failure detail and suggested action |
+| backend `POST /leads/intake` with synthetic data | pass; local mock-only success with dedupe `unique` and mock CRM `created` |
+| hidden local frontend helper on `127.0.0.1:3042` with backend base URL set to `http://127.0.0.1:8028` | pass; started and later stopped |
+| `Invoke-WebRequest -Uri "http://127.0.0.1:3042/"` | pass; HTTP 200 and app title present |
+| `Invoke-WebRequest -Uri "http://127.0.0.1:3042/admin/runs?status=failed&runId=run_demo_failed"` | pass; HTTP 200 |
+| `Invoke-WebRequest -Uri "http://127.0.0.1:3042/docs" -MaximumRedirection 0` | pass; HTTP 307 redirect to `http://127.0.0.1:8028/docs` |
+| frontend `GET /api/leads/runs` | pass; four seeded IDs present before smoke intake plus local smoke rows until final reset |
+| frontend `GET /api/leads/runs/run_demo_failed` | pass; status `failed`, failure detail available |
+| frontend `POST /api/leads/intake` with repeated synthetic data | pass; local persisted dedupe returned `duplicate_email` and mock CRM `updated` |
+| frontend `POST /api/leads/intake` with fresh synthetic data | pass; local mock-only success with dedupe `unique` and mock CRM `created` |
+| post-smoke demo reset | pass; deleted 7 synthetic/demo runs and reseeded the canonical four demo runs |
+| post-reset `GET /leads/runs` | pass; exactly four seeded run IDs present |
+| backend/frontend helper cleanup | pass; stopped repo-local Uvicorn and Next dev listener processes; ports `8028` and `3042` closed |
+
+## 7. Scope And Safety Checks
+
+| Command or check | Result |
+|---|---|
+| `git status --short --branch` before validation | pass; `## main...origin/main` and clean worktree |
+| `rg --files` | pass; repository inventory inspected |
+| `rg --files -g AGENTS.md` | pass; only top-level `AGENTS.md` found |
+| `git diff --name-only` before `STATE.md` update | pass; no tracked source diffs |
+| `git ls-files --others --exclude-standard` before `STATE.md` update | pass; no untracked non-ignored files |
+| `git diff --cached --name-only` | pass; no staged files |
+| `Test-Path -LiteralPath ".github\workflows"` | pass; returned `False` |
+| `git ls-files -- .env .env.example .github .github\workflows` | pass; only `.env.example` is tracked |
+| `git diff --check` before `STATE.md` update | pass |
+| `git ls-files -- apps/web/tsconfig.tsbuildinfo` | pass; no tracked TypeScript build-info file |
+| `git check-ignore -v apps/web/tsconfig.tsbuildinfo apps/web/.next apps/web/node_modules node_modules .mypy_cache .pytest_cache .ruff_cache .venv .env` | pass; generated/dependency/cache/local-env paths are ignored |
+| strong token-shaped secret scan over 93 tracked text files, excluding lockfiles | pass; no OpenAI, Slack token/webhook, GitHub token, AWS key, Google API key, SendGrid key, or private-key-shaped hits |
+| local/private path scan over tracked text files | pass; no Windows or Unix user-home absolute paths found |
+| broad forbidden-public-claim scan | pass/limited; matches were safety-boundary wording, explicit exclusions, or historical status text, not affirmative claims of deployed production, live-provider, paid-API, OAuth, CI/CD, GitHub Actions, or real-customer capability |
+| accidental contact-data scan | pass/limited; no phone-like hits; email hits were synthetic test fixtures only on `marked-sales.local` and `acme-sales.com` domains in `tests/test_demo_reset.py` |
+
+## 8. Skipped Checks And Reasons
+
+- In-app browser visual automation was attempted but skipped after the browser control process failed to start in the Windows sandbox layer. Local HTTP and API smoke checks were completed instead.
+- Manual visual/browser interaction QA was not completed because the request was run through Codex tooling rather than a user-visible manual browser session. The documented manual browser checklist in `RUNBOOK.md` remains the follow-up for visual layout, filter interaction, and network-tab verification.
+- Real HubSpot, Slack, Google Sheets, OpenAI, paid API, production API, OAuth, webhook, deployment, and provider-dashboard checks were skipped because they are explicitly forbidden for this mock-only local portfolio phase.
+- GitHub Actions, staging, commit, push, reset, rebase, stash, and deployment actions were skipped because they are out of scope or explicitly forbidden.
+- `docker compose stop postgres` was not run. The PostgreSQL service was already reported as running by Compose, and stopping it could affect the user's local environment outside this smoke gate.
+
+## 9. Remaining Risks
+
+- Browser-level visual interaction was only partially validated through HTTP route/API checks. The remaining manual check is to open the documented pages in a browser and verify filter UI, selected-run detail scrolling/focus, table overflow, and network requests per `RUNBOOK.md`.
+- The broad forbidden-claim scan intentionally reports historical safety-boundary wording and must be interpreted, not treated as a zero-hit scan.
+- The contact scan still includes synthetic non-personal test fixture emails on non-reserved domains; they are not public copy and were not changed during this validation-only phase.
+- Local PostgreSQL remains running as it was during smoke validation.
+
+## 10. Final Git Status
+
+Expected final status after this `STATE.md` update:
+
+```text
+## main...origin/main
+ M STATE.md
+```
+
+No files are staged.
+
+## 11. Suggested Commit Message
+
+```text
+Record final local smoke gate
+```
