@@ -9,11 +9,24 @@
 | Contributors | Codex |
 | Repository path | repository root |
 | Current branch | `main` |
-| Current phase | Final portfolio recording rehearsal QA |
-| Overall status | Ready for final portfolio recording rehearsal after checklist review and local quality gate; active reviewer docs remain local-only and mock-safe |
-| Quality gate status | Pass with caveats: sandboxed PowerShell failed with `CreateProcessAsUserW failed: 5`, so commands were run through approved escalated PowerShell; exact root-level pytest was not run because an ignored local `.env` exists and backend settings use `env_file=".env"`, so an equivalent `uv --project ... pytest` command ran from `apps/web` without reading root `.env` and passed |
-| Completion | Complete for final portfolio recording rehearsal QA |
+| Current phase | Manual browser recording rehearsal QA reconciliation |
+| Overall status | User-reported manual browser recording rehearsal QA passed successfully; active reviewer docs remain local-only and mock-safe |
+| Quality gate status | Codex static/test/build validation, user manual browser QA, skipped real provider/API checks, and skipped CI/deployment checks are tracked separately in the latest entries |
+| Completion | Complete for user manual browser QA state reconciliation, subject to current local validation gate results |
 | Main blocker | None |
+
+## Latest Update - 2026-06-17 Manual Browser Recording Rehearsal QA Reconciliation
+
+Recorded the user's latest manual browser recording rehearsal QA result without changing product code. The user reported that manual browser QA was completed successfully and that everything works fine. Codex did not perform browser QA in this reconciliation pass; Codex only recorded the user-provided result.
+
+This entry is documentation/state-only and distinguishes the current evidence categories:
+
+- Codex static/test/build validation: command-based repository gates are separate from browser QA and are reported by Codex after the `STATE.md` reconciliation edit.
+- Manual browser QA: passed per the user's explicit 2026-06-17 report. This is a user-performed manual browser result, not a Codex-performed browser result.
+- Real provider/API checks: skipped intentionally because real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, webhooks, provider dashboards, and real credentials remain forbidden and outside the local mock-only portfolio boundary.
+- CI/deployment checks: skipped intentionally because GitHub Actions, CI, staging, deployment, and production smoke validation remain out of scope for this phase; workflow absence is checked locally.
+
+No backend behavior, frontend behavior, UI behavior, API contract, dependency, lockfile, migration, generated asset, GitHub Actions workflow, deployment config, real provider integration, secret, ignored `.env` contents, staged change, commit, push, reset, rebase, stash, or discard operation was changed or performed.
 
 ## Latest Update - 2026-06-17 Final Portfolio Recording Rehearsal QA
 
