@@ -1,17 +1,16 @@
 # SalesOps Workflow Automation Hub
 
-SalesOps Workflow Automation Hub is a local-first portfolio demo for automating a growth agency's lead intake workflow. It accepts leads from a public form and CSV upload, validates and deduplicates them, simulates CRM contact/deal upsert behavior, simulates qualified-lead Slack notification, persists audit/run records, and gives reviewers a local-only admin dashboard for run history, failure detail, and guarded manual retry.
+## 60-second client read
 
-The demo is built around a synthetic growth agency scenario with 5 sales reps. It is intended for sales operations, revenue operations, and agency teams that need faster lead handoff, fewer duplicates, and clearer auditability without depending on spreadsheets or manual CRM/Slack updates.
+This is a client-style portfolio demo for automating a sales lead workflow: form/CSV intake -> validation -> deduplication -> mock CRM/Slack handoff -> audit/run history -> failure review -> guarded manual retry.
 
-All demo data is synthetic. All CRM and Slack behavior is deterministic mock behavior. No paid APIs, real provider calls, live webhooks, production accounts, or real customer data are required to run or review the project locally.
+**Best-fit client problem:** a small agency or sales team receives leads from forms, CSV uploads, landing pages, or manual sources, then wastes time copying data into a CRM, notifying sales reps, checking duplicates, and investigating failed handoffs.
 
-## 60-Second Portfolio Read
+**Business value demonstrated:** faster lead handling, fewer duplicate records, clearer owner assignment, visible failure states, and a safer retry path when automation runs fail.
 
-- **Client problem:** a growth agency with 5 sales reps is losing time and audit clarity to manual form/CSV lead handling, duplicate checks, CRM updates, and Slack handoffs.
-- **Automated workflow:** local intake validates leads, checks duplicates by email and company domain, simulates CRM contact/deal upsert, simulates qualified-lead Slack notification, and stores run/audit evidence.
-- **Reviewer proof:** committed screenshots show the public intake page, CSV import evidence, local-only admin run history, filtered admin views, sanitized failure detail, and retry guardrails.
-- **Safety boundary:** the project is mock-only and local-first by default; it does not require or call real HubSpot, Slack, Google Sheets, OpenAI, paid APIs, production APIs, or live webhooks.
+**Technical proof:** FastAPI intake API, Pydantic validation, PostgreSQL persistence, SQLAlchemy/Alembic, Next.js public lead form and admin dashboard, frontend CSV import, mock CRM adapter, mock Slack adapter, run history, failure detail, guarded manual retry, tests, and Docker-based local setup.
+
+**Demo safety:** all data is synthetic. CRM and Slack behavior is mocked. No real HubSpot, Slack, Google Sheets, paid API, live webhook, production API, or production credential is required. Real-provider work is a separate future/client adaptation phase.
 
 ## What It Does
 
@@ -56,25 +55,67 @@ This repository is intentionally local-only by default.
 - Backend retry refuses unsafe non-local or non-mock provider settings before mutating local run records.
 - Future real-provider work requires a separate approved phase; see [HANDOFF.md](HANDOFF.md) for safe boundaries.
 
+## Reliability features
+
+- Pydantic schema validation normalizes and rejects invalid lead payloads before persistence.
+- The frontend CSV parser validates required columns, email/domain formats, source values, and lead score ranges before local submission.
+- Persisted email/domain duplicate handling detects exact email matches and possible company-domain duplicates against local lead snapshots.
+- PostgreSQL-backed lead, run, attempt, and audit records preserve run history and mock handoff evidence.
+- Run detail exposes only allowlisted and sanitized payload/audit fields for failure review.
+- Manual retry is limited to failed or queued selected runs and appends a local retry attempt while preserving prior history.
+- Retry is blocked before mutation when local/mock provider settings are unsafe.
+- Mock CRM and Slack adapters are deterministic and do not call live providers.
+- Demo seed/reset behavior is local/demo-only and targets rows marked as demo data.
+- Backend pytest coverage and frontend Vitest/Testing Library coverage exercise validation, dedupe, persistence, run history, failure detail, retry guardrails, CSV import, and admin UI behavior.
+
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+  A[Lead source: form or CSV] --> B[FastAPI intake API]
+  B --> C[Pydantic validation]
+  C --> D[Email/domain deduplication]
+  D --> E[(PostgreSQL database)]
+  E --> F[Mock CRM adapter]
+  E --> G[Mock Slack adapter]
+  E --> H[Next.js admin dashboard]
+  H --> I[Run history]
+  H --> J[Failure detail]
+  H --> K[Guarded manual retry]
+```
+
 ## Screenshots
 
 Portfolio-ready screenshots are stored under `docs/assets/screenshots/` and use synthetic local data only.
 
-![SalesOps public lead form and CSV import](docs/assets/screenshots/salesops-home.png)
+| Proof point | What it shows | Asset |
+| --- | --- | --- |
+| Lead form | Synthetic lead intake from the public form | [salesops-home.png](docs/assets/screenshots/salesops-home.png) |
+| CSV import | Batch lead intake through CSV upload/import | [salesops-csv-session-dashboard.png](docs/assets/screenshots/salesops-csv-session-dashboard.png) |
+| Admin run history | Local run/audit history and status review | [salesops-admin-run-history.png](docs/assets/screenshots/salesops-admin-run-history.png) |
+| Failure detail / retry | Failure context, retry guardrails, and manual retry path | [salesops-admin-failed-detail.png](docs/assets/screenshots/salesops-admin-failed-detail.png) |
 
-![SalesOps CSV import latest result and session dashboard](docs/assets/screenshots/salesops-csv-session-dashboard.png)
-
-![SalesOps local-only admin run-history table](docs/assets/screenshots/salesops-admin-run-history.png)
-
-![SalesOps failed run detail with sanitized retry guidance](docs/assets/screenshots/salesops-admin-failed-detail.png)
-
-![SalesOps filtered admin view with selected run detail preserved](docs/assets/screenshots/salesops-admin-filtered-detail.png)
+Additional local captures for filtered admin states, local API docs, and mobile layouts are also kept in `docs/assets/screenshots/`.
 
 Asset notes are in [docs/assets/README.md](docs/assets/README.md), and the optional capture checklist is in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md).
 
 Final still screenshots belong in `docs/assets/screenshots/`. Optional GIFs or short recordings belong in `docs/assets/demo/` and should stay untracked until intentionally selected for the portfolio. The exact capture checklist, suggested filenames, and desktop/mobile viewport recommendations are in [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md).
 
-Additional local captures for the filtered empty state, the current local-only `/docs` API docs page with its `/openapi.json` link, and mobile-width layouts are also kept in `docs/assets/screenshots/` for final portfolio review.
+## Demo video
+
+Demo video: TODO — record a 60-90 second walkthrough covering form intake, CSV import, run history, failure detail, and retry.
+
+No GIF or video binary is currently committed. Future local-only recordings should use `docs/assets/demo/` and follow [docs/DEMO_ASSETS.md](docs/DEMO_ASSETS.md).
+
+## Client adaptation paths
+
+These are real-client extension paths, not active live integrations in this local demo.
+
+- **HubSpot or Pipedrive:** replace the mock CRM adapter with authenticated contact/deal upsert calls, duplicate checks, and owner assignment rules.
+- **Airtable or Google Sheets:** use form/CSV rows or sheet records as intake sources or lightweight CRM records.
+- **Slack:** replace the mock notification adapter with channel/user notifications for qualified leads, failed handoffs, and retry outcomes.
+- **Routing rules:** adapt lead assignment by territory, service line, budget, lead score, or account owner.
+- **Client handoff:** add client-specific monitoring, runbook steps, and credential rotation documentation after real-provider approval.
 
 ## Quick Start
 
